@@ -1098,9 +1098,15 @@ function genCfg() {
   if (s2 === s1 + 56) s2 += 1;
   var s3 = Math.min(64, rnd(8, 24) + boost);
   var s4 = Math.min(32, rnd(6, 18) + boost);
-  var jcv = Math.min(10, jc + (inten === "high" ? 2 : 0));
+
+  // Оптимизация Junk-параметров на основе фидбэка разработчиков AmneziaWG
+  // Для AWG 1.0 (и в целом для стабильности) Jc должен быть >= 4, а Jmax > 81
+  var minJc = ver === "1.0" ? 4 : 3;
+  var jcv = Math.max(minJc, Math.min(10, jc + (inten === "high" ? 2 : 0)));
+
   var jmin = 64 + boost * 2;
-  var jmax = Math.min(1024, 256 + iv * 150 + boost * 5);
+  var baseJmax = ver === "1.0" ? 128 : 256; // Гарантируем Jmax > 81 для v1.0
+  var jmax = Math.min(1280, baseJmax + iv * 150 + boost * 10);
 
   return {
     h1,
