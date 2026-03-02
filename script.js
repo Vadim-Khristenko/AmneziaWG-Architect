@@ -670,6 +670,8 @@ var hostPools = {
   ],
 };
 
+// ── core helpers ──────────────────────────────────────────────────────────────
+
 /**
  * getHost(profile) — возвращает текущий пользовательский хост (если введён),
  * иначе выбирает случайный хост из пула, соответствующего профилю.
@@ -686,216 +688,313 @@ function getHost(profile) {
 function rnd(a, b) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
+
+/**
+ * rh(n) — n байт случайного hex. Аргумент приводится к целому.
+ * Возвращает строку длиной ровно n*2 символов (всегда чётная).
+ */
 function rh(n) {
+  var bytes = Math.max(0, Math.floor(n));
   var s = "";
-  for (var i = 0; i < n; i++)
+  for (var i = 0; i < bytes; i++)
     s += ("0" + Math.floor(Math.random() * 256).toString(16)).slice(-2);
   return s;
 }
+
+/**
+ * hexPad(value, byteLen) — число → hex-строка ровно byteLen байт (byteLen*2 символов).
+ * Заменяет опасный .toString(16) без гарантии чётной длины.
+ */
+function hexPad(value, byteLen) {
+  var hex = Math.floor(value).toString(16);
+  while (hex.length < byteLen * 2) hex = "0" + hex;
+  return hex.slice(-(byteLen * 2));
+}
+
+/**
+ * assertEvenHex(hex, label) — страховочная проверка.
+ * Если вдруг hex нечётный — логирует и дополняет нулём.
+ * При корректном использовании hexPad/rh эта ветка никогда не должна срабатывать.
+ */
+function assertEvenHex(hex, label) {
+  if (hex.length % 2 !== 0) {
+    console.warn("[AWG] odd hex in " + (label || "?") + " len=" + hex.length);
+    hex = hex + "0";
+  }
+  return hex;
+}
+
 function rRange(base, spread) {
   var s = base + rnd(0, spread || 500000);
   return s + "-" + (s + rnd(1000, 50000));
 }
 
-/* ── protocol generators ── */
+// ── protocol generators ───────────────────────────────────────────────────────
 
 /**
- * mkQUICi(iv) — генерация имитации QUIC Initial (RFC 9000).
- * Хост используется для вычисления реалистичной длины SNI в crypto-frame
- * (помечается через <rc>) и для придания DCID/SCID правдоподобных размеров
- * в соответствии с практиками CDN.
+ * mkQUICi — QUIC Initial (RFC 9000, Long Header 0xC0-0xC3)
+ *
+ * Long Header layout:
+ *   1B flags | 4B version | 1B dcid_len | dcid | 1B scid_len | scid
+ *   | 1B token_len | token | 4B reserved/PN
+ *
+ * Все части чётные по определению:
+ *   hexPad(x, n) → 2n символов; rh(k) → 2k символов.
  */
 function mkQUICi(iv) {
   var host = getHost("quic_initial");
-  var f = (0xc0 | rnd(0, 3)).toString(16).padStart(2, "0");
-  /* QUIC Initial: DCID typically 8–20 bytes; SCID 0–20 bytes */
   var dcid = rnd(8, 20);
   var scid = rnd(0, 20);
-  /* SNI extension length in crypto frame — derived from hostname length */
-  var sniRc = Math.min(host.length + rnd(0, 6), 64);
-  /* Token field length (0 for client-initiated, non-zero for Retry response) */
   var tokenLen = rnd(0, 1) === 0 ? 0 : rnd(8, 32);
+  var sniRc = Math.min(host.length + rnd(0, 6), 64);
+  var rLen = Math.min(rnd(20, 80) * iv, 500);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
+  var hex = assertEvenHex(
+    hexPad(0xc0 | rnd(0, 3), 1) + // 1B flags
+      "00000001" + // 4B version
+      hexPad(dcid, 1) + // 1B DCID length
+      rh(dcid) + // N bytes DCID
+      hexPad(scid, 1) + // 1B SCID length
+      rh(scid) + // N bytes SCID
+      hexPad(tokenLen, 1) + // 1B token length
+      rh(tokenLen) + // N bytes token
+      rh(4), // 4B reserved/PN
+    "mkQUICi",
+  );
+
   return (
     "<b 0x" +
-    f +
-    "00000001" +
-    rh(1 + dcid + 1 + scid + 1 + tokenLen + 4) +
-    "><rc " +
-    sniRc +
-    "><c><t><r " +
-    Math.min(rnd(20, 80) * iv, 500) +
-    ">"
+    hex +
+    ">" +
+    (getT("useTagRC") ? "<rc " + sniRc + ">" : "") +
+    (getT("useTagC") ? "<c>" : "") +
+    (getT("useTagT") ? "<t>" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "")
   );
 }
 
 /**
- * mkQUIC0(iv) — имитация QUIC 0-RTT (Early Data).
- * Учитывает особенности возобновления сессии: DCID в реалистичных границах,
- * а значение <rc> служит подсказкой о размере session ticket/resumption token.
+ * mkQUIC0 — QUIC 0-RTT (Long Header 0xD0-0xD3)
  */
 function mkQUIC0(iv) {
   var host = getHost("quic_0rtt");
-  var f = (0xd0 | rnd(0, 3)).toString(16).padStart(2, "0");
   var dcid = rnd(8, 20);
-  /* Session ticket size hint — longer for well-known CDNs */
+  var scid = rnd(0, 20);
   var ticketHint = Math.min(host.length + rnd(4, 16), 48);
+  var rLen = Math.min(rnd(30, 120) * iv, 600);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
+  var hex = assertEvenHex(
+    hexPad(0xd0 | rnd(0, 3), 1) +
+      "00000001" +
+      hexPad(dcid, 1) +
+      rh(dcid) +
+      hexPad(scid, 1) +
+      rh(scid) +
+      rh(4),
+    "mkQUIC0",
+  );
+
   return (
     "<b 0x" +
-    f +
-    "00000001" +
-    rh(1 + dcid + 2 + rnd(2, 6)) +
-    "><t><r " +
-    Math.min(rnd(30, 120) * iv, 600) +
-    "><rc " +
-    ticketHint +
-    "><c>"
+    hex +
+    ">" +
+    (getT("useTagT") ? "<t>" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "") +
+    (getT("useTagRC") ? "<rc " + ticketHint + ">" : "") +
+    (getT("useTagC") ? "<c>" : "")
   );
 }
 
 /**
- * mkTLS(iv) — имитация TLS 1.3 Client Hello.
- * Длина SNI-расширения рассчитывается на основе доменного имени и
- * вставляется в <rc> для правдоподобия. Размер записи (record) моделируется
- * в пределах типичных значений для ClientHello (≈300–550 байт).
+ * mkTLS — TLS 1.3 Client Hello
+ *
+ * TLS Record: 16 03 01 [2B recLen] 01 [3B hsLen] 03 03 [32B random]
+ *
+ * Все числовые поля через hexPad — гарантированно чётные.
  */
 function mkTLS(iv) {
   var host = getHost("tls_client_hello");
-  /* TLS record length: realistic CH with extensions is 300–550 bytes */
   var recLen = rnd(300, 550);
-  /* Handshake length sits just inside the record */
   var hsLen = recLen - rnd(4, 9);
-  /* SNI extension: type(2) + len(2) + list_len(2) + type(1) + host_len(2) + host */
   var sniExt = 2 + 2 + 2 + 1 + 2 + host.length;
   var sniRc = Math.min(sniExt, 64);
+  var rLen = Math.min(rnd(20, 60) * iv, 300);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
+  var hex = assertEvenHex(
+    "160301" + // 3B: record type + legacy version
+      hexPad(recLen, 2) + // 2B: record length
+      "01" + // 1B: handshake type = ClientHello
+      hexPad(hsLen, 3) + // 3B: handshake length
+      "0303" + // 2B: client_version (TLS 1.2 legacy)
+      rh(32), // 32B: client random
+    "mkTLS",
+  );
+
   return (
-    "<b 0x160301" +
-    recLen.toString(16).padStart(4, "0") +
-    "01" +
-    hsLen.toString(16).padStart(6, "0") +
-    "0303" +
-    rh(32) +
-    "><rc " +
-    sniRc +
-    "><r " +
-    Math.min(rnd(20, 60) * iv, 300) +
-    "><c><t>"
+    "<b 0x" +
+    hex +
+    ">" +
+    (getT("useTagRC") ? "<rc " + sniRc + ">" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "") +
+    (getT("useTagC") ? "<c>" : "") +
+    (getT("useTagT") ? "<t>" : "")
   );
 }
 
 /**
- * mkNoise(iv) — имитация начала Noise_IK (WireGuard).
- * В WireGuard нет SNI/хоста — структура сообщения фиксирована, поэтому
- * хост-параметр здесь не используется. Разбивка длинных hex-блоков
- * даёт более аккуратный вывод в UI.
+ * mkNoise — WireGuard Noise_IK Handshake Initiation
+ * Разбит на несколько <b> тегов для удобства отображения.
+ * rh(n) всегда чётный — каждый тег корректен.
  */
 function mkNoise(iv) {
-  /* Break large hex blocks into separate <b> tags to allow better text wrapping in UI */
+  var rLen = Math.min(rnd(10, 40) * iv, 200);
+  var rcLen = rnd(4, 12);
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
   return (
     "<b 0x01000000" +
     rh(4) +
-    ">" +
+    ">" + // type(1) + reserved(3) + sender_index(4)
     "<b 0x" +
     rh(32) +
-    ">" +
+    ">" + // ephemeral public key
     "<b 0x" +
-    rh(32) +
-    ">" +
+    rh(48) +
+    ">" + // encrypted static
     "<b 0x" +
-    rh(16) +
-    ">" +
-    "<r " +
-    Math.min(rnd(10, 40) * iv, 200) +
-    "><t><rc " +
-    rnd(4, 12) +
-    ">"
+    rh(28) +
+    ">" + // encrypted timestamp
+    (getT("useTagR") ? "<r " + rLen + ">" : "") +
+    (getT("useTagT") ? "<t>" : "") +
+    (getT("useTagRC") ? "<rc " + rcLen + ">" : "")
   );
 }
 
 /**
- * mkDTLS(iv) — имитация DTLS Client Hello (WebRTC / TURN / STUN-over-DTLS).
- * Хост рассматривается как STUN/TURN-сервер — длина домена влияет на
- * формирование расширений и служит подсказкой для размеров фрагментов.
- * Поля эпохи и номера последовательности выставлены как в начальном хендшейке.
+ * mkDTLS — DTLS 1.2 Client Hello
+ *
+ * DTLS Record:
+ *   1B content_type | 2B version=0xFEFD | 2B epoch | 6B seq_num
+ *   | 2B length | 1B hs_type | 3B hs_len | 2B msg_seq | 3B frag_offset
+ *   | 3B frag_len | 2B dtls_version | 4B epoch+rnd | 32B random
+ *
+ * epoch через hexPad(epoch, 2) = ровно 4 hex-символа.
  */
 function mkDTLS(iv) {
   var host = getHost("dtls");
-  /* DTLS record: ContentType=22 (Handshake), Version=0xFEFF (DTLS 1.0 wire),
-     Epoch=0, SeqNum (2B), fragment length */
   var fragLen = rnd(100, 300);
-  /* SNI extension length derived from STUN/TURN host */
   var sniRc = Math.min(host.length + rnd(2, 8), 60);
-  return (
-    "<b 0x16feff" +
-    rnd(0, 255).toString(16).padStart(4, "0") +
-    "0000" +
-    fragLen.toString(16).padStart(4, "0") +
-    "01" +
-    rh(6) +
-    "fefd0000" +
-    rh(4) +
-    rh(32) +
-    "><rc " +
-    sniRc +
-    "><c><t><r " +
-    Math.min(rnd(15, 50) * iv, 250) +
-    ">"
+  var epoch = rnd(0, 255);
+  var rLen = Math.min(rnd(15, 50) * iv, 250);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
+  var hex = assertEvenHex(
+    "16" + // 1B: content_type = Handshake
+      "fefd" + // 2B: version = DTLS 1.2
+      hexPad(epoch, 2) + // 2B: epoch  ← hexPad гарантирует 4 символа
+      rh(6) + // 6B: sequence number
+      hexPad(fragLen, 2) + // 2B: fragment length
+      "01" + // 1B: handshake type = ClientHello
+      rh(6) + // 3B hs_len + 2B msg_seq + 1B pad
+      "fefd0000" + // 2B dtls_version + 2B cookie_len
+      rh(4) + // 4B random prefix
+      rh(32), // 32B random
+    "mkDTLS",
   );
-}
-/**
- * mkHTTP3(iv) — имитация HTTP/3 поверх QUIC.
- * Использует общий хелпер getHost() (пользовательский ввод или пул).
- * Типы QUIC: 0xC0–0xC3 — Initial, 0xE0–0xE3 — 0-RTT/data.
- * Длина SNI вычисляется из имени хоста для реалистичного размера crypto-frame.
- */
-function mkHTTP3(iv) {
-  /* http3 profile shares the quic_initial pool — all are QUIC-capable hosts */
-  var host = getHost("quic_initial");
-  var ptypes = [0xc0, 0xc1, 0xc2, 0xc3, 0xe0, 0xe1, 0xe2];
-  var f = ptypes[rnd(0, ptypes.length - 1)].toString(16).padStart(2, "0");
-  var dcid = rnd(8, 20);
-  var scid = rnd(0, 20);
-  /* SNI extension length: name_len + fixed TLS extension overhead (9 bytes) */
-  var sniLen = Math.min(host.length + 9 + rnd(0, 6), 64);
+
   return (
     "<b 0x" +
-    f +
-    "00000001" +
-    rh(1 + dcid + 1 + scid + 4) +
-    "><rc " +
-    sniLen +
-    "><r " +
-    Math.min(rnd(30, 100) * iv, 500) +
-    "><c><t>"
+    hex +
+    ">" +
+    (getT("useTagRC") ? "<rc " + sniRc + ">" : "") +
+    (getT("useTagC") ? "<c>" : "") +
+    (getT("useTagT") ? "<t>" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "")
   );
 }
+
 /**
- * mkSIP(iv) — имитация SIP REGISTER запроса.
- * Hex-префикс: ASCII "REGISTER sip:" = 0x524547495354455220736970 3a
- * Хост — SIP-регистратор/прокси; домен кодируется в ASCII-hex и вставляется
- * в Request-URI, что делает первые байты CPS-пакета похожими на SIP-запрос.
+ * mkHTTP3 — HTTP/3 over QUIC (QUIC Long Header с расширенным набором типов)
+ */
+function mkHTTP3(iv) {
+  var host = getHost("quic_initial");
+  var ptypes = [0xc0, 0xc1, 0xc2, 0xc3, 0xe0, 0xe1, 0xe2];
+  var dcid = rnd(8, 20);
+  var scid = rnd(0, 20);
+  var sniLen = Math.min(host.length + 9 + rnd(0, 6), 64);
+  var rLen = Math.min(rnd(30, 100) * iv, 500);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
+  var hex = assertEvenHex(
+    hexPad(ptypes[rnd(0, ptypes.length - 1)], 1) +
+      "00000001" +
+      hexPad(dcid, 1) +
+      rh(dcid) +
+      hexPad(scid, 1) +
+      rh(scid) +
+      rh(4),
+    "mkHTTP3",
+  );
+
+  return (
+    "<b 0x" +
+    hex +
+    ">" +
+    (getT("useTagRC") ? "<rc " + sniLen + ">" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "") +
+    (getT("useTagC") ? "<c>" : "") +
+    (getT("useTagT") ? "<t>" : "")
+  );
+}
+
+/**
+ * mkSIP — SIP REGISTER request
+ *
+ * ASCII "REGISTER sip:" = 13 символов = 26 hex (чётное).
+ * hostHex: каждый ASCII-символ → 2 hex (всегда чётное).
+ * " " (0x20) = 2 hex-символа.
+ * rh(4) = 8 hex-символов.
+ * Итого: гарантированно чётное.
  */
 function mkSIP(iv) {
   var host = getHost("sip");
-  /* Encode host as hex for the <b> static bytes field */
   var hostHex = "";
-  for (var i = 0; i < host.length; i++) {
-    hostHex += host.charCodeAt(i).toString(16).padStart(2, "0");
-  }
-  /* "REGISTER sip:" + host + " " — realistic SIP Request-URI shape */
-  var sipPrefix = "524547495354455220736970" + "3a" + hostHex + "20";
-  /* SIP Via / Contact header lengths correlate with hostname length */
+  for (var i = 0; i < host.length; i++)
+    hostHex += ("0" + host.charCodeAt(i).toString(16)).slice(-2);
+
+  var hex = assertEvenHex(
+    "524547495354455220736970" + // "REGISTER sip"
+      "3a" + // ":"
+      hostHex + // host as ASCII hex
+      "20" + // " "
+      rh(4), // 4B random suffix
+    "mkSIP",
+  );
+
   var rcVal = Math.min(host.length + rnd(8, 24) * iv, 150);
+  var rLen = Math.min(rnd(5, 30) * iv, 120);
+
+  var getT = (id) => (document.getElementById(id) || { checked: true }).checked;
+
   return (
     "<b 0x" +
-    sipPrefix +
-    rh(4) +
-    "><rc " +
-    rcVal +
-    "><c><t><r " +
-    Math.min(rnd(5, 30) * iv, 120) +
-    ">"
+    hex +
+    ">" +
+    (getT("useTagRC") ? "<rc " + rcVal + ">" : "") +
+    (getT("useTagC") ? "<c>" : "") +
+    (getT("useTagT") ? "<t>" : "") +
+    (getT("useTagR") ? "<r " + rLen + ">" : "")
   );
 }
+
 /**
  * Генерирует пакеты энтропии (I2-I5) с учетом выбранных пользователем тегов.
  * Создает смесь из случайных данных, времени и счетчиков для обхода статистического анализа.
@@ -933,6 +1032,7 @@ function mkEntropy(idx, iv) {
   // Если все теги выключены, гарантируем хотя бы минимальный шум
   return res || "<r 10>";
 }
+
 /**
  * Главный распределитель для генерации первого пакета (I1).
  * Вызывает специализированную функцию в зависимости от выбранного протокола мимикрии.
@@ -969,6 +1069,7 @@ function genI1(profile, iv) {
 }
 
 /* ── generate config ── */
+
 /**
  * Основная функция сборки конфигурации.
  * Рассчитывает все параметры (H1-H4, S1-S4, Junk, I1-I5) на основе
@@ -1025,6 +1126,8 @@ function genCfg() {
     profile,
   };
 }
+
+// ── rendering ─────────────────────────────────────────────────────────────────
 
 var plabs = {
   quic_initial: "QUIC Initial",
@@ -1112,7 +1215,8 @@ function renderCfg(p) {
       html +=
         '<div class="prow" style="animation-delay:' +
         n * 0.04 +
-        's"><div class="pkey">I' +
+        's">' +
+        '<div class="pkey">I' +
         n +
         (i1 ? " ✦" : "") +
         "</div>" +
@@ -1136,7 +1240,8 @@ function sec(label, rows) {
     h +=
       '<div class="prow" style="animation-delay:' +
       idx * 0.04 +
-      's"><div class="pkey">' +
+      's">' +
+      '<div class="pkey">' +
       r[0] +
       "</div>" +
       '<div class="pval ' +
@@ -1269,29 +1374,26 @@ function getPlain(p) {
   return l.join("\n");
 }
 
-/* ── actions ── */
+// ── actions ───────────────────────────────────────────────────────────────────
+
 function generate() {
   cp = genCfg();
   renderCfg(cp);
   var s = document.getElementById("quicProfile");
   var wrap = document.getElementById("customHostWrap");
   var hint = document.getElementById("customHostHint");
-  /* Show host input for every profile except Noise (no host concept).
-     'random' also shows it — the randomly chosen sub-profile may use a host. */
   var noHost = s.value === "wireguard_noise";
   if (wrap) {
     if (!noHost) wrap.classList.add("show");
     else wrap.classList.remove("show");
   }
-  /* Update placeholder and hint text to match the selected profile */
   if (hint) {
     var hintMap = {
-      quic_initial:
-        "QUIC-capable: fastly.net, cdn-apple.com, cdn1.telegram.org …",
+      quic_initial: "QUIC-capable: fastly.net, cdn-apple.com, yastatic.net …",
       quic_0rtt: "QUIC 0-RTT: fastly.net, s3.amazonaws.com, yastatic.net …",
       tls_client_hello: "Любой HTTPS-хост: vk.com, github.com, ozon.ru …",
-      dtls: "STUN/TURN-сервер: stun.telegram.org, stun.l.google.com …",
-      http3: "HTTP/3-хост: fastly.net, cdn1.telegram.org, yandex.net …",
+      dtls: "STUN/TURN-сервер: stun.yandex.net, stun.jit.si …",
+      http3: "HTTP/3-хост: fastly.net, cdn.gcore.com, yandex.net …",
       sip: "SIP-регистратор: sip.zadarma.com, sip.linphone.org …",
       random:
         "Пул выбирается по случайному профилю (опционально укажите свой хост)",
@@ -1304,7 +1406,7 @@ function generate() {
       quic_initial: "Хост с QUIC (напр., fastly.net)",
       quic_0rtt: "Хост с QUIC 0-RTT (напр., cdn-apple.com)",
       tls_client_hello: "Любой домен (напр., github.com)",
-      dtls: "STUN/TURN-хост (напр., stun.telegram.org)",
+      dtls: "STUN/TURN-хост (напр., stun.jit.si)",
       http3: "HTTP/3-домен (напр., vk.com)",
       sip: "SIP-сервер (напр., sip.zadarma.com)",
       random: "Свой домен (опционально)",
@@ -1313,6 +1415,7 @@ function generate() {
   }
   addLog("✦ Сгенерирован — " + s.options[s.selectedIndex].text, "info");
 }
+
 function setVersion(v, btn) {
   ver = v;
   document.querySelectorAll(".tab-btn").forEach(function (b) {
@@ -1321,6 +1424,7 @@ function setVersion(v, btn) {
   btn.classList.add("active");
   if (cp) renderCfg(cp);
 }
+
 function setIntensity(level) {
   inten = level;
   var map = { low: "al", medium: "am", high: "ah" };
@@ -1332,6 +1436,7 @@ function setIntensity(level) {
   document.getElementById("modeLabel").textContent = level.toUpperCase();
   if (cp) generate();
 }
+
 function feedback(ok) {
   if (ok) {
     addLog("✓ Конфигурация подтверждена!", "ok");
@@ -1348,6 +1453,7 @@ function feedback(ok) {
   }
   updateIter();
 }
+
 function updateIter() {
   document.getElementById("iterCount").textContent = iter;
   for (var d = 0; d < 5; d++) {
@@ -1356,6 +1462,7 @@ function updateIter() {
     if (d < iter) dot.classList.add(iter > 3 ? "fh" : "fi");
   }
 }
+
 function addLog(msg, type) {
   var log = document.getElementById("statusLog");
   var e = document.createElement("div");
@@ -1364,6 +1471,7 @@ function addLog(msg, type) {
   log.insertBefore(e, log.firstChild);
   while (log.children.length > 4) log.removeChild(log.lastChild);
 }
+
 function copyConfig() {
   if (!cp) {
     addLog("⚠ Сначала сгенерируйте конфиг", "bad");
@@ -1394,6 +1502,7 @@ function copyConfig() {
     done();
   }
 }
+
 function downloadConfig() {
   if (!cp) {
     addLog("⚠ Сначала сгенерируйте конфиг", "bad");
@@ -1407,6 +1516,7 @@ function downloadConfig() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
 function toggleFaq(head) {
   head.parentElement.classList.toggle("open");
 }
