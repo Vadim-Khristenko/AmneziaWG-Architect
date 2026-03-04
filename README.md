@@ -20,9 +20,9 @@
 
 ![Github Preview banner](assets/github-preview.png)
 
-## Интерфейс
-
 <div align="center">
+  <h1>Превью интерфейса</h1>
+
   <h3>Desktop Version</h3>
   <img src="assets/preview-desktop.png" width="900" alt="Desktop Preview">
   
