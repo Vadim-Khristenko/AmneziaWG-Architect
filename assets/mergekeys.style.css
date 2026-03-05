@@ -573,7 +573,7 @@
 .mk-how.open .mk-how-body {
     /* max-height задаётся динамически через JS (scrollHeight) */
     max-height: 9999px;
-    padding: 0 18px 18px;
+    padding: 10px 18px 18px;
 }
 .mk-how-item {
     display: flex;
@@ -650,12 +650,18 @@
 @media (max-width: 600px) {
     .mk-tabs {
         width: 100%;
+        flex-direction: column;
+        border-radius: 14px;
     }
     .mk-tab-btn {
-        flex: 1;
+        width: 100%;
         justify-content: center;
-        padding: 10px 10px;
-        font-size: 0.68rem;
+        padding: 11px 14px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+    }
+    .mk-tab-btn.active {
+        border-radius: 8px;
     }
     .mk-out-row {
         flex-direction: column;
