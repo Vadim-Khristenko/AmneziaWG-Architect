@@ -471,12 +471,6 @@ const statCards = [
                 </p>
             </div>
         </section>
-
-        <!-- ── Footer spacer ───────────────────────────────────────────── -->
-        <div class="about-footer">
-            <CircleDot :size="14" class="text-dim" />
-            <span class="text-dim">AmneziaWG Architect · 2025</span>
-        </div>
     </div>
 </template>
 
@@ -1252,16 +1246,6 @@ const statCards = [
     background: rgba(232, 168, 64, 0.14);
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* ── Footer ───────────────────────────────────────────────────────────── */
-.about-footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 24px 0 12px;
-    font-size: 0.75rem;
 }
 
 /* ── Stagger Animations ───────────────────────────────────────────────── */

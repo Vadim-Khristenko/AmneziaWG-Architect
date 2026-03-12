@@ -18,6 +18,7 @@
 import {
   createRouter,
   createWebHistory,
+  createWebHashHistory,
   type RouteRecordRaw,
   type RouteMeta,
 } from "vue-router";
@@ -100,10 +101,41 @@ const routes: RouteRecordRaw[] = [
   },
 ];
 
+/* ── Base path detection ─────────────────────────────────────── */
+
+/**
+ * Detects the base path for Vue Router based on the current location.
+ *
+ * Returns:
+ * - null: for file:// protocol (signals hash routing should be used)
+ * - '/repo/': for GitHub Pages subdirectory (username.github.io/repo/)
+ * - '/': for custom domain or GitHub Pages root
+ */
+function getBasePath(): string | null {
+  const { protocol, hostname, pathname } = window.location;
+
+  // For file:// protocol, return null to signal hash routing
+  if (protocol === "file:") {
+    return null;
+  }
+
+  // For GitHub Pages subdirectory (username.github.io/repo-name/)
+  // Extract the repo name from the pathname
+  if (hostname.match(/\.github\.io$/) && pathname.match(/^\/[^\/]+\//)) {
+    return pathname.match(/^\/[^\/]+\//)![0];
+  }
+
+  // For custom domain or GitHub Pages root
+  return "/";
+}
+
 /* ── Router instance ─────────────────────────────────────────── */
 
+const basePath = getBasePath();
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history:
+    basePath === null ? createWebHashHistory() : createWebHistory(basePath),
   routes,
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) return savedPosition;
@@ -152,7 +184,18 @@ router.afterEach((to) => {
     setMeta("og:description", m.ogDescription, "property");
   }
   if (m.ogImage) {
-    setMeta("og:image", m.ogImage, "property");
+    // Convert relative path to absolute URL for og:image
+    const basePath = getBasePath();
+
+    if (basePath === null) {
+      // For file:// protocol, use relative path (og:image doesn't matter for local files)
+      setMeta("og:image", m.ogImage, "property");
+    } else {
+      // For web deployment, convert to absolute URL
+      const cleanPath = m.ogImage.replace(/^\.\//, "");
+      const absoluteUrl = window.location.origin + basePath + cleanPath;
+      setMeta("og:image", absoluteUrl, "property");
+    }
   }
 });
 

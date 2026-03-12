@@ -71,15 +71,11 @@ function spaFallback(): Plugin {
 
       if (!fs.existsSync(indexSrc)) return;
 
-      // How many path segments does the base occupy?
-      // base = "/"           → 1  (root domain:   username.github.io)
-      // base = "/repo-name/" → 2  (project page:  username.github.io/repo)
+      // Canonical site origin used for absolute og:image URLs (required by bots)
       const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
       const owner = process.env.GITHUB_REPOSITORY?.split("/")[0];
       const isGhActions = Boolean(process.env.GITHUB_ACTIONS);
-      const segmentCount = isGhActions && repoName ? 2 : 1;
 
-      // Canonical site origin used for absolute og:image URLs (required by bots)
       const siteBase =
         isGhActions && repoName && owner
           ? `https://${owner.toLowerCase()}.github.io/${repoName}`
@@ -87,16 +83,12 @@ function spaFallback(): Plugin {
 
       // ── 1. Write dist/404.html with a redirect script ───────────────────
       //
-      // IMPORTANT: base is computed as slice(0, segmentCount) — NOT +1.
+      // The script detects the base path dynamically at runtime:
+      // - On GitHub Pages subdirectory (*.github.io/repo-name/): base = /repo-name/
+      // - On custom domain or root: base = /
       //
-      // Example on a project page (segmentCount = 2):
-      //   pathname = "/AmneziaWG-Architect/iaa/"
-      //   split    = ["", "AmneziaWG-Architect", "iaa", ""]
-      //   slice(0,2) = ["", "AmneziaWG-Architect"]  →  "/AmneziaWG-Architect"
-      //   replace  → origin + "/AmneziaWG-Architect/"   ✓ (app root)
-      //
-      // Using slice(0, segmentCount + 1) would give "/AmneziaWG-Architect/iaa"
-      // and redirect back to the same 404 page → infinite loop.
+      // This allows the same build to work on multiple domains without
+      // hardcoding the base path at build time.
       const redirect404 = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -217,15 +209,29 @@ function spaFallback(): Plugin {
   }
   </style>
   <script>
-    // GitHub Pages SPA fallback
+    // GitHub Pages SPA fallback with dynamic base detection
     // Saves the requested URL and redirects to the app root.
     // The restore script in index.html then calls history.replaceState
     // so Vue Router sees the original path.
+    //
+    // Base path is detected dynamically:
+    // - GitHub Pages subdirectory (*.github.io/repo/): extracts /repo/ as base
+    // - Custom domain or root: uses / as base
     (function () {
       var l = window.location;
-      var base = l.pathname.split('/').slice(0, ${segmentCount}).join('/');
-      sessionStorage.redirect = l.pathname + l.search + l.hash;
-      l.replace(l.origin + base + '/');
+      var pathname = l.pathname;
+
+      // Detect base path dynamically
+      var base = '/';
+
+      // If on GitHub Pages subdirectory (username.github.io/repo-name/...)
+      // Extract the repo name as the base
+      if (l.hostname.match(/\\.github\\.io$/) && pathname.match(/^\\/[^\\/]+\\//)) {
+        base = pathname.match(/^\\/[^\\/]+\\//)[0];
+      }
+
+      sessionStorage.redirect = pathname + l.search + l.hash;
+      l.replace(l.origin + base);
     })();
   <\/script>
 </head>
@@ -325,17 +331,19 @@ function spaFallback(): Plugin {
 }
 
 // ── Base path ───────────────────────────────────────────────────────────────
-// GITHUB_ACTIONS + GITHUB_REPOSITORY are injected automatically by the runner.
-// Locally both are undefined → base stays "/" so the dev server works normally.
-const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-const isGhPages = Boolean(process.env.GITHUB_ACTIONS) && Boolean(repoName);
-const base = isGhPages ? `/${repoName}/` : "/";
+// Use relative paths so the build works in all scenarios:
+// - file:// protocol (local filesystem without server)
+// - Custom domain at root (awg-ait.vai-rice.space)
+// - GitHub Pages subdirectory (username.github.io/repo-name/)
+//
+// Relative paths (./assets/...) resolve correctly in all cases.
+// Vue Router detects the absolute base path dynamically at runtime.
+const base = "./";
 
 export default defineConfig({
   plugins: [vue(), spaFallback()],
 
-  // ↑ Critical: Vite prefixes every asset URL with /repo-name/
-  //   Without this, JS/CSS load from /assets/… → 404 on GitHub Pages
+  // ↑ Relative base path ensures assets load correctly from any location
   base,
 
   resolve: {
