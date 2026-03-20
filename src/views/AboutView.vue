@@ -414,7 +414,7 @@ const statCards = [
             </div>
             <div class="cta-row">
                 <a
-                    href="https://github.com/vadim-kh/amneziawg-architect"
+                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect" 
                     target="_blank"
                     rel="noopener noreferrer"
                     class="cta-btn cta-secondary"
