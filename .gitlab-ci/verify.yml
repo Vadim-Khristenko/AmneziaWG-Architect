@@ -1,0 +1,72 @@
+# GitLab CI — Verify stage (modular include)
+# File: .gitlab-ci/verify.yml
+#
+# This module defines:
+# 1) Type-check
+# 2) Unit tests (+ optional coverage output)
+#
+# Expected usage from root .gitlab-ci.yml:
+#   include:
+#     - local: ".gitlab-ci/verify.yml"
+
+verify:typecheck:
+  stage: verify
+  image: oven/bun:1
+  rules:
+    # Skip if explicitly requested
+    - if: '$SKIP_VERIFY == "true"'
+      when: never
+    # Run on MR, branch, tag, manual web
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH'
+      when: on_success
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: on_success
+    - when: never
+  before_script:
+    - bun --version
+    - node --version
+    - bun install --frozen-lockfile
+  script:
+    - bun run typecheck
+  allow_failure: false
+  interruptible: true
+
+verify:test:
+  stage: verify
+  image: oven/bun:1
+  needs: []
+  rules:
+    # Skip if explicitly requested
+    - if: '$SKIP_TESTS == "true"'
+      when: never
+    # Run on MR, branch, tag, manual web
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH'
+      when: on_success
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: on_success
+    - when: never
+  before_script:
+    - bun --version
+    - node --version
+    - bun install --frozen-lockfile
+  script:
+    - bun run test:coverage
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  allow_failure: false
+  interruptible: true

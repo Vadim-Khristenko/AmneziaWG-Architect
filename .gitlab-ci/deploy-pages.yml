@@ -1,0 +1,72 @@
+# GitLab CI module: Pages deploy job
+# Include from root .gitlab-ci.yml:
+#   include:
+#     - local: ".gitlab-ci/deploy-pages.yml"
+#
+# Expected upstream job:
+#   - build:pages (publishes ./dist as artifact)
+
+deploy:pages:
+  stage: deploy
+  image: alpine:3.20
+  needs:
+    - job: build:pages
+      artifacts: true
+  rules:
+    # Deploy Pages from default branches
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    # Also allow semver tags (useful for release snapshots)
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/'
+      when: on_success
+    - when: never
+
+  before_script:
+    - apk add --no-cache bash coreutils findutils
+
+  script:
+    - |
+      set -euo pipefail
+
+      if [ ! -d dist ]; then
+        echo "❌ dist/ not found. Ensure build:pages job produced artifacts."
+        exit 1
+      fi
+
+      # GitLab Pages requires public/
+      rm -rf public
+      mkdir -p public
+      cp -R dist/. public/
+
+      # Optional diagnostics for faster troubleshooting
+      echo "✅ Prepared public/ from dist/"
+      echo "Top-level files:"
+      find public -maxdepth 2 -type f | sort | head -n 80
+
+      # Ensure SPA fallback files exist (best-effort; generated in vite plugin)
+      if [ ! -f public/index.html ]; then
+        echo "❌ public/index.html missing"
+        exit 1
+      fi
+
+      if [ ! -f public/404.html ]; then
+        echo "⚠️ public/404.html is missing (SPA fallback may be degraded on some hosts)"
+      fi
+
+      # If _redirects exists it will help on hosts that support rewrite rules
+      if [ -f public/_redirects ]; then
+        echo "ℹ️ Found public/_redirects"
+      fi
+
+  artifacts:
+    when: on_success
+    expire_in: 7 days
+    paths:
+      - public
+
+  environment:
+    name: pages
+    url: $CI_PAGES_URL
+
+  allow_failure: false
+  interruptible: true

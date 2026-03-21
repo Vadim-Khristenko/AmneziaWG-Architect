@@ -1,19 +1,17 @@
-import { defineConfig } from "vitest/config";
-import type { Plugin } from "vite";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
+import type { Plugin } from "vite";
+import { fileURLToPath } from "node:url";
 
-// ── Route definitions for pre-render stubs ──────────────────────────────────
-// Each entry produces dist/{slug}/index.html with correct og:meta so that
-// crawlers/bots get real metadata without executing JavaScript.
 interface RouteStub {
-  slug: string; // e.g. "about"  → dist/about/index.html
+  slug: string;
   title: string;
   description: string;
   ogTitle: string;
   ogDescription: string;
-  ogImage: string; // relative to site root assets dir, e.g. "og-about.png"
+  ogImage: string;
 }
 
 const ROUTE_STUBS: RouteStub[] = [
@@ -49,334 +47,502 @@ const ROUTE_STUBS: RouteStub[] = [
   },
 ];
 
-/**
- * Vite plugin that handles GitHub Pages SPA routing:
- *
- * 1. Generates dist/404.html with a redirect script that preserves the URL
- *    and bounces the user back to the app root (index.html).
- *
- * 2. Injects a tiny restore script into dist/index.html so Vue Router
- *    sees the original path (e.g. /mergekeys) instead of the root.
- *
- * 3. Pre-renders stub HTML files for every route (dist/{slug}/index.html)
- *    so that crawlers/bots receive correct og:meta tags without JS execution,
- *    AND so that GitHub Pages never triggers 404.html for known routes.
- */
-function spaFallback(): Plugin {
+type HostPlatform = "github" | "gitlab" | "cloudflare" | "generic";
+
+function detectHostPlatform(): HostPlatform {
+  const platform = (
+    process.env.VITE_DEPLOY_PLATFORM ||
+    process.env.DEPLOY_PLATFORM ||
+    (process.env.GITHUB_ACTIONS && "github") ||
+    (process.env.GITLAB_CI && "gitlab") ||
+    (process.env.CF_PAGES && "cloudflare") ||
+    "generic"
+  )
+    .toString()
+    .toLowerCase();
+
+  if (platform.includes("gitlab")) return "gitlab";
+  if (platform.includes("cloudflare") || platform.includes("cf"))
+    return "cloudflare";
+  if (platform.includes("github")) return "github";
+  return "generic";
+}
+
+function normalizeBase(input?: string | null): string {
+  if (!input) return "/";
+  let base = input.trim();
+
+  if (base === "." || base === "./") return "./";
+
+  if (base === "/") return "/";
+
+  base = base.replace(/\\/g, "/");
+  if (!base.startsWith("/")) base = `/${base}`;
+  if (!base.endsWith("/")) base += "/";
+
+  return base;
+}
+
+function inferBase(): string {
+  const explicit =
+    process.env.VITE_BASE ||
+    process.env.BASE_URL ||
+    process.env.ASSET_BASE ||
+    process.env.PUBLIC_URL;
+
+  if (explicit) return normalizeBase(explicit);
+
+  const platform = detectHostPlatform();
+
+  if (platform === "cloudflare") {
+    return "/";
+  }
+
+  if (platform === "github" || platform === "gitlab") {
+    return "./";
+  }
+
+  return "./";
+}
+
+function inferSiteOrigin(): string {
+  const explicit =
+    process.env.VITE_SITE_ORIGIN ||
+    process.env.SITE_ORIGIN ||
+    process.env.VITE_PUBLIC_SITE_URL ||
+    process.env.PUBLIC_SITE_URL;
+
+  if (explicit) return explicit.replace(/\/+$/, "");
+
+  const repo = process.env.GITHUB_REPOSITORY;
+  if (repo && process.env.GITHUB_ACTIONS) {
+    const [owner, name] = repo.split("/");
+    if (owner && name) {
+      return `https://${owner.toLowerCase()}.github.io/${name}`;
+    }
+  }
+
+  const gitlabProject = process.env.CI_PROJECT_PATH;
+  const gitlabUrl = process.env.CI_PAGES_URL || process.env.PAGES_URL;
+  if (gitlabUrl) return gitlabUrl.replace(/\/+$/, "");
+  if (gitlabProject && process.env.CI_SERVER_HOST) {
+    return `https://${process.env.CI_SERVER_HOST}/${gitlabProject}`;
+  }
+
+  const cfUrl =
+    process.env.CF_PAGES_URL ||
+    process.env.CLOUDFLARE_PAGES_URL ||
+    process.env.PAGES_URL;
+  if (cfUrl) return cfUrl.replace(/\/+$/, "");
+
+  return "";
+}
+
+function makeAbsoluteUrl(
+  siteOrigin: string,
+  base: string,
+  assetPath: string,
+): string {
+  const cleanAsset = assetPath.replace(/^\.?\//, "");
+  if (!siteOrigin) {
+    return `${base}${cleanAsset}`.replace(/\/{2,}/g, "/").replace(":/", "://");
+  }
+  const normalizedBase = base === "./" ? "/" : base;
+  return new URL(
+    `${normalizedBase}${cleanAsset}`,
+    siteOrigin.endsWith("/") ? siteOrigin : `${siteOrigin}/`,
+  ).toString();
+}
+
+function buildStubHtml(
+  template: string,
+  route: RouteStub,
+  siteOrigin: string,
+  base: string,
+): string {
+  const absImage = makeAbsoluteUrl(siteOrigin, base, `assets/${route.ogImage}`);
+
+  let html = template;
+
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${route.title}</title>`);
+
+  html = html.replace(
+    /(<meta\s+name="description"\s+content=")[^"]*(")/,
+    `$1${route.description}$2`,
+  );
+
+  if (html.includes('property="og:title"')) {
+    html = html.replace(
+      /(<meta\s+property="og:title"\s+content=")[^"]*(")/,
+      `$1${route.ogTitle}$2`,
+    );
+  }
+
+  if (html.includes('property="og:description"')) {
+    html = html.replace(
+      /(<meta\s+property="og:description"\s+content=")[^"]*(")/,
+      `$1${route.ogDescription}$2`,
+    );
+  }
+
+  if (html.includes('property="og:image"')) {
+    html = html.replace(
+      /(<meta\s+property="og:image"\s+content=")[^"]*(")/,
+      `$1${absImage}$2`,
+    );
+  }
+
+  if (html.includes('name="robots"')) {
+    html = html.replace(
+      /(<meta\s+name="robots"\s+content=")[^"]*(")/,
+      `$1index,follow$2`,
+    );
+  } else {
+    html = html.replace(
+      /<\/title>/,
+      `</title>\n    <meta name="robots" content="index,follow" />`,
+    );
+  }
+
+  return html;
+}
+
+function createSpaFallbackPlugin(): Plugin {
   return {
-    name: "spa-fallback-404",
+    name: "amneziawg-architect-spa-fallback",
+    enforce: "post",
     closeBundle() {
       const outDir = path.resolve(__dirname, "dist");
-      const indexSrc = path.join(outDir, "index.html");
-      const dest404 = path.join(outDir, "404.html");
+      const indexPath = path.join(outDir, "index.html");
+      const fallback404 = path.join(outDir, "404.html");
 
-      if (!fs.existsSync(indexSrc)) return;
+      if (!fs.existsSync(indexPath)) return;
 
-      // Canonical site origin used for absolute og:image URLs (required by bots)
-      const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-      const owner = process.env.GITHUB_REPOSITORY?.split("/")[0];
-      const isGhActions = Boolean(process.env.GITHUB_ACTIONS);
+      const rawIndex = fs.readFileSync(indexPath, "utf-8");
+      const base = inferBase();
+      const siteOrigin = inferSiteOrigin();
+      const isRelativeBase = base === "./";
+      const effectiveBase = isRelativeBase ? "/" : base;
 
-      const siteBase =
-        isGhActions && repoName && owner
-          ? `https://${owner.toLowerCase()}.github.io/${repoName}`
-          : "";
+      const restoreScript = `
+    <script>
+      (function () {
+        var key = "awg_spa_path";
+        try {
+          var saved = sessionStorage.getItem(key);
+          if (saved) {
+            sessionStorage.removeItem(key);
+            var current = location.pathname + location.search + location.hash;
+            if (saved !== current) {
+              history.replaceState(null, "", saved);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>`;
 
-      // ── 1. Write dist/404.html with a redirect script ───────────────────
-      //
-      // The script detects the base path dynamically at runtime:
-      // - On GitHub Pages subdirectory (*.github.io/repo-name/): base = /repo-name/
-      // - On custom domain or root: base = /
-      //
-      // This allows the same build to work on multiple domains without
-      // hardcoding the base path at build time.
-      const redirect404 = `<!DOCTYPE html>
-<html lang="en">
+      const indexWithRestore = rawIndex.includes("awg_spa_path")
+        ? rawIndex
+        : rawIndex.replace("<head>", `<head>${restoreScript}`);
+
+      fs.writeFileSync(indexPath, indexWithRestore, "utf-8");
+
+      const redirectHtml = `<!doctype html>
+<html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <title>Redirecting…</title>
-  <meta name="robots" content="noindex">
-  <style>
-  /* ── Palette ──────────────────────────────────────────────────────────────── */
-  :root {
-      /* Backgrounds — layered depth */
-      --bg: #0a0806;
-      --bg2: #110e0a;
-      --bg3: #181410;
-      --bg4: #201a14;
-      --bg5: #281f16;
-
-      /* Surface — for cards, panels, elevated elements */
-      --surface: rgba(232, 168, 64, 0.03);
-      --surface-hover: rgba(232, 168, 64, 0.06);
-      --surface-active: rgba(232, 168, 64, 0.09);
-
-      /* Accent: Amber */
-      --amber: #e8a840;
-      --amber2: #f5c060;
-      --amber3: #ffd980;
-      --amber-dim: #7a5820;
-      --amber-deep: #c48520;
-
-      /* Accent Glow */
-      --ag: rgba(232, 168, 64, 0.12);
-      --ag2: rgba(232, 168, 64, 0.06);
-      --ag3: rgba(232, 168, 64, 0.03);
-
-      /* Semantic — Green */
-      --green: #5cb87a;
-      --green2: #7dd99a;
-      --green-bg: rgba(92, 184, 122, 0.08);
-      --gd: rgba(92, 184, 122, 0.15);
-
-      /* Semantic — Red */
-      --red: #d4604a;
-      --red2: #ff8f7d;
-      --red-bg: rgba(212, 96, 74, 0.08);
-      --rd: rgba(212, 96, 74, 0.12);
-
-      /* Semantic — Blue (info accents) */
-      --blue: #5b9bd5;
-      --blue-bg: rgba(91, 155, 213, 0.08);
-
-      /* Text */
-      --text: #e0d4b8;
-      --text2: #9a8a68;
-      --text3: #5e5038;
-      --text4: #3d3226;
-
-      /* Borders */
-      --border: rgba(232, 168, 64, 0.14);
-      --border2: rgba(232, 168, 64, 0.07);
-      --border3: rgba(232, 168, 64, 0.03);
-
-      /* Semantic Aliases */
-      --accent: var(--amber2);
-      --accent-glow: var(--ag);
-      --radius: 12px;
-      --radius-sm: 8px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-
-      /* Fonts */
-      --fw: "Manrope", sans-serif;
-      --fu: "Unbounded", sans-serif;
-      --fm: "JetBrains Mono", monospace;
-
-      /* Animation */
-      --ease: cubic-bezier(0.23, 1, 0.32, 1);
-      --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
-      --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-      --trans-fast: 150ms var(--ease);
-      --trans-norm: 250ms var(--ease);
-      --trans-slow: 400ms var(--ease);
-
-      /* Shadows */
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
-      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.2);
-      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-      --shadow-glow:
-          0 0 20px rgba(232, 168, 64, 0.08), 0 0 60px rgba(232, 168, 64, 0.04);
-  }
-
-  /* ── Reset ────────────────────────────────────────────────────────────────── */
-  *,
-  *::before,
-  *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-  }
-
-  html {
-      scroll-behavior: smooth;
-      background-color: var(--bg);
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-      hanging-punctuation: first last;
-  }
-
-  body {
-      font-family: var(--fw);
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      font-size: 16px;
-      overflow-x: hidden;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-  }
-  </style>
-  <script>
-    // GitHub Pages SPA fallback with dynamic base detection
-    // Saves the requested URL and redirects to the app root.
-    // The restore script in index.html then calls history.replaceState
-    // so Vue Router sees the original path.
-    //
-    // Base path is detected dynamically:
-    // - GitHub Pages subdirectory (*.github.io/repo/): extracts /repo/ as base
-    // - Custom domain or root: uses / as base
-    (function () {
-      var l = window.location;
-      var pathname = l.pathname;
-
-      // Detect base path dynamically
-      var base = '/';
-
-      // If on GitHub Pages subdirectory (username.github.io/repo-name/...)
-      // Extract the repo name as the base
-      if (l.hostname.match(/\\.github\\.io$/) && pathname.match(/^\\/[^\\/]+\\//)) {
-        base = pathname.match(/^\\/[^\\/]+\\//)[0];
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Упс... Редирект сам не сработал</title>
+    <style>
+      :root {
+        --bg: #0a0806;
+        --card: rgba(232, 168, 64, 0.06);
+        --border: rgba(232, 168, 64, 0.22);
+        --text: #e0d4b8;
+        --muted: #b6a37b;
+        --accent: #f5c060;
+        --accent-2: #e8a840;
       }
 
-      sessionStorage.redirect = pathname + l.search + l.hash;
-      l.replace(l.origin + base);
-    })();
-  <\/script>
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: radial-gradient(circle at 20% 10%, rgba(232, 168, 64, 0.08), transparent 35%), var(--bg);
+        color: var(--text);
+        font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 640px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(232,168,64,0.08), rgba(232,168,64,0.03));
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-family: "Unbounded", "Manrope", sans-serif;
+        font-size: clamp(20px, 3vw, 28px);
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .meta {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        color: #d2be92;
+        opacity: 0.92;
+        word-break: break-all;
+        margin: 8px 0 20px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px dashed rgba(232,168,64,0.28);
+        background: rgba(0,0,0,0.18);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 11px 16px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+      }
+
+      .btn-primary {
+        color: #241a0b;
+        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+        border-color: rgba(255, 220, 140, 0.65);
+        box-shadow: 0 6px 24px rgba(232, 168, 64, 0.25);
+      }
+
+      .btn-secondary {
+        color: var(--text);
+        background: rgba(232,168,64,0.06);
+      }
+
+      .btn:hover { transform: translateY(-1px); }
+      .btn:active { transform: translateY(0); }
+
+      .hint {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #c7b284;
+      }
+    </style>
+    <script>
+      (function () {
+        var BASE = ${JSON.stringify(effectiveBase)};
+        var KEY = "awg_spa_path";
+        var path = location.pathname + location.search + location.hash;
+
+        function normalizeBase(base) {
+          if (!base || base === "./") return "/";
+          return base;
+        }
+
+        function goHome() {
+          var target = normalizeBase(BASE);
+          location.replace(target);
+        }
+
+        function ensureStoredPath() {
+          try {
+            sessionStorage.setItem(KEY, path);
+          } catch (e) {}
+        }
+
+        function bootstrapAutoRedirect() {
+          ensureStoredPath();
+          try {
+            if (normalizeBase(BASE) === "/" && location.pathname === "/404.html") {
+              location.replace("/");
+              return;
+            }
+            location.replace(normalizeBase(BASE));
+          } catch (e) {
+            // leave UI visible for manual redirect
+          }
+        }
+
+        window.__AWG_404__ = {
+          base: normalizeBase(BASE),
+          path: path,
+          goHome: goHome,
+        };
+
+        bootstrapAutoRedirect();
+      })();
+    </script>
 </head>
-<body>Redirecting…</body>
+<body>
+  <main class="wrap" role="main" aria-live="polite">
+    <h1>Упс... Редирект сам не сработал!</h1>
+    <p>
+      Мы попытались автоматически открыть SPA-приложение, но браузер или хостинг
+      заблокировал авто-переход. Нажмите кнопку ниже, чтобы перейти к странице вручную.
+    </p>
+
+    <div class="meta" id="debugPath">Путь: определяем...</div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="goBtn" type="button">
+        Перейти к странице
+      </button>
+      <a class="btn btn-secondary" id="rootLink" href="/">
+        Открыть главную
+      </a>
+    </div>
+
+    <div class="hint">
+      Если проблема повторяется, обновите страницу с очисткой кэша (Ctrl+F5) или откройте сайт в новом табе.
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var state = window.__AWG_404__ || { base: "/", path: location.pathname + location.search + location.hash };
+      var debug = document.getElementById("debugPath");
+      var goBtn = document.getElementById("goBtn");
+      var rootLink = document.getElementById("rootLink");
+
+      if (debug) {
+        debug.textContent = "Путь: " + state.path + " | Base: " + state.base;
+      }
+
+      if (rootLink) {
+        rootLink.setAttribute("href", state.base || "/");
+      }
+
+      if (goBtn) {
+        goBtn.addEventListener("click", function () {
+          try {
+            sessionStorage.setItem("awg_spa_path", state.path);
+          } catch (e) {}
+          location.replace(state.base || "/");
+        });
+      }
+    })();
+  </script>
+</body>
 </html>`;
 
-      fs.writeFileSync(dest404, redirect404, "utf-8");
-      console.log("  ✓ SPA fallback: generated 404.html with redirect script");
-
-      // ── 2. Pre-render stubs for every named route ────────────────────────
-      // Creates dist/{slug}/index.html with correct <title>, <meta name="description">
-      // and og:meta tags hard-coded in HTML so that:
-      //   a) Crawlers / OG bots get real metadata without running JS.
-      //   b) GitHub Pages finds a real file → 404.html is never triggered
-      //      for known routes → no redirect loop for direct navigation.
-      //
-      // The stub contains the same JS bundle as index.html so regular users
-      // still get the full Vue SPA experience after hydration.
-
-      const indexHtml = fs.readFileSync(indexSrc, "utf-8");
-      const basePath = isGhActions && repoName ? `/${repoName}` : "";
+      fs.writeFileSync(fallback404, redirectHtml, "utf-8");
 
       for (const route of ROUTE_STUBS) {
-        const absImage = siteBase
-          ? `${siteBase}/assets/${route.ogImage}`
-          : `${basePath}/assets/${route.ogImage}`;
-
-        // Replace <title>
-        let stub = indexHtml.replace(
-          /<title>[^<]*<\/title>/,
-          `<title>${route.title}</title>`,
-        );
-
-        // Replace <meta name="description">
-        stub = stub.replace(
-          /(<meta\s+name="description"\s+content=")[^"]*(")/,
-          `$1${route.description}$2`,
-        );
-
-        // Replace / inject og:title
-        if (stub.includes("og:title")) {
-          stub = stub.replace(
-            /(<meta\s+property="og:title"\s+content=")[^"]*(")/,
-            `$1${route.ogTitle}$2`,
-          );
-        }
-
-        // Replace / inject og:description
-        if (stub.includes("og:description")) {
-          stub = stub.replace(
-            /(<meta\s+property="og:description"\s+content=")[^"]*(")/,
-            `$1${route.ogDescription}$2`,
-          );
-        }
-
-        // Replace / inject og:image (must be absolute URL for bots)
-        if (stub.includes("og:image")) {
-          stub = stub.replace(
-            /(<meta\s+property="og:image"\s+content=")[^"]*(")/,
-            `$1${absImage}$2`,
-          );
-        }
-
-        // Write dist/{slug}/index.html
         const stubDir = path.join(outDir, route.slug);
-        const stubFile = path.join(stubDir, "index.html");
+        const stubIndex = path.join(stubDir, "index.html");
+
         fs.mkdirSync(stubDir, { recursive: true });
-        fs.writeFileSync(stubFile, stub, "utf-8");
-        console.log(`  ✓ Pre-render stub: dist/${route.slug}/index.html`);
+        fs.writeFileSync(
+          stubIndex,
+          buildStubHtml(rawIndex, route, siteOrigin, effectiveBase),
+          "utf-8",
+        );
       }
 
-      // ── 3. Inject restore script into dist/index.html ───────────────────
-      // Must run before Vue boots so the router sees the real path.
-      const restoreScript = [
-        `<script>`,
-        `    (function () {`,
-        `      var r = sessionStorage.redirect;`,
-        `      delete sessionStorage.redirect;`,
-        `      if (r && r !== location.pathname + location.search + location.hash) {`,
-        `        history.replaceState(null, null, r);`,
-        `      }`,
-        `    })();`,
-        `  <\/script>`,
-      ].join("\n");
+      if (base === "./") {
+        const cfPages = path.join(outDir, "_redirects");
+        const gitlabPages = path.join(outDir, "200.html");
 
-      let html = fs.readFileSync(indexSrc, "utf-8");
+        const rewriteRules = [
+          "/*    /index.html   200",
+          "/mergekeys    /mergekeys/index.html   200",
+          "/about    /about/index.html   200",
+          "/iaa    /iaa/index.html   200",
+        ].join("\n");
 
-      if (!html.includes("sessionStorage.redirect")) {
-        html = html.replace("<head>", `<head>\n  ${restoreScript}`);
-        fs.writeFileSync(indexSrc, html, "utf-8");
-        console.log(
-          "  ✓ SPA fallback: injected restore script into index.html\n",
-        );
+        fs.writeFileSync(cfPages, rewriteRules, "utf-8");
+        fs.writeFileSync(gitlabPages, rawIndex, "utf-8");
+      }
+
+      if (
+        process.env.GITHUB_ACTIONS ||
+        process.env.GITLAB_CI ||
+        process.env.CF_PAGES
+      ) {
+        console.log(`[spa] base=${base} siteOrigin=${siteOrigin || "(auto)"}`);
       }
     },
   };
 }
 
-// ── Base path ───────────────────────────────────────────────────────────────
-// Use relative paths so the build works in all scenarios:
-// - file:// protocol (local filesystem without server)
-// - Custom domain at root (awg-ait.vai-rice.space)
-// - GitHub Pages subdirectory (username.github.io/repo-name/)
-//
-// Relative paths (./assets/...) resolve correctly in all cases.
-// Vue Router detects the absolute base path dynamically at runtime.
-const base = "./";
+function createMultiHostBuildPlugin(): Plugin {
+  return {
+    name: "amneziawg-architect-multi-host-build",
+    configResolved(config) {
+      if (config.base && config.base !== "./" && config.base !== "/") return;
+    },
+  };
+}
+
+const base = inferBase();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [vue(), spaFallback()],
-
-  // ↑ Relative base path ensures assets load correctly from any location
+  plugins: [vue(), createSpaFallbackPlugin(), createMultiHostBuildPlugin()],
   base,
-
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
-
   build: {
     outDir: "dist",
     emptyOutDir: true,
     minify: "esbuild",
+    sourcemap: true,
   },
-
   server: {
+    host: "0.0.0.0",
     port: 3000,
+    strictPort: true,
     open: true,
   },
-
-  test: {
-    globals: true,
-    environment: "node",
-    include: ["src/**/__tests__/**/*.test.ts"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json-summary", "html"],
-      include: ["src/utils/**/*.ts"],
-      exclude: ["src/utils/__tests__/**"],
-    },
+  preview: {
+    host: "0.0.0.0",
+    port: 4173,
+    strictPort: true,
   },
 });
+
+export const test = {
+  globals: true,
+  environment: "node",
+  include: ["src/**/__tests__/**/*.test.ts"],
+  coverage: {
+    provider: "v8",
+    reporter: ["text", "json-summary", "html"],
+    include: ["src/utils/**/*.ts"],
+    exclude: ["src/utils/__tests__/**"],
+  },
+};

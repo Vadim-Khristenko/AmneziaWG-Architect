@@ -1,0 +1,40 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# AmneziaWG Architect — GitLab CI (root, modular)
+# This file is intentionally small and only wires modular pipeline parts.
+# ──────────────────────────────────────────────────────────────────────────────
+
+stages:
+  - verify
+  - build
+  - deploy
+  - release
+
+default:
+  image: oven/bun:1
+  before_script:
+    - bun --version
+    - bun install --frozen-lockfile
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - node_modules/
+    policy: pull-push
+  interruptible: true
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+variables:
+  NODE_ENV: "production"
+  VITE_DEPLOY_PLATFORM: "gitlab"
+
+include:
+  - local: ".gitlab-ci/verify.yml"
+  - local: ".gitlab-ci/build.yml"
+  - local: ".gitlab-ci/deploy-pages.yml"
+  - local: ".gitlab-ci/release.yml"

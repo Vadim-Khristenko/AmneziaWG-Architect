@@ -1,0 +1,92 @@
+# Shared defaults for modular GitLab CI
+# Include this file from .gitlab-ci.yml and from other partials.
+
+variables:
+  # Runtime / environment
+  NODE_ENV: "production"
+  BUN_VERSION: "latest"
+
+  # Build tuning
+  VITE_DEPLOY_PLATFORM: "gitlab"
+  VITE_BASE: "./"
+  VITE_SITE_ORIGIN: "${CI_PAGES_URL}"
+
+  # Package manager behavior
+  BUN_INSTALL_CACHE_DIR: "${CI_PROJECT_DIR}/.bun-cache"
+  NPM_CONFIG_FUND: "false"
+  NPM_CONFIG_AUDIT: "false"
+
+  # Git strategy
+  GIT_DEPTH: "0"
+  GIT_STRATEGY: "fetch"
+
+  # Optional safety toggles (can be overridden per-pipeline)
+  SKIP_TESTS: "false"
+  SKIP_BUILD: "false"
+  SKIP_DEPLOY: "false"
+
+default:
+  image: oven/bun:1
+  interruptible: true
+  before_script:
+    - bun --version
+    - node --version
+  cache:
+    key:
+      files:
+        - bun.lock
+    paths:
+      - .bun-cache/
+      - node_modules/
+    policy: pull-push
+
+workflow:
+  rules:
+    # Merge requests: always run validation pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+
+    # Branch pushes (except tags): run CI
+    - if: '$CI_COMMIT_BRANCH'
+      when: always
+
+    # Version tags (vX.Y.Z): run release/deploy pipeline
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/'
+      when: always
+
+    # Manual trigger from UI
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+
+    # Scheduled pipelines
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+
+    # Otherwise don't create a pipeline
+    - when: never
+
+stages:
+  - validate
+  - test
+  - build
+  - deploy
+  - release
+
+# Reusable hidden templates for downstream includes
+.bun_install_template:
+  before_script:
+    - bun --version
+    - node --version
+    - bun install --frozen-lockfile
+
+.only_default_branches:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"'
+      when: on_success
+    - when: never
+
+.only_semver_tags:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/'
+      when: on_success
+    - when: never

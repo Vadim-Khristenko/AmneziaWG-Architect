@@ -1,0 +1,71 @@
+# GitLab CI module: Build stage
+# Included by root .gitlab-ci.yml
+#
+# Responsibilities:
+# - Install dependencies once
+# - Build production bundle
+# - Emit build metadata
+# - Publish dist as artifact for downstream jobs (deploy/release)
+
+build:
+  stage: build
+  extends:
+    - .bun_install_template
+  rules:
+    - if: '$SKIP_BUILD == "true"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH'
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/'
+      when: on_success
+    - when: never
+  script:
+    - |
+      set -euo pipefail
+
+      echo "▶ Build started"
+      echo "Platform: gitlab"
+      echo "Commit: ${CI_COMMIT_SHA}"
+      echo "Ref: ${CI_COMMIT_REF_NAME}"
+
+      export VITE_DEPLOY_PLATFORM="${VITE_DEPLOY_PLATFORM:-gitlab}"
+      export VITE_BASE="${VITE_BASE:-./}"
+      export VITE_SITE_ORIGIN="${VITE_SITE_ORIGIN:-${CI_PAGES_URL:-}}"
+
+      bun run build
+
+      # Metadata
+      BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+      DIST_SIZE="$(du -sh dist | cut -f1)"
+      FILE_COUNT="$(find dist -type f | wc -l | tr -d " ")"
+      VERSION="$(node -p "require('./package.json').version")"
+
+      echo "BUILD_TIME=${BUILD_TIME}" > build.env
+      echo "DIST_SIZE=${DIST_SIZE}" >> build.env
+      echo "FILE_COUNT=${FILE_COUNT}" >> build.env
+      echo "VERSION=${VERSION}" >> build.env
+
+      echo "✅ Build finished"
+      echo "Version: ${VERSION}"
+      echo "Dist size: ${DIST_SIZE}"
+      echo "Files: ${FILE_COUNT}"
+
+      # Optional launcher scripts, if present
+      if [ -d scripts ]; then
+        [ -f scripts/serve.sh ] && cp scripts/serve.sh dist/serve.sh || true
+        [ -f scripts/serve.ps1 ] && cp scripts/serve.ps1 dist/serve.ps1 || true
+        [ -f scripts/serve.bat ] && cp scripts/serve.bat dist/serve.bat || true
+        [ -f dist/serve.sh ] && chmod +x dist/serve.sh || true
+      fi
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - dist/
+      - build.env
+    reports:
+      dotenv: build.env
+  interruptible: true
+  allow_failure: false

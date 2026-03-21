@@ -1,0 +1,111 @@
+# GitLab CI template: Release job
+# Usage (in .gitlab-ci.yml):
+#   include:
+#     - local: '.gitlab-ci/release.yml'
+#
+#   release:
+#     extends: .release_template
+#
+# Optional variables:
+#   RELEASE_ASSET_PATHS: "dist scripts"
+#   RELEASE_NOTES_FILE: "release-notes.md"
+
+.release_template:
+  stage: release
+  image: alpine:3.20
+  needs: []
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+      when: on_success
+    - when: never
+  variables:
+    GIT_STRATEGY: fetch
+    RELEASE_ASSET_PATHS: "dist scripts"
+    RELEASE_NOTES_FILE: "release-notes.md"
+  before_script:
+    - apk add --no-cache git bash coreutils tar zip curl jq
+    - git fetch --tags --force
+  script:
+    - |
+      set -euo pipefail
+
+      TAG="${CI_COMMIT_TAG}"
+      PROJECT_NAME="${CI_PROJECT_NAME:-amneziawg-architect}"
+      VERSION="${TAG#v}"
+
+      echo "Preparing release for ${PROJECT_NAME} ${TAG}"
+
+      # Build release notes
+      PREV_TAG="$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -n 1 || true)"
+
+      {
+        echo "## ${PROJECT_NAME} ${TAG}"
+        echo
+        echo "| Key | Value |"
+        echo "|---|---|"
+        echo "| Version | \`${VERSION}\` |"
+        echo "| Commit | \`${CI_COMMIT_SHA}\` |"
+        echo "| Pipeline | [#${CI_PIPELINE_ID}](${CI_PIPELINE_URL}) |"
+        echo
+
+        if [ -n "${PREV_TAG}" ]; then
+          echo "## Changes since \`${PREV_TAG}\`"
+          echo
+          git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --no-merges || true
+        else
+          echo "## Initial release"
+          echo
+          git log --pretty=format:"- %s (%h)" --no-merges | head -30 || true
+        fi
+        echo
+      } > "${RELEASE_NOTES_FILE}"
+
+      echo "Release notes generated: ${RELEASE_NOTES_FILE}"
+
+      # Create archives from RELEASE_ASSET_PATHS
+      ARCHIVE_BASE="${PROJECT_NAME}-${TAG}"
+      ZIP_NAME="${ARCHIVE_BASE}.zip"
+      TAR_NAME="${ARCHIVE_BASE}.tar.gz"
+
+      # shellcheck disable=SC2086
+      zip -r "${ZIP_NAME}" ${RELEASE_ASSET_PATHS}
+      # shellcheck disable=SC2086
+      tar -czf "${TAR_NAME}" ${RELEASE_ASSET_PATHS}
+
+      ls -lh "${ZIP_NAME}" "${TAR_NAME}"
+
+      # Save paths for release-cli command
+      cat > .release-assets.json <<EOF
+      [
+        {
+          "name": "${ZIP_NAME}",
+          "url": "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/${ZIP_NAME}",
+          "link_type": "package"
+        },
+        {
+          "name": "${TAR_NAME}",
+          "url": "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/${TAR_NAME}",
+          "link_type": "package"
+        }
+      ]
+      EOF
+
+      echo "Assets JSON:"
+      cat .release-assets.json
+
+  artifacts:
+    expire_in: 30 days
+    when: always
+    paths:
+      - "*.zip"
+      - "*.tar.gz"
+      - "release-notes.md"
+      - ".release-assets.json"
+
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "Release $CI_COMMIT_TAG"
+    description: "./$RELEASE_NOTES_FILE"
+
+  allow_failure: false
+  interruptible: true
