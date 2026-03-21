@@ -314,21 +314,15 @@ AmneziaWG-Architect/
 
 <div align="center">
 
-[![Поддержать автора](https://img.shields.io/badge/Поддержать_автора-❤_Donatty-ff5e6e?style=for-the-badge&logo=heart&logoColor=white)](https://donatty.com/vai_prog)
+[![Поддержать автора](https://img.shields.io/badge/Поддержать_автора-❤_YooMoney-ff5e6e?style=for-the-badge&logo=heart&logoColor=white)](https://yoomoney.ru/fundraise/1GA2JV51324.260304)
 
 *Каждый донат — это ещё одна фича, фикс или улучшение. Спасибо!*
 
-</div>
+## 📄 Лицензия 📄
 
-<br/>
-
-## 📄 Лицензия
-
-Этот проект распространяется под лицензией [MIT](LICENSE) — свободное использование, модификация и распространение.
+**Этот проект распространяется под лицензией [MIT](LICENSE) — свободное использование, модификация и распространение.**
 
 ---
-
-<div align="center">
 
 **AmneziaWG Architect** · 2026
 
