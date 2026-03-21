@@ -94,9 +94,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    // Catch-all redirect to home
+    // Catch-all 404
     path: "/:pathMatch(.*)*",
-    redirect: "/",
+    name: "not-found",
+    component: () => import("@/views/NotFoundView.vue"),
+    meta: {
+      title: "Страница не найдена — AmneziaWG Architect",
+      description:
+        "Кажется, вы перешли по неверной ссылке или страница была удалена.",
+    },
   },
 ];
 
