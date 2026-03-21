@@ -47,9 +47,9 @@ const ROUTE_STUBS: RouteStub[] = [
   },
 ];
 
-type HostPlatform = "github" | "gitlab" | "cloudflare" | "generic";
+export type HostPlatform = "github" | "gitlab" | "cloudflare" | "generic";
 
-function detectHostPlatform(): HostPlatform {
+export function detectHostPlatform(): HostPlatform {
   const platform = (
     process.env.VITE_DEPLOY_PLATFORM ||
     process.env.DEPLOY_PLATFORM ||
@@ -68,7 +68,7 @@ function detectHostPlatform(): HostPlatform {
   return "generic";
 }
 
-function normalizeBase(input?: string | null): string {
+export function normalizeBase(input?: string | null): string {
   if (!input) return "/";
   let base = input.trim();
 
@@ -83,7 +83,7 @@ function normalizeBase(input?: string | null): string {
   return base;
 }
 
-function inferBase(): string {
+export function inferBase(): string {
   const explicit =
     process.env.VITE_BASE ||
     process.env.BASE_URL ||
@@ -105,7 +105,7 @@ function inferBase(): string {
   return "./";
 }
 
-function inferSiteOrigin(): string {
+export function inferSiteOrigin(): string {
   const explicit =
     process.env.VITE_SITE_ORIGIN ||
     process.env.SITE_ORIGIN ||
@@ -138,7 +138,7 @@ function inferSiteOrigin(): string {
   return "";
 }
 
-function makeAbsoluteUrl(
+export function makeAbsoluteUrl(
   siteOrigin: string,
   base: string,
   assetPath: string,
@@ -147,14 +147,13 @@ function makeAbsoluteUrl(
   if (!siteOrigin) {
     return `${base}${cleanAsset}`.replace(/\/{2,}/g, "/").replace(":/", "://");
   }
-  const normalizedBase = base === "./" ? "/" : base;
   return new URL(
-    `${normalizedBase}${cleanAsset}`,
+    cleanAsset,
     siteOrigin.endsWith("/") ? siteOrigin : `${siteOrigin}/`,
   ).toString();
 }
 
-function buildStubHtml(
+export function buildStubHtml(
   template: string,
   route: RouteStub,
   siteOrigin: string,
@@ -378,7 +377,20 @@ function createSpaFallbackPlugin(): Plugin {
           } catch (e) {}
         }
 
+        var isKnownRoute = false;
+        var knownRoutes = ${JSON.stringify(ROUTE_STUBS.map((r) => r.slug))};
+        var currentSlug = path.split('/')[1];
+        if (currentSlug) {
+            isKnownRoute = knownRoutes.indexOf(currentSlug.split('?')[0].split('#')[0]) !== -1;
+        }
+
         function bootstrapAutoRedirect() {
+          if (!isKnownRoute && location.pathname !== "/404.html" && location.pathname !== "/") {
+            // Not a known route, don't auto-redirect, show 404 UI
+            document.documentElement.classList.add("show-404");
+            return;
+          }
+
           ensureStoredPath();
           try {
             if (normalizeBase(BASE) === "/" && location.pathname === "/404.html") {
@@ -387,7 +399,7 @@ function createSpaFallbackPlugin(): Plugin {
             }
             location.replace(normalizeBase(BASE));
           } catch (e) {
-            // leave UI visible for manual redirect
+            document.documentElement.classList.add("show-redirect");
           }
         }
 
@@ -397,31 +409,56 @@ function createSpaFallbackPlugin(): Plugin {
           goHome: goHome,
         };
 
-        bootstrapAutoRedirect();
+        window.onload = bootstrapAutoRedirect;
       })();
     </script>
+    <style>
+      .ui-redirect, .ui-404 { display: none; }
+      html.show-redirect .ui-redirect { display: block; }
+      html.show-404 .ui-404 { display: block; }
+
+      /* If JS is disabled or taking too long, fallback to showing redirect UI */
+      noscript .ui-redirect { display: block; }
+    </style>
 </head>
 <body>
   <main class="wrap" role="main" aria-live="polite">
-    <h1>Упс... Редирект сам не сработал!</h1>
-    <p>
-      Мы попытались автоматически открыть SPA-приложение, но браузер или хостинг
-      заблокировал авто-переход. Нажмите кнопку ниже, чтобы перейти к странице вручную.
-    </p>
+    <!-- UI for failed auto-redirect -->
+    <div class="ui-redirect">
+      <h1>Упс... Редирект сам не сработал!</h1>
+      <p>
+        Мы попытались автоматически открыть SPA-приложение, но браузер или хостинг
+        заблокировал авто-переход. Нажмите кнопку ниже, чтобы перейти к странице вручную.
+      </p>
 
-    <div class="meta" id="debugPath">Путь: определяем...</div>
+      <div class="meta" id="debugPath">Путь: определяем...</div>
 
-    <div class="actions">
-      <button class="btn btn-primary" id="goBtn" type="button">
-        Перейти к странице
-      </button>
-      <a class="btn btn-secondary" id="rootLink" href="/">
-        Открыть главную
-      </a>
+      <div class="actions">
+        <button class="btn btn-primary" id="goBtn" type="button">
+          Перейти к приложению
+        </button>
+        <a class="btn btn-secondary" id="rootLink" href="/">
+          На главную
+        </a>
+      </div>
+
+      <div class="hint">
+        Если проблема повторяется, обновите страницу с очисткой кэша (Ctrl+F5) или откройте сайт в новом табе.
+      </div>
     </div>
 
-    <div class="hint">
-      Если проблема повторяется, обновите страницу с очисткой кэша (Ctrl+F5) или откройте сайт в новом табе.
+    <!-- UI for actual 404 (unknown route) -->
+    <div class="ui-404">
+      <h1>Страница не найдена (404)</h1>
+      <p>
+        Кажется, вы перешли по неверной ссылке или страница была удалена.
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-primary" id="rootLink404" href="/">
+          Вернуться на главную
+        </a>
+      </div>
     </div>
   </main>
 
@@ -431,23 +468,34 @@ function createSpaFallbackPlugin(): Plugin {
       var debug = document.getElementById("debugPath");
       var goBtn = document.getElementById("goBtn");
       var rootLink = document.getElementById("rootLink");
+      var rootLink404 = document.getElementById("rootLink404");
 
       if (debug) {
         debug.textContent = "Путь: " + state.path + " | Base: " + state.base;
       }
 
-      if (rootLink) {
-        rootLink.setAttribute("href", state.base || "/");
-      }
+      var baseHref = state.base || "/";
+
+      if (rootLink) rootLink.setAttribute("href", baseHref);
+      if (rootLink404) rootLink404.setAttribute("href", baseHref);
 
       if (goBtn) {
         goBtn.addEventListener("click", function () {
           try {
             sessionStorage.setItem("awg_spa_path", state.path);
           } catch (e) {}
-          location.replace(state.base || "/");
+          location.replace(baseHref);
         });
       }
+
+      // Fallback: if body is shown but no classes added by bootstrapAutoRedirect,
+      // it means JS executed but logic failed to decide. Show redirect UI just in case.
+      setTimeout(function() {
+        if (!document.documentElement.classList.contains('show-404') &&
+            !document.documentElement.classList.contains('show-redirect')) {
+          document.documentElement.classList.add('show-redirect');
+        }
+      }, 1000);
     })();
   </script>
 </body>

@@ -129,18 +129,26 @@ const timelineEvents = [
     },
     {
         version: "2.0",
-        date: "Сейчас",
+        date: "Релиз 2.0",
         title: "Router Mode, Inspector, композитные профили",
         icon: Star,
         color: "green",
         desc: "Режим роутера для NanoPi/Keenetic/OpenWrt. Инспектор и редактор vpn://-ключей. Композитные профили TLS→QUIC и QUIC Burst. Проверка доступности доменов. 133+ автотестов (vitest). Обновлённая IAA-страница. Скрипты запуска для Win/Linux/macOS.",
+    },
+    {
+        version: "2.1",
+        date: "Сейчас",
+        title: "Инцидент с роутингом и CI/CD",
+        icon: Bug,
+        color: "red",
+        desc: "Инцидент с маршрутизацией: из-за конфликта SPA-редиректов пользователи получали белый экран по прямым ссылкам. Починено! Добавлена умная 404-заглушка с ручным fallback'ом, продвинутый мульти-хостинг (GitLab/GitHub/Cloudflare) и новые автотесты резолва URL, чтобы больше ничего не сломалось.",
     },
 ];
 
 const statCards = [
     { label: "Профили мимикрии", value: "9+", icon: Eye },
     { label: "Параметров генерации", value: "18+", icon: FileCode },
-    { label: "Автотестов", value: "133+", icon: Terminal },
+    { label: "Автотестов", value: "150+", icon: Terminal },
     { label: "Серверов и трекеров", value: "0", icon: ShieldCheck },
 ];
 </script>
@@ -414,7 +422,7 @@ const statCards = [
             </div>
             <div class="cta-row">
                 <a
-                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect" 
+                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="cta-btn cta-secondary"
