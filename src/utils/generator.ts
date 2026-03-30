@@ -1629,9 +1629,8 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     s2 = rnd(1, 150);
   }
 
-  const s3 = rnd(1, 64); // Cookie Reply
-
   // Гарантируем S1 + 56 ≠ S3 и S2 + 92 ≠ S3
+  let s3 = rnd(1, 64); // Cookie Reply
   let s3Attempts = 0;
   while ((s3 === s1 + 56 || s3 === s2 + 92) && s3Attempts < 10) {
     s3 = rnd(1, 64);
