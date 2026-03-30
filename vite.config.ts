@@ -5,6 +5,10 @@ import fs from "node:fs";
 import type { Plugin } from "vite";
 import { fileURLToPath } from "node:url";
 
+// ESM-compatible __dirname for use in functions
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 interface RouteStub {
   slug: string;
   title: string;
@@ -316,7 +320,6 @@ function createMultiHostBuildPlugin(): Plugin {
 }
 
 const base = inferBase();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [vue(), createSpaFallbackPlugin(), createMultiHostBuildPlugin()],
