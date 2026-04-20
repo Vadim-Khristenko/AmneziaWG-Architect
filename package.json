@@ -1,7 +1,7 @@
 {
-  "name": "amneziawg-architect",
+  "name": "amneziawg-architect-lite",
   "version": "2.3.0",
-  "description": "AmneziaWG Architect — Professional Config Generator",
+  "description": "AmneziaWG Architect — Lite Config Generator",
   "author": "Vadim Khristenko <just@vai-prog.ru>",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.19.0",
     "bun": ">=1.0.0"
   },
   "dependencies": {
