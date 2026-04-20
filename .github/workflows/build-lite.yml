@@ -21,7 +21,7 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install .
 
       - name: Build lite
         run: npm run build:lite
