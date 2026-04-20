@@ -29,7 +29,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .pnpm-store/
-package-lock.json
 .pnp.cjs
 .pnp.js
 
