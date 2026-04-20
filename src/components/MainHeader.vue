@@ -1,34 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
-import {
-    Menu,
-    X,
-    Github,
-    Layers,
-    Info,
-    Download,
-    ExternalLink,
-    ChevronRight,
-} from "lucide-vue-next";
 
 interface NavLink {
     name: string;
     to: string;
-    icon: any;
 }
 
 const route = useRoute();
 const isMenuOpen = ref(false);
-const isScrolled = ref(false);
 
-const faviconUrl = `${import.meta.env.BASE_URL}assets/favicon.svg`;
+const faviconUrl =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f5c060'/%3E%3Cstop offset='1' stop-color='%23c48520'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%230e0b07'/%3E%3Cpath d='M14 40 32 14l18 26h-8l-10-15-10 15h-8Z' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='43' r='6' fill='%23f5c060'/%3E%3C/svg%3E";
 
 const navLinks: NavLink[] = [
-    { name: "Генератор", to: "/", icon: Layers },
-    { name: "MergeKeys", to: "/mergekeys", icon: Download },
-    { name: "Установка", to: "/iaa", icon: ExternalLink },
-    { name: "О проекте", to: "/about", icon: Info },
+    { name: "Генератор", to: "/" },
+    { name: "MergeKeys", to: "/mergekeys" },
+    { name: "Установка", to: "/iaa" },
+    { name: "О проекте", to: "/about" },
 ];
 
 const isActive = (linkTo: string): boolean => {
@@ -36,142 +25,103 @@ const isActive = (linkTo: string): boolean => {
     return route.path.startsWith(linkTo);
 };
 
+const closeMenu = () => {
+    isMenuOpen.value = false;
+    document.body.style.overflow = "";
+};
+
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value;
-    if (isMenuOpen.value) {
-        document.body.style.overflow = "hidden";
-    } else {
-        document.body.style.overflow = "";
-    }
+    document.body.style.overflow = isMenuOpen.value ? "hidden" : "";
 };
-
-const handleScroll = () => {
-    isScrolled.value = window.scrollY > 10;
-};
-
-onMounted(() => {
-    window.addEventListener("scroll", handleScroll);
-});
 
 onUnmounted(() => {
-    window.removeEventListener("scroll", handleScroll);
+    document.body.style.overflow = "";
 });
 </script>
 
 <template>
-    <header class="header" :class="{ 'is-scrolled': isScrolled }">
+    <header class="header">
         <div class="header-inner container">
-            <!-- Brand Logo -->
-            <router-link to="/" class="brand" @click="isMenuOpen = false">
+            <router-link to="/" class="brand" @click="closeMenu">
                 <div class="brand-logo">
-                    <img :src="faviconUrl" alt="AWG Logo" />
+                    <img :src="faviconUrl" alt="AWG" />
                 </div>
                 <div class="brand-info">
                     <span class="brand-title">AmneziaWG</span>
-                    <span class="brand-subtitle">Architect</span>
+                    <span class="brand-subtitle">Architect Lite</span>
                 </div>
             </router-link>
 
-            <!-- Desktop Nav -->
             <nav class="nav-desktop">
-                <div class="nav-list">
-                    <router-link
-                        v-for="link in navLinks"
-                        :key="link.to"
-                        :to="link.to"
-                        class="nav-link"
-                        :class="{ 'router-link-active': isActive(link.to) }"
-                    >
-                        <span>{{ link.name }}</span>
-                    </router-link>
-                </div>
-                <div class="nav-sep"></div>
+                <router-link
+                    v-for="link in navLinks"
+                    :key="link.to"
+                    :to="link.to"
+                    class="nav-link"
+                    :class="{ 'router-link-active': isActive(link.to) }"
+                >
+                    <span>{{ link.name }}</span>
+                </router-link>
                 <a
                     href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="gh-link"
-                    title="GitHub Repository"
                 >
-                    <Github :size="20" />
+                    GitHub
                 </a>
             </nav>
 
-            <!-- Mobile Toggle -->
             <button
                 class="menu-toggle"
                 @click="toggleMenu"
                 aria-label="Toggle navigation"
             >
-                <Menu v-if="!isMenuOpen" :size="24" />
-                <X v-else :size="24" />
+                {{ isMenuOpen ? "✕" : "☰" }}
             </button>
         </div>
 
-        <!-- Mobile Menu Overlay -->
-        <transition name="fade">
-            <div
-                v-if="isMenuOpen"
-                class="mobile-overlay"
-                @click="toggleMenu"
-            ></div>
-        </transition>
+        <div v-if="isMenuOpen" class="mobile-overlay" @click="toggleMenu"></div>
 
-        <!-- Mobile Slide Panel -->
-        <transition name="slide">
-            <div v-if="isMenuOpen" class="mobile-panel">
-                <div class="mobile-head">
-                    <span class="mobile-title">Меню</span>
-                </div>
-                <div class="mobile-links">
-                    <router-link
-                        v-for="link in navLinks"
-                        :key="link.to"
-                        :to="link.to"
-                        class="mobile-item"
-                        :class="{ active: isActive(link.to) }"
-                        @click="toggleMenu"
-                    >
-                        <component :is="link.icon" :size="20" class="m-icon" />
-                        <span class="m-text">{{ link.name }}</span>
-                        <ChevronRight :size="16" class="m-arrow" />
-                    </router-link>
-                </div>
-
-                <div class="mobile-footer">
-                    <a
-                        href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
-                        target="_blank"
-                        class="mobile-gh"
-                    >
-                        <Github :size="18" />
-                        <span>GitHub Repository</span>
-                    </a>
-                </div>
+        <div v-if="isMenuOpen" class="mobile-panel">
+            <div class="mobile-links">
+                <router-link
+                    v-for="link in navLinks"
+                    :key="link.to"
+                    :to="link.to"
+                    class="mobile-item"
+                    :class="{ active: isActive(link.to) }"
+                    @click="closeMenu"
+                >
+                    <span class="m-text">{{ link.name }}</span>
+                </router-link>
             </div>
-        </transition>
+
+            <div class="mobile-footer">
+                <a
+                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mobile-gh"
+                >
+                    GitHub Repository
+                </a>
+            </div>
+        </div>
     </header>
 </template>
 
 <style scoped>
-/* ── Header Container ─────────────────────────────────────────────────── */
 .header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 72px;
-    z-index: 1000;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    border-bottom: 1px solid transparent;
-}
-
-.header.is-scrolled {
     height: 64px;
-    background: rgba(14, 11, 7, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom-color: rgba(232, 168, 64, 0.1);
+    z-index: 1000;
+    background: rgba(14, 11, 7, 0.92);
+    border-bottom: 1px solid var(--border2);
 }
 
 .header-inner {
@@ -181,34 +131,27 @@ onUnmounted(() => {
     justify-content: space-between;
 }
 
-/* ── Brand ────────────────────────────────────────────────────────────── */
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-decoration: none;
     user-select: none;
-    z-index: 1002;
 }
 
 .brand-logo {
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(
-        135deg,
-        rgba(232, 168, 64, 0.1) 0%,
-        rgba(232, 168, 64, 0.05) 100%
-    );
+    width: 34px;
+    height: 34px;
     border: 1px solid rgba(232, 168, 64, 0.2);
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .brand-logo img {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
 }
 
@@ -220,26 +163,24 @@ onUnmounted(() => {
 .brand-title {
     font-family: var(--fu);
     font-weight: 800;
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: var(--text);
     line-height: 1;
-    letter-spacing: -0.02em;
 }
 
 .brand-subtitle {
     font-family: var(--fm);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
+    font-size: 0.62rem;
     color: var(--text3);
-    margin-top: 3px;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
 }
 
-/* ── Desktop Nav ──────────────────────────────────────────────────────── */
 .nav-desktop {
     display: none;
     align-items: center;
-    gap: 24px;
+    gap: 8px;
 }
 
 @media (min-width: 860px) {
@@ -248,26 +189,14 @@ onUnmounted(() => {
     }
 }
 
-.nav-list {
-    display: flex;
-    gap: 6px;
-}
-
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
-    border-radius: 100px;
+    padding: 6px 12px;
+    border-radius: 999px;
     color: var(--text2);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    transition: all 0.2s;
-    position: relative;
-}
-
-.nav-link:hover {
-    color: var(--accent);
-    background: rgba(232, 168, 64, 0.04);
 }
 
 .nav-link.router-link-active {
@@ -275,53 +204,28 @@ onUnmounted(() => {
     background: rgba(232, 168, 64, 0.08);
 }
 
-.nav-link.router-link-active::before {
-    content: "";
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    opacity: 0;
-}
-
-.nav-sep {
-    width: 1px;
-    height: 18px;
-    background: var(--border);
-}
-
 .gh-link {
+    margin-left: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 50%;
-    color: var(--text2);
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-
-.gh-link:hover {
-    color: var(--accent);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
     background: var(--bg2);
-    border-color: var(--border);
-}
-
-/* ── Mobile Toggle ────────────────────────────────────────────────────── */
-.menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: none;
     color: var(--text);
+    font-size: 1.05rem;
+    line-height: 1;
     cursor: pointer;
     z-index: 1002;
 }
@@ -332,12 +236,10 @@ onUnmounted(() => {
     }
 }
 
-/* ── Mobile Panel ─────────────────────────────────────────────────────── */
 .mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.65);
     z-index: 1001;
 }
 
@@ -345,109 +247,56 @@ onUnmounted(() => {
     position: fixed;
     top: 0;
     right: 0;
-    width: 280px;
+    width: 270px;
     height: 100vh;
     background: var(--bg2);
     border-left: 1px solid var(--border);
     z-index: 1002;
-    padding: 80px 20px 20px;
+    padding: 72px 16px 16px;
     display: flex;
     flex-direction: column;
-    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
-}
-
-.mobile-head {
-    margin-bottom: 20px;
-    padding-left: 12px;
-}
-
-.mobile-title {
-    font-family: var(--fu);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text3);
+    gap: 8px;
 }
 
 .mobile-links {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex: 1;
 }
 
 .mobile-item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
     color: var(--text2);
-    text-decoration: none;
     font-weight: 600;
-    transition: all 0.2s;
     background: rgba(255, 255, 255, 0.02);
 }
 
-.mobile-item:hover,
 .mobile-item.active {
     background: rgba(232, 168, 64, 0.08);
     color: var(--accent);
 }
 
-.m-icon {
-    opacity: 0.7;
-}
-
-.mobile-item.active .m-icon {
-    opacity: 1;
-    color: var(--accent);
-}
-
-.m-arrow {
-    margin-left: auto;
-    opacity: 0.3;
-}
-
 .mobile-footer {
     margin-top: auto;
+    padding-top: 12px;
     border-top: 1px solid var(--border2);
-    padding-top: 20px;
 }
 
 .mobile-gh {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
     width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
     color: var(--text);
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 600;
-}
-
-/* ── Transitions ──────────────────────────────────────────────────────── */
-.slide-enter-active,
-.slide-leave-active {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.slide-enter-from,
-.slide-leave-to {
-    transform: translateX(100%);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
+    background: var(--bg);
 }
 </style>

@@ -64,10 +64,10 @@
     --radius-lg: 16px;
     --radius-xl: 20px;
 
-    /* Fonts */
-    --fw: "Manrope", sans-serif;
-    --fu: "Unbounded", sans-serif;
-    --fm: "JetBrains Mono", monospace;
+    /* Fonts (lite: no external requests) */
+    --fw: "Segoe UI", "Noto Sans", "Liberation Sans", sans-serif;
+    --fu: "Trebuchet MS", "Segoe UI", "Noto Sans", sans-serif;
+    --fm: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
 
     /* Animation */
     --ease: cubic-bezier(0.23, 1, 0.32, 1);
@@ -888,6 +888,25 @@ pre {
     .hide-desktop {
         display: none !important;
     }
+}
+
+/* ── Lite Runtime Overrides ─────────────────────────────────────────────── */
+.lite-mode *,
+.lite-mode *::before,
+.lite-mode *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+.lite-mode .header,
+.lite-mode .footer,
+.lite-mode .mobile-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.lite-mode [data-tooltip]::after {
+    display: none !important;
 }
 
 /* ── Reduced Motion ───────────────────────────────────────────────────────── */

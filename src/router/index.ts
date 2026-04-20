@@ -21,6 +21,7 @@ import {
   type RouteRecordRaw,
   type RouteMeta,
 } from "vue-router";
+import HomeView from "@/views/HomeView.vue";
 
 /* ── Extended route meta typing ──────────────────────────────── */
 
@@ -40,7 +41,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "home",
-    component: () => import("@/views/HomeView.vue"),
+    component: HomeView,
     meta: {
       title: "AmneziaWG Architect — Генератор конфигураций",
       description:
@@ -48,7 +49,7 @@ const routes: RouteRecordRaw[] = [
       ogTitle: "AmneziaWG Architect — Генератор конфигураций",
       ogDescription:
         "Тонкая настройка параметров AmneziaWG: Jc, Jmin, Jmax, S1–S4, H1–H4, CPS I1–I5. Профили мимикрии QUIC/TLS/DTLS/SIP. Защита от блокировок.",
-      ogImage: `${import.meta.env.BASE_URL}assets/og-image.png`,
+      ogImage: `${import.meta.env.BASE_URL}assets/og-lite.svg`,
     },
   },
   {
@@ -62,7 +63,7 @@ const routes: RouteRecordRaw[] = [
       ogTitle: "MergeKeys — AmneziaWG Architect",
       ogDescription:
         "Объединяй ключи Amnezia VPN, обновляй обфускацию — всё локально в браузере.",
-      ogImage: `${import.meta.env.BASE_URL}assets/og-mergekeys.png`,
+      ogImage: `${import.meta.env.BASE_URL}assets/og-lite.svg`,
     },
   },
   {
@@ -76,7 +77,7 @@ const routes: RouteRecordRaw[] = [
       ogTitle: "О проекте — AmneziaWG Architect",
       ogDescription:
         "Твой протокол — твои правила. Разбор архитектуры, безопасности и принципов работы генератора.",
-      ogImage: `${import.meta.env.BASE_URL}assets/og-about.png`,
+      ogImage: `${import.meta.env.BASE_URL}assets/og-lite.svg`,
     },
   },
   {
@@ -90,7 +91,7 @@ const routes: RouteRecordRaw[] = [
       ogTitle: "IAA — Веб-панель VPN",
       ogDescription:
         "Быстрая адаптивная панель для управления VPN-серверами. Amnezia, WireGuard, XRay.",
-      ogImage: `${import.meta.env.BASE_URL}assets/og-iaa.png`,
+      ogImage: `${import.meta.env.BASE_URL}assets/og-lite.svg`,
     },
   },
   {

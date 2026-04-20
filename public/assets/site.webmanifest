@@ -1,21 +1,15 @@
 {
-  "name": "AWG ARCHITECT",
-  "short_name": "AWG-AiT",
+  "name": "AWG Architect Lite",
+  "short_name": "AWG Lite",
   "icons": [
     {
-      "src": "/AmneziaWG-Architect/assets/web-app-manifest-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/AmneziaWG-Architect/assets/web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  "theme_color": "#000000",
-  "background_color": "#000000",
+  "theme_color": "#0a0806",
+  "background_color": "#0a0806",
   "display": "standalone"
 }

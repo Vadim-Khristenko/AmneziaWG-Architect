@@ -27,7 +27,7 @@ const ROUTE_STUBS: RouteStub[] = [
     ogTitle: "MergeKeys — AmneziaWG Architect",
     ogDescription:
       "Объединяй ключи Amnezia VPN, обновляй обфускацию — всё локально в браузере.",
-    ogImage: "og-mergekeys.png",
+    ogImage: "og-lite.svg",
   },
   {
     slug: "about",
@@ -37,7 +37,7 @@ const ROUTE_STUBS: RouteStub[] = [
     ogTitle: "О проекте — AmneziaWG Architect",
     ogDescription:
       "Твой протокол — твои правила. Разбор архитектуры, безопасности и принципов работы генератора.",
-    ogImage: "og-about.png",
+    ogImage: "og-lite.svg",
   },
   {
     slug: "iaa",
@@ -47,7 +47,7 @@ const ROUTE_STUBS: RouteStub[] = [
     ogTitle: "IAA — Веб-панель VPN",
     ogDescription:
       "Быстрая адаптивная панель для управления VPN-серверами. Amnezia, WireGuard, XRay.",
-    ogImage: "og-iaa.png",
+    ogImage: "og-lite.svg",
   },
 ];
 
@@ -319,36 +319,69 @@ function createMultiHostBuildPlugin(): Plugin {
   };
 }
 
-const base = inferBase();
+export default defineConfig(({ mode }) => {
+  const base = inferBase();
+  const isLiteBuild =
+    mode === "lite" ||
+    mode === "lite-single" ||
+    process.env.LITE_BUILD === "true";
+  const isLiteSingleBuild =
+    mode === "lite-single" || process.env.LITE_SINGLE_BUILD === "true";
 
-export default defineConfig({
-  plugins: [vue(), createSpaFallbackPlugin(), createMultiHostBuildPlugin()],
-  base,
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  return {
+    plugins: [vue(), createSpaFallbackPlugin(), createMultiHostBuildPlugin()],
+    base,
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-  define: {
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-  },
-  build: {
-    outDir: "dist",
-    emptyOutDir: true,
-    minify: "esbuild",
-    sourcemap: true,
-  },
-  server: {
-    host: "0.0.0.0",
-    port: 3000,
-    strictPort: true,
-    open: true,
-  },
-  preview: {
-    host: "0.0.0.0",
-    port: 4173,
-    strictPort: true,
-  },
+    define: {
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      __LITE_BUILD__: JSON.stringify(isLiteBuild),
+    },
+    esbuild: {
+      legalComments: "none",
+      ...(isLiteBuild
+        ? {
+            drop: ["console", "debugger"],
+            minifyIdentifiers: true,
+            minifySyntax: true,
+            minifyWhitespace: true,
+          }
+        : {}),
+    },
+    build: {
+      outDir: "dist",
+      emptyOutDir: true,
+      minify: "esbuild",
+      sourcemap: false,
+      reportCompressedSize: false,
+      cssCodeSplit: !isLiteSingleBuild,
+      modulePreload: !isLiteSingleBuild,
+      target: isLiteBuild ? "es2020" : undefined,
+      ...(isLiteSingleBuild
+        ? {
+            rollupOptions: {
+              output: {
+                inlineDynamicImports: true,
+              },
+            },
+          }
+        : {}),
+    },
+    server: {
+      host: "0.0.0.0",
+      port: 3000,
+      strictPort: true,
+      open: true,
+    },
+    preview: {
+      host: "0.0.0.0",
+      port: 4173,
+      strictPort: true,
+    },
+  };
 });
 
 export const test = {

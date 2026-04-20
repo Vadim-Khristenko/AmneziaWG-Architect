@@ -8,6 +8,8 @@
 
 ### Генератор продвинутой обфускации для обхода DPI
 
+> ⚡ Ветка `lite`: экстремально сжатая сборка для potato-устройств. Приоритет — минимальный вес и быстрый запуск даже на слабом железе.
+
 <br/>
 
 [![Deploy to Pages](https://img.shields.io/github/actions/workflow/status/Vadim-Khristenko/AmneziaWG-Architect/deploy-pages.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=Deploy&color=232a30)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/actions)
@@ -170,6 +172,14 @@ Jc ≥ 4, Jmax > 81        — Минимальные требования AWG 1
 
 Просто откройте **[vadim-khristenko.github.io/AmneziaWG-Architect/](https://vadim-khristenko.github.io/AmneziaWG-Architect/)**
 
+### Lite-позиционирование этой ветки
+
+- Это **специальная облегчённая ветка** для слабых устройств и медленных сетей.
+- Текущая цель: максимально компактный билд с сохранением основной функциональности.
+- Эта lite-версия **не деплоится как отдельный production-сайт на GitHub Pages**.
+- На текущий момент она хранится как статичный билд/артефакт и используется локально.
+- В будущем публикация возможна, но **сейчас таких планов нет**.
+
 ### Локальная разработка
 
 ```bash
@@ -177,28 +187,43 @@ Jc ≥ 4, Jmax > 81        — Минимальные требования AWG 1
 git clone https://github.com/Vadim-Khristenko/AmneziaWG-Architect.git
 cd AmneziaWG-Architect
 
-# Установить зависимости (bun или npm)
-bun install      # или npm install
+# Установить зависимости (npm / bun)
+npm install
+# или
+bun install
 
 # Dev-сервер с HMR
-bun run dev      # или npm run dev
+npm run dev
 
-# Продакшн-билд
-bun run build    # или npm run build
+# Lite-билд (по умолчанию в этой ветке)
+npm run build
+
+# Полная сборка без lite-ограничений
+npm run build:full
+
+# Явный lite-билд
+npm run build:lite
+
+# Lite single-file (один HTML-файл)
+npm run build:lite:single
 
 # Превью билда
-bun run preview  # или npm run preview
+npm run preview
 ```
 
 ### Просмотр собранного проекта
 
-После сборки (`bun run build`) файлы находятся в папке `dist/`. Для их просмотра **необходим локальный веб-сервер** — прямое открытие `index.html` через `file://` не работает из-за ограничений CORS для ES-модулей в браузерах.
+После сборки (`npm run build`) файлы находятся в папке `dist/`.
+
+- Для обычного SPA-билда (`dist/index.html`) лучше использовать локальный веб-сервер.
+- Для максимальной портативности используйте single-file артефакт: `dist/AmneziaWG-Architect-lite-single.html`.
+- Single-file вариант можно открывать напрямую через `file://` как один локальный файл.
 
 **Варианты запуска:**
 
 ```bash
 # 1. Встроенный превью Vite (рекомендуется)
-bun run preview
+npm run preview
 
 # 2. Python (если установлен)
 cd dist
@@ -214,7 +239,7 @@ npx http-server dist
 # Установите расширение "Live Server" и откройте dist/index.html
 ```
 
-> **Почему не работает file://?** Современные браузеры блокируют загрузку ES-модулей через `file://` протокол из соображений безопасности (CORS policy). Это стандартное ограничение, не связанное с проектом.
+> Примечание: ограничение `file://` относится к обычному модульному SPA-билду. Для этого в lite-ветке добавлен отдельный single-file артефакт.
 
 <br/>
 
@@ -223,7 +248,7 @@ npx http-server dist
 ```
 AmneziaWG-Architect/
 ├── public/
-│   └── assets/               # OG-изображения, favicon, manifest
+│   └── assets/               # Lite SVG-ассеты (иконка, OG, manifest)
 ├── src/
 │   ├── views/
 │   │   ├── HomeView.vue      # Генератор обфускации (главная страница)
@@ -243,6 +268,8 @@ AmneziaWG-Architect/
 │   ├── App.vue               # Корневой компонент
 │   └── main.ts               # Точка входа
 ├── assets/                   # Глобальные CSS (main.css, nav.css, footer.css)
+├── scripts/
+│   └── make-single-file.mjs  # Инлайнит CSS/JS в один HTML-файл
 ├── ogImageGen.py             # Генератор OG-изображений (Pillow)
 ├── index.html                # SPA shell
 ├── vite.config.ts            # Конфигурация Vite

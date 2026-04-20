@@ -79,8 +79,31 @@ export function useGenerator() {
 
   // ── Состояние UI ──────────────────────────────────────────────────────────
 
-  /** Результат последней генерации */
-  const currentAwg = ref<AWGConfig | null>(null);
+  /**
+   * Результат последней генерации.
+   * Инициализируем сразу, чтобы не было layout shift на первом рендере HomeView.
+   */
+  const currentAwg = ref<AWGConfig | null>(
+    genCfg({
+      version: version.value,
+      intensity: intensity.value,
+      profile: config.profile,
+      customHost: config.customHost,
+      mimicAll: config.mimicAll,
+      useTagC: config.useTagC,
+      useTagT: config.useTagT,
+      useTagR: config.useTagR,
+      useTagRC: config.useTagRC,
+      useTagRD: config.useTagRD,
+      useBrowserFp: config.useBrowserFp,
+      browserProfile: config.browserProfile,
+      mtu: config.mtu,
+      junkLevel: config.junkLevel,
+      iterCount: 0,
+      routerMode: config.routerMode,
+      useExtremeMax: config.useExtremeMax,
+    }),
+  );
 
   /** Счётчик неудачных попыток (используется для автоусиления параметров) */
   const iterCount = ref(0);

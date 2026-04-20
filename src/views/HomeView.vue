@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import {
     Cpu,
@@ -82,10 +82,6 @@ const isYandexUnstable = () =>
     config.useBrowserFp &&
     YANDEX_UNSTABLE_PROFILES.includes(config.browserProfile as any);
 
-onMounted(() => {
-    generate();
-});
-
 const openMergeKeys = (tab: "update" | "merge") => {
     // Write current AWG config to sessionStorage so MergeKeys can pick it up
     const awg = currentAwg.value;
@@ -126,6 +122,7 @@ interface HistoryEntry {
 
 const historyEntries = ref<HistoryEntry[]>([]);
 const showHistory = ref(false);
+const showKnowledgeBase = ref(false);
 let historyIdCounter = 0;
 
 function saveToHistory() {
@@ -1342,51 +1339,70 @@ AWG-клиент будет вести себя как обычный WireGuard.
             <!-- ── FAQ / Knowledge Base ─────────────────────────────────── -->
             <section class="faq-section">
                 <div class="faq-section-head">
-                    <BookOpen :size="22" class="text-accent" />
-                    <h2>База знаний</h2>
-                </div>
-
-                <div class="alert alert-warn">
-                    <AlertTriangle :size="16" class="alert-icon" />
-                    <div class="alert-content">
-                        <b>Блокировка по IP.</b> Если провайдер блокирует
-                        диапазоны IP-адресов датацентров, обфускация не поможет.
-                        Она скрывает только тип протокола.
+                    <div class="faq-section-title">
+                        <BookOpen :size="22" class="text-accent" />
+                        <h2>База знаний</h2>
                     </div>
-                </div>
-
-                <div class="faq-list">
-                    <div
-                        v-for="(item, idx) in faqItems"
-                        :key="idx"
-                        class="faq-item"
-                        :class="{ open: activeFaqIdx === idx }"
+                    <button
+                        class="btn btn-ghost faq-toggle-btn"
+                        @click="showKnowledgeBase = !showKnowledgeBase"
                     >
-                        <button
-                            class="faq-trigger"
-                            @click="
-                                activeFaqIdx = activeFaqIdx === idx ? null : idx
-                            "
-                        >
-                            <component
-                                :is="item.icon"
-                                :size="18"
-                                class="faq-icon"
-                            />
-                            <span class="faq-title">{{ item.title }}</span>
-                            <ChevronDown
-                                :size="16"
-                                class="faq-arrow"
-                                :class="{ rotated: activeFaqIdx === idx }"
-                            />
-                        </button>
-                        <transition name="expand">
-                            <div v-show="activeFaqIdx === idx" class="faq-body">
-                                <div v-html="item.body" class="prose"></div>
-                            </div>
-                        </transition>
-                    </div>
+                        {{
+                            showKnowledgeBase
+                                ? "Скрыть раздел"
+                                : "Показать раздел"
+                        }}
+                    </button>
                 </div>
+
+                <template v-if="showKnowledgeBase">
+                    <div class="alert alert-warn">
+                        <AlertTriangle :size="16" class="alert-icon" />
+                        <div class="alert-content">
+                            <b>Блокировка по IP.</b> Если провайдер блокирует
+                            диапазоны IP-адресов датацентров, обфускация не поможет.
+                            Она скрывает только тип протокола.
+                        </div>
+                    </div>
+
+                    <div class="faq-list">
+                        <div
+                            v-for="(item, idx) in faqItems"
+                            :key="idx"
+                            class="faq-item"
+                            :class="{ open: activeFaqIdx === idx }"
+                        >
+                            <button
+                                class="faq-trigger"
+                                @click="
+                                    activeFaqIdx =
+                                        activeFaqIdx === idx ? null : idx
+                                "
+                            >
+                                <component
+                                    :is="item.icon"
+                                    :size="18"
+                                    class="faq-icon"
+                                />
+                                <span class="faq-title">{{ item.title }}</span>
+                                <ChevronDown
+                                    :size="16"
+                                    class="faq-arrow"
+                                    :class="{ rotated: activeFaqIdx === idx }"
+                                />
+                            </button>
+                            <transition name="expand">
+                                <div v-show="activeFaqIdx === idx" class="faq-body">
+                                    <div v-html="item.body" class="prose"></div>
+                                </div>
+                            </transition>
+                        </div>
+                    </div>
+                </template>
+
+                <p v-else class="faq-collapsed-note">
+                    Раздел свернут для ускорения первого рендера.
+                </p>
             </section>
         </div>
     </div>
@@ -1839,14 +1855,7 @@ AWG-клиент будет вести себя как обычный WireGuard.
 
 /* ── Controls Panel ───────────────────────────────────────────────────── */
 .panel-controls {
-    position: sticky;
-    top: 88px;
-}
-
-@media (max-width: 960px) {
-    .panel-controls {
-        position: static;
-    }
+    position: static;
 }
 
 .field-group {
@@ -2546,12 +2555,32 @@ AWG-клиент будет вести себя как обычный WireGuard.
 .faq-section-head {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 1.5rem;
 }
 
+.faq-section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .faq-section-head h2 {
     margin: 0;
+}
+
+.faq-toggle-btn {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.faq-collapsed-note {
+    margin: 0;
+    color: var(--text3);
+    font-size: 0.84rem;
 }
 
 .faq-list {
@@ -2731,6 +2760,10 @@ AWG-клиент будет вести себя как обычный WireGuard.
 
     .merge-banner-actions .btn {
         flex: 1;
+    }
+
+    .faq-section-head {
+        flex-wrap: wrap;
     }
 
     .faq-body {

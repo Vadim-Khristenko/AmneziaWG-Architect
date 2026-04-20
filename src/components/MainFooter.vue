@@ -1,469 +1,105 @@
-<script setup lang="ts">
-import { ref, onMounted } from "vue";
-import {
-    Github,
-    User,
-    Send,
-    Shield,
-    Heart,
-    ChevronRight,
-    Lock,
-} from "lucide-vue-next";
-
-const lastBuild = ref<string>("");
-
-onMounted(() => {
-    try {
-        const raw = __BUILD_TIME__;
-        const d = new Date(raw);
-        lastBuild.value = d.toLocaleString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    } catch {
-        lastBuild.value = new Date().toLocaleString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    }
-});
-</script>
-
 <template>
     <footer class="footer">
         <div class="container footer-inner">
-            <!-- ── Top Row: Brand & Actions ────────────────────────────────── -->
-            <div class="footer-top">
-                <div class="footer-brand">
-                    <div class="brand-title">
-                        AmneziaWG <span class="brand-sub">Architect</span>
-                    </div>
-                    <div class="brand-slogan">
-                        Шифруем реальность.
-                        <span class="text-accent">Архитектура свободы</span> — в
-                        каждом пакете.
-                    </div>
-                </div>
+            <div class="footer-brand">
+                <span class="footer-title">AmneziaWG Architect Lite</span>
+                <span class="footer-note"
+                    >Potato build: минимальный вес и быстрый запуск.</span
+                >
+            </div>
 
+            <nav class="footer-links" aria-label="Footer links">
                 <a
-                    href="https://yoomoney.ru/fundraise/1GA2JV51324.260304"
+                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="donate-card"
+                    >GitHub</a
                 >
-                    <div class="dc-icon">
-                        <Heart :size="20" fill="currentColor" />
-                    </div>
-                    <div class="dc-content">
-                        <span class="dc-title">Поддержать проект</span>
-                        <span class="dc-desc">Yoomoney</span>
-                    </div>
-                    <ChevronRight class="dc-arrow" :size="18" />
-                </a>
-            </div>
+                <a
+                    href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Issues</a
+                >
+                <a
+                    href="https://t.me/amnezia_vpn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Telegram</a
+                >
+            </nav>
 
-            <div class="divider"></div>
-
-            <!-- ── Grid Section: Links ─────────────────────────────────────── -->
-            <div class="footer-grid">
-                <!-- Column 1: Resources -->
-                <div class="f-col">
-                    <h4 class="col-head">Ресурсы</h4>
-                    <div class="col-links">
-                        <a
-                            href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
-                            target="_blank"
-                            class="f-link"
-                        >
-                            <Github :size="16" /> Исходный код
-                        </a>
-                        <a
-                            href="https://github.com/amnezia-vpn/"
-                            target="_blank"
-                            class="f-link"
-                        >
-                            <Shield :size="16" /> Amnezia VPN GitHub
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Column 2: Community -->
-                <div class="f-col">
-                    <h4 class="col-head">Сообщество</h4>
-                    <div class="col-links">
-                        <a
-                            href="https://t.me/amnezia_vpn"
-                            target="_blank"
-                            class="f-link"
-                        >
-                            <Send :size="16" /> Чат в Telegram
-                        </a>
-                        <a
-                            href="https://github.com/Vadim-Khristenko/"
-                            target="_blank"
-                            class="f-link"
-                        >
-                            <User :size="16" /> Автор проекта
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Column 3: Credits -->
-                <div class="f-col credits">
-                    <h4 class="col-head">Исследования</h4>
-                    <div class="credits-text">
-                        Основано на идеях
-                        <a
-                            href="https://voidwaifu.github.io/Special-Junk-Packet-List/"
-                            target="_blank"
-                            >Special Junk Packet List</a
-                        >
-                        от
-                        <a href="https://github.com/VoidWaifu" target="_blank"
-                            >@VoidWaifu</a
-                        >
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Bottom Bar ─────────────────────────────────────────────── -->
-            <div class="footer-bottom">
-                <div class="copy-block">
-                    <div class="copy-row">
-                        &copy; 2026
-                        <span class="copy-hl">AmneziaWG Architect</span>
-                    </div>
-                    <div class="copy-sub">
-                        Разработано с <span class="heart-anim">❤️</span> для
-                        сообщества AmneziaVPN
-                    </div>
-                    <div v-if="lastBuild" class="build-time">
-                        Последняя сборка: {{ lastBuild }}
-                    </div>
-                </div>
-
-                <div class="local-badge">
-                    <Lock :size="12" />
-                    <span>100% Local: Данные не покидают браузер</span>
-                </div>
-            </div>
+            <div class="footer-meta">100% local. No telemetry. No trackers.</div>
         </div>
     </footer>
 </template>
 
 <style scoped>
 .footer {
-    position: relative;
     margin-top: auto;
-    background: linear-gradient(
-        to bottom,
-        rgba(14, 11, 7, 0.6) 0%,
-        var(--bg2) 100%
-    );
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border2);
-    padding: 64px 0 40px;
+    background: var(--bg2);
+    padding: 18px 0;
+    position: relative;
     z-index: 10;
 }
 
 .footer-inner {
     display: flex;
-    flex-direction: column;
-    gap: 48px;
-}
-
-/* ── Top Row ──────────────────────────────────────────────────────────── */
-.footer-top {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 40px;
+    justify-content: space-between;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .footer-brand {
-    flex: 1;
-    min-width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 2px;
+    min-width: 220px;
 }
 
-.brand-title {
+.footer-title {
     font-family: var(--fu);
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--accent);
-    line-height: 1;
-}
-
-.brand-sub {
-    font-family: var(--fm);
-    font-size: 0.75rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    margin-left: 8px;
-    font-weight: 400;
-}
-
-.brand-slogan {
-    font-size: 0.95rem;
-    color: var(--text2);
-    line-height: 1.6;
-    max-width: 420px;
-}
-
-/* ── Donate Card ──────────────────────────────────────────────────────── */
-.donate-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 12px 24px 12px 14px;
-    background: rgba(232, 168, 64, 0.05);
-    border: 1px solid rgba(232, 168, 64, 0.15);
-    border-radius: 16px;
-    text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.donate-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent);
-    background: rgba(232, 168, 64, 0.08);
-    box-shadow: 0 12px 24px rgba(232, 168, 64, 0.1);
-}
-
-.dc-icon {
-    width: 44px;
-    height: 44px;
-    background: var(--accent);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--bg);
-    box-shadow: 0 4px 12px rgba(232, 168, 64, 0.3);
-}
-
-.dc-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.dc-title {
-    font-family: var(--fu);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: var(--text);
 }
 
-.dc-desc {
-    font-size: 0.75rem;
+.footer-note {
+    font-size: 0.72rem;
     color: var(--text3);
 }
 
-.dc-arrow {
-    color: var(--text3);
-    margin-left: 8px;
-    transition: transform 0.3s;
-}
-
-.donate-card:hover .dc-arrow {
-    transform: translateX(4px);
-    color: var(--accent);
-}
-
-/* ── Grid ─────────────────────────────────────────────────────────────── */
-.divider {
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(232, 168, 64, 0.1) 50%,
-        transparent 100%
-    );
-}
-
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 40px;
-}
-
-.col-head {
-    font-family: var(--fu);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--text3);
-    margin-bottom: 24px;
-}
-
-.col-links {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.f-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text2);
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.f-link svg {
-    color: var(--accent);
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.f-link:hover {
-    color: var(--accent);
-    transform: translateX(4px);
-}
-
-.f-link:hover svg {
-    opacity: 1;
-}
-
-.credits-text {
-    font-size: 0.85rem;
-    color: var(--text2);
-    line-height: 1.6;
-}
-
-.credits-text a {
-    color: var(--text);
-    border-bottom: 1px solid var(--border2);
-    transition: all 0.2s;
-}
-
-.credits-text a:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-}
-
-/* ── Bottom Bar ───────────────────────────────────────────────────────── */
-.footer-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    padding-top: 8px;
-}
-
-.copy-block {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.copy-row {
-    font-family: var(--fm);
-    font-size: 0.8rem;
-    color: var(--text3);
-}
-
-.copy-hl {
-    color: var(--text2);
-    font-weight: 600;
-}
-
-.copy-sub {
-    font-size: 0.8rem;
-    color: var(--text3);
-}
-
-.heart-anim {
-    display: inline-block;
-    color: var(--red);
-    animation: heartbeat 2s infinite;
-}
-
-.build-time {
-    font-family: var(--fm);
-    font-size: 0.7rem;
-    color: var(--text3);
-    opacity: 0.6;
-    margin-top: 4px;
-}
-
-.local-badge {
+.footer-links {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px;
-    background: rgba(92, 184, 122, 0.05);
-    border: 1px solid rgba(92, 184, 122, 0.15);
-    border-radius: 100px;
-    font-size: 0.75rem;
-    color: var(--green);
-    font-weight: 600;
+    flex-wrap: wrap;
 }
 
-@keyframes heartbeat {
-    0%,
-    100% {
-        transform: scale(1);
-    }
-    10% {
-        transform: scale(1.2);
-    }
-    20% {
-        transform: scale(1);
-    }
+.footer-links a {
+    font-size: 0.78rem;
+    color: var(--text2);
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border3);
 }
 
-/* ── Mobile ───────────────────────────────────────────────────────────── */
-@media (max-width: 850px) {
-    .footer-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .credits {
-        grid-column: span 2;
-    }
+.footer-links a:hover {
+    color: var(--accent);
+    border-color: var(--border);
 }
 
-@media (max-width: 600px) {
-    .footer-top {
+.footer-meta {
+    font-size: 0.72rem;
+    color: var(--text3);
+}
+
+@media (max-width: 760px) {
+    .footer-inner {
         flex-direction: column;
         align-items: flex-start;
-        gap: 32px;
-    }
-
-    .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 32px;
-    }
-
-    .credits {
-        grid-column: span 1;
-    }
-
-    .footer-bottom {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 24px;
-    }
-
-    .local-badge {
-        width: 100%;
-        justify-content: center;
     }
 }
 </style>

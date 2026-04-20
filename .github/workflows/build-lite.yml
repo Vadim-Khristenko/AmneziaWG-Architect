@@ -1,0 +1,42 @@
+name: Build and publish Lite artifact
+
+on:
+  push:
+    branches: [lite]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build lite
+        run: npm run build:lite
+
+      - name: Archive dist
+        run: |
+          cd dist || exit 1
+          zip -r "../lite-dist-${{ github.sha }}.zip" .
+
+      - name: Create lite release and upload asset (prerelease)
+        uses: ncipollo/release-action@v1
+        with:
+          tag: lite-${{ github.sha }}
+          name: "Lite build ${{ github.sha }}"
+          body: "Automated Lite build artifact. Does not replace main releases."
+          prerelease: true
+          files: |
+            lite-dist-${{ github.sha }}.zip

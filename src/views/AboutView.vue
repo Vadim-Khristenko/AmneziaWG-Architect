@@ -39,8 +39,6 @@ import {
 } from "lucide-vue-next";
 
 const activeTimeline = ref<number | null>(null);
-const avatarFailed = ref(false);
-const avatarUrl = `${import.meta.env.BASE_URL}assets/avatar.jpg`;
 
 function toggleTimeline(idx: number) {
     activeTimeline.value = activeTimeline.value === idx ? null : idx;
@@ -475,14 +473,7 @@ const statCards = [
 
             <div class="dev-card">
                 <div class="dev-avatar">
-                    <img
-                        v-if="!avatarFailed"
-                        :src="avatarUrl"
-                        alt="Developer Avatar"
-                        class="dev-avatar-image"
-                        @error="avatarFailed = true"
-                    />
-                    <span v-else class="dev-avatar-letter">V</span>
+                    <span class="dev-avatar-letter">V</span>
                 </div>
                 <div class="dev-info">
                     <h3>Единственный разработчик</h3>
@@ -1091,17 +1082,12 @@ const statCards = [
         0 0 20px rgba(232, 168, 64, 0.15);
 }
 
-.dev-avatar-image {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-    transition: filter 0.3s var(--ease);
-}
-
-.dev-card:hover .dev-avatar-image {
-    filter: brightness(1.08);
+.dev-avatar-letter {
+    font-family: var(--fu);
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--bg);
+    line-height: 1;
 }
 
 .dev-info {

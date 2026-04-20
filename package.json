@@ -6,13 +6,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run vite",
-    "build": "bun run vue-tsc && bun run vite build",
-    "preview": "bun run vite preview",
-    "test": "bun run vitest",
-    "test:run": "bun run vitest run",
-    "test:coverage": "bun run vitest run --coverage",
-    "typecheck": "bun run vue-tsc --noEmit"
+    "dev": "vite",
+    "build": "vue-tsc && vite build --mode lite",
+    "build:full": "vue-tsc && vite build",
+    "build:lite": "vue-tsc && vite build --mode lite",
+    "build:lite:single": "vue-tsc && vite build --mode lite-single && node scripts/make-single-file.mjs",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "vue-tsc --noEmit"
   },
   "engines": {
     "node": ">=18.0.0",
