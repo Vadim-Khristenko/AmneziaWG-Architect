@@ -50,6 +50,7 @@ site/
 coverage/
 *.tgz
 *.zip
+.*/
 
 # <==| Static site / Pages artifacts |==>
 .surge/
@@ -118,6 +119,7 @@ pip-log.txt
 .github/workflows/*.secret.yml
 pages/
 gh-pages/
+docs/
 .deploy/
 .ssh/
 
@@ -142,5 +144,11 @@ temp_*
 *.dylib
 *.iso
 *.img
+
+# <==| Git | ==>
+!.github
+!.gitlab-ci
+!.codeberg
+!.gitea
 
 # <==| End of file |==>

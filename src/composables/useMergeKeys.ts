@@ -2,14 +2,14 @@
  * useMergeKeys — Vue composable for MergeKeys reactive state and logic.
  *
  * Manages two tabs:
- *   1. "update" — apply obfuscation patch (Jc/Jmin/Jmax/I1–I5) to an existing vpn:// key
+ *   1. "editor" — Редактор & Конвертер (handled by ConfigEditor component)
  *   2. "merge"  — merge containers from multiple vpn:// keys into one master key
  *
  * All crypto/codec operations happen locally via src/utils/mergekeys.ts (pako).
  * No data leaves the browser.
  */
 
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import type { Ref } from "vue";
 import {
   vpnDecode,
@@ -29,7 +29,7 @@ import type {
    Types
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export type MkTab = "update" | "merge" | "inspect";
+export type MkTab = "editor" | "merge";
 
 export interface MkSlot {
   id: number;
@@ -42,7 +42,7 @@ export interface MkSlot {
 
 export function useMergeKeys() {
   /* ── Active tab ──────────────────────────────────────────────────────── */
-  const activeTab: Ref<MkTab> = ref("update");
+  const activeTab: Ref<MkTab> = ref("editor");
 
   function switchTab(tab: MkTab) {
     activeTab.value = tab;
@@ -104,89 +104,6 @@ export function useMergeKeys() {
       { label: "I1–I5 (CPS)", color: "green" },
     ];
   });
-
-  /* ══════════════════════════════════════════════════════════════════════
-     Tab 1 — Update obfuscation
-     ══════════════════════════════════════════════════════════════════════ */
-
-  const singleInput = ref("");
-  const singleOutput = ref("");
-  const singleSummary = ref("");
-  const singleErrorMsg = ref("");
-  const singlePreviewJson = ref("");
-
-  type SingleState = "idle" | "ok" | "error" | "preview";
-  const singleState: Ref<SingleState> = ref("idle");
-
-  function clearSingleResult() {
-    singleState.value = "idle";
-    singleOutput.value = "";
-    singleSummary.value = "";
-    singleErrorMsg.value = "";
-    singlePreviewJson.value = "";
-  }
-
-  function singleClear() {
-    singleInput.value = "";
-    clearSingleResult();
-  }
-
-  /** Apply obfuscation from pendingCfg to the key in singleInput. */
-  function applyObfuscation() {
-    clearSingleResult();
-
-    const val = singleInput.value.trim();
-    if (!val) {
-      singleErrorMsg.value = "Вставьте ваш vpn://-ключ в поле выше.";
-      singleState.value = "error";
-      return;
-    }
-
-    if (!pendingCfg.value) {
-      singleErrorMsg.value =
-        "Нет сгенерированного конфига. Вернитесь на главную страницу, " +
-        "нажмите «СГЕНЕРИРОВАТЬ» а затем «Открыть MergeKeys».";
-      singleState.value = "error";
-      return;
-    }
-
-    try {
-      const decoded = vpnDecode(val);
-      const patch = buildObfuscationPatch(pendingCfg.value, pendingVer.value);
-      const result = applyPatchToVpnConfig(decoded, patch);
-      const newKey = vpnEncode(result.updated);
-
-      singleOutput.value = newKey;
-      singleSummary.value = `Обновлено: ${result.changed.join(", ")} (в ${result.containerCount} AWG-контейнере(ах)).`;
-      singleState.value = "ok";
-    } catch (err: unknown) {
-      singleErrorMsg.value =
-        err instanceof Error ? err.message : String(err);
-      singleState.value = "error";
-    }
-  }
-
-  /** Decode and preview the key JSON without patching. */
-  function singleDecodeOnly() {
-    clearSingleResult();
-
-    const val = singleInput.value.trim();
-    if (!val) {
-      singleErrorMsg.value = "Вставьте vpn://-ключ.";
-      singleState.value = "error";
-      return;
-    }
-
-    try {
-      const decoded = vpnDecode(val);
-      singlePreviewJson.value = JSON.stringify(decoded, null, 2);
-      singleState.value = "preview";
-    } catch (err: unknown) {
-      singleErrorMsg.value =
-        err instanceof Error ? err.message : String(err);
-      singleState.value = "error";
-    }
-  }
 
   /* ══════════════════════════════════════════════════════════════════════
      Tab 2 — Merge containers
@@ -425,67 +342,17 @@ export function useMergeKeys() {
     }
   }
 
-  /* ══════════════════════════════════════════════════════════════════════
-     Tab 3: Key Inspector
-     ══════════════════════════════════════════════════════════════════════ */
-
-  const inspectInput = ref("");
-  const inspectParsed: Ref<VpnConfig | null> = ref(null);
-  const inspectError = ref("");
-  const inspectState = ref<"idle" | "parsed" | "error">("idle");
-  const inspectEditing = ref(false);
-  const inspectEditJson = ref("");
-
-  function inspectKey() {
-    try {
-      const val = inspectInput.value.trim();
-      if (!val) throw new Error("Вставьте vpn:// ключ");
-      inspectParsed.value = vpnDecode(val);
-      inspectEditJson.value = JSON.stringify(inspectParsed.value, null, 4);
-      inspectState.value = "parsed";
-      inspectError.value = "";
-    } catch (err) {
-      inspectError.value = err instanceof Error ? err.message : String(err);
-      inspectState.value = "error";
-      inspectParsed.value = null;
-    }
-  }
-
-  function startEditing() {
-    if (!inspectParsed.value) return;
-    inspectEditJson.value = JSON.stringify(inspectParsed.value, null, 4);
-    inspectEditing.value = true;
-  }
-
-  function saveEdit() {
-    try {
-      const parsed = JSON.parse(inspectEditJson.value) as VpnConfig;
-      const encoded = vpnEncode(parsed);
-      inspectInput.value = encoded;
-      inspectParsed.value = parsed;
-      inspectEditJson.value = JSON.stringify(parsed, null, 4);
-      inspectEditing.value = false;
-      inspectState.value = "parsed";
-      inspectError.value = "";
-    } catch (err) {
-      inspectError.value = "Невалидный JSON: " + (err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  function cancelEdit() {
-    inspectEditing.value = false;
-    if (inspectParsed.value) {
-      inspectEditJson.value = JSON.stringify(inspectParsed.value, null, 4);
-    }
-  }
-
-  function clearInspect() {
-    inspectInput.value = "";
-    inspectParsed.value = null;
-    inspectError.value = "";
-    inspectState.value = "idle";
-    inspectEditing.value = false;
-    inspectEditJson.value = "";
+  /**
+   * Generic text download helper for the editor component.
+   */
+  function downloadText(text: string, filename: string) {
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   /* ── Slot validation ──────────────────────────────────────────────────── */
@@ -510,12 +377,7 @@ export function useMergeKeys() {
      How-it-works collapse state
      ══════════════════════════════════════════════════════════════════════ */
 
-  const howUpdateOpen = ref(false);
   const howMergeOpen = ref(false);
-
-  function toggleHowUpdate() {
-    howUpdateOpen.value = !howUpdateOpen.value;
-  }
 
   function toggleHowMerge() {
     howMergeOpen.value = !howMergeOpen.value;
@@ -527,9 +389,14 @@ export function useMergeKeys() {
 
   function initFromRoute(tabParam?: string | null) {
     loadPendingCfg();
-    if (tabParam === "merge" || tabParam === "update" || tabParam === "inspect") {
-      switchTab(tabParam);
+    // Map legacy tab names to new ones for backward-compatible deep links
+    if (tabParam === "merge") {
+      switchTab("merge");
+    } else if (tabParam === "update" || tabParam === "inspect") {
+      // Legacy values → editor tab
+      switchTab("editor");
     }
+    // "editor" or anything else: keep default ("editor")
   }
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -558,18 +425,6 @@ export function useMergeKeys() {
     pendingBannerText,
     compatPills,
 
-    // Tab 1: Update
-    singleInput,
-    singleOutput,
-    singleSummary,
-    singleErrorMsg,
-    singlePreviewJson,
-    singleState,
-    clearSingleResult,
-    singleClear,
-    applyObfuscation,
-    singleDecodeOnly,
-
     // Tab 2: Merge
     mergeSlots,
     mergeOutput,
@@ -588,19 +443,6 @@ export function useMergeKeys() {
     mergeDecodeSlot,
     mergeContainers,
 
-    // Tab 3: Inspector
-    inspectInput,
-    inspectParsed,
-    inspectError,
-    inspectState,
-    inspectEditing,
-    inspectEditJson,
-    inspectKey,
-    startEditing,
-    saveEdit,
-    cancelEdit,
-    clearInspect,
-
     // Slot validation
     slotValid,
     validateSlot,
@@ -609,11 +451,10 @@ export function useMergeKeys() {
     copyToClipboard,
     isCopied,
     downloadResult,
+    downloadText,
 
     // How-it-works
-    howUpdateOpen,
     howMergeOpen,
-    toggleHowUpdate,
     toggleHowMerge,
 
     // Slot helpers

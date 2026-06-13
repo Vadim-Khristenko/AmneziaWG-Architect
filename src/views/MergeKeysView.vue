@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * MergeKeysView.vue — Full Vue 3 port of the legacy mergekeys.html page.
+ * MergeKeysView.vue — Two-tab layout for the /mergekeys page.
  *
  * Two tabs:
- *   1. "update" — apply obfuscation patch (Jc/Jmin/Jmax/I1–I5) to a vpn:// key
+ *   1. "editor" — Редактор & Конвертер (ConfigEditor component)
  *   2. "merge"  — merge containers from multiple vpn:// keys into one master key
  *
  * All operations are local (pako zlib in-browser). No data leaves the browser.
@@ -12,15 +12,13 @@
 import { onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useMergeKeys } from "@/composables/useMergeKeys";
+import ConfigEditor from "@/components/ConfigEditor.vue";
 import {
   GitMerge,
-  SlidersHorizontal,
+  FileCode2,
   HelpCircle,
   ChevronDown,
   Key,
-  Clipboard,
-  Zap,
-  Eye,
   Trash2,
   CheckCircle2,
   XCircle,
@@ -30,10 +28,8 @@ import {
   Layers,
   PlusCircle,
   X,
-  ShieldAlert,
   Info,
   Check,
-  Settings2,
 } from "lucide-vue-next";
 
 const route = useRoute();
@@ -43,20 +39,10 @@ const {
   activeTab,
   switchTab,
   // Pending
+  pendingCfg,
+  pendingVer,
   hasPendingCfg,
   pendingBannerText,
-  compatPills,
-  // Tab 1: Update
-  singleInput,
-  singleOutput,
-  singleSummary,
-  singleErrorMsg,
-  singlePreviewJson,
-  singleState,
-  clearSingleResult,
-  singleClear,
-  applyObfuscation,
-  singleDecodeOnly,
   // Tab 2: Merge
   mergeSlots,
   mergeOutput,
@@ -74,48 +60,19 @@ const {
   clearAllSlots,
   mergeDecodeSlot,
   mergeContainers,
-  // Tab 3: Inspector
-  inspectInput,
-  inspectParsed,
-  inspectError,
-  inspectState,
-  inspectEditing,
-  inspectEditJson,
-  inspectKey,
-  startEditing,
-  saveEdit,
-  cancelEdit,
-  clearInspect,
-  // Slot validation
-  slotValid,
-  validateSlot,
   // Shared
   copyToClipboard,
   isCopied,
   downloadResult,
+  downloadText,
   // How-it-works
-  howUpdateOpen,
   howMergeOpen,
-  toggleHowUpdate,
   toggleHowMerge,
   // Slot helpers
   getSlotLabel,
   // Init
   initFromRoute,
 } = useMergeKeys();
-
-/** Syntax-highlight JSON for the inspector view */
-function highlightJson(obj: unknown): string {
-  const json = JSON.stringify(obj, null, 4);
-  return json
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
-    .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
-    .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
-    .replace(/: (true|false|null)/g, ': <span class="json-bool">$1</span>');
-}
 
 onMounted(() => {
   const tabParam = (route.query.tab as string) || null;
@@ -126,17 +83,13 @@ onMounted(() => {
 watch(
   () => route.query.tab,
   (tab) => {
-    if (tab === "merge" || tab === "update") {
-      switchTab(tab);
+    if (tab === "merge") {
+      switchTab("merge");
+    } else if (tab === "editor" || tab === "update" || tab === "inspect") {
+      switchTab("editor");
     }
   }
 );
-
-function pillIcon(color: string) {
-  if (color === "red") return X;
-  if (color === "amber") return Layers;
-  return Check;
-}
 </script>
 
 <template>
@@ -148,7 +101,7 @@ function pillIcon(color: string) {
         MERGE KEYS
       </div>
       <h1>MERGE<span>KEYS</span></h1>
-      <p>Обновление обфускации и объединение ключей Amnezia VPN</p>
+      <p>Редактор ключей и объединение контейнеров Amnezia VPN</p>
     </div>
 
     <!-- Pending cfg banner (from generator) -->
@@ -159,7 +112,7 @@ function pillIcon(color: string) {
       <div class="mk-banner-text">
         <b>Конфиг из генератора загружен.</b>
         {{ pendingBannerText }}
-        Вставьте ваш vpn://-ключ ниже и нажмите «Применить».
+        Перейдите во вкладку «Редактор» и нажмите «Применить обфускацию».
       </div>
     </div>
 
@@ -174,7 +127,7 @@ function pillIcon(color: string) {
         <router-link to="/">главную страницу</router-link>, нажмите
         <b>«СГЕНЕРИРОВАТЬ»</b>, затем <b>«Открыть MergeKeys»</b>.<br />
         Вы также можете отредактировать ключ вручную во вкладке
-        <b @click="switchTab('inspect')" class="mk-notice-link">«Инспектор»</b>.<br />
+        <b @click="switchTab('editor')" class="mk-notice-link">«Редактор»</b>.<br />
         Вкладка <b>«Объединить ключи»</b> работает без генератора.
       </div>
     </div>
@@ -183,11 +136,11 @@ function pillIcon(color: string) {
     <div class="mk-tabs">
       <button
         class="mk-tab-btn"
-        :class="{ active: activeTab === 'update' }"
-        @click="switchTab('update')"
+        :class="{ active: activeTab === 'editor' }"
+        @click="switchTab('editor')"
       >
-        <SlidersHorizontal :size="14" />
-        Обновить обфускацию
+        <FileCode2 :size="14" />
+        Редактор &amp; Конвертер
       </button>
       <button
         class="mk-tab-btn"
@@ -197,211 +150,21 @@ function pillIcon(color: string) {
         <GitMerge :size="14" />
         Объединить ключи
       </button>
-
-      <button
-        class="mk-tab-btn"
-        :class="{ active: activeTab === 'inspect' }"
-        @click="switchTab('inspect')"
-      >
-        <Eye :size="14" />
-        Инспектор
-      </button>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
-         PANE 1 — Update obfuscation
+         PANE 1 — Editor & Converter
     ═══════════════════════════════════════════════════════════ -->
-    <div v-show="activeTab === 'update'" class="mk-pane visible">
-      <!-- How-it-works -->
-      <div class="mk-how" :class="{ open: howUpdateOpen }">
-        <div class="mk-how-head" @click="toggleHowUpdate">
-          <HelpCircle :size="14" class="icon-amber" />
-          <span class="mk-how-title">Как это работает</span>
-          <span class="mk-how-arrow">
-            <ChevronDown :size="14" />
-          </span>
-        </div>
-        <div class="mk-how-body">
-          <div class="mk-how-item">
-            <div class="mk-how-num">1</div>
-            <div>
-              На главной странице нажмите
-              <b>«СГЕНЕРИРОВАТЬ»</b>, затем
-              <b>«Открыть MergeKeys»</b> — новые параметры обфускации будут
-              переданы сюда автоматически.
-            </div>
-          </div>
-          <div class="mk-how-item">
-            <div class="mk-how-num">2</div>
-            <div>
-              Вставьте ваш существующий
-              <b>vpn://-ключ</b> Amnezia (AWG или AWG + XRay и т.д.) в поле
-              ниже.
-            </div>
-          </div>
-          <div class="mk-how-item">
-            <div class="mk-how-num">3</div>
-            <div>
-              Нажмите <b>«Применить обфускацию»</b>. Инструмент обновит только
-              клиентские параметры: <b>Jc, Jmin, Jmax</b> и (при AWG 2.0)
-              <b>I1–I5</b>. Серверные H1–H4, S1–S4 и ключи — не тронуты.
-            </div>
-          </div>
-          <div class="mk-how-item">
-            <div class="mk-how-num">4</div>
-            <div>
-              Скопируйте готовый ключ и импортируйте его в
-              <b>Amnezia VPN</b>.
-            </div>
-          </div>
-          <div class="mk-compat mk-compat-warn">
-            <ShieldAlert :size="15" class="flex-shrink" />
-            <span>
-              <b>Важно:</b> параметры H1–H4 и S1–S4 — серверные. Их изменение
-              без пересинхронизации сервера разорвёт соединение. Этот инструмент
-              их не меняет.
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Input card -->
-      <div class="mk-card">
-        <div class="mk-card-head">
-          <Key :size="14" class="icon-amber" />
-          <span class="mk-card-title">Ваш существующий ключ</span>
-          <!-- AWG version compat info pills -->
-          <div class="mk-info-row">
-            <span
-              v-for="(pill, pi) in compatPills"
-              :key="pi"
-              class="mk-info-pill"
-              :class="`mk-pill-${pill.color}`"
-            >
-              <component :is="pillIcon(pill.color)" :size="9" />
-              {{ pill.label }}
-            </span>
-          </div>
-        </div>
-        <div class="mk-card-body">
-          <div>
-            <div class="mk-label">
-              <Clipboard :size="11" />
-              Вставьте vpn://-ключ Amnezia
-            </div>
-            <textarea
-              v-model="singleInput"
-              class="mk-ta"
-              rows="4"
-              placeholder="vpn://AAAGX..."
-              @input="clearSingleResult()"
-            ></textarea>
-          </div>
-
-          <div class="mk-actions">
-            <button class="mk-btn-primary" @click="applyObfuscation">
-              <Zap :size="14" />
-              Применить обфускацию
-            </button>
-            <button class="mk-btn-sec" @click="singleDecodeOnly">
-              <Eye :size="13" />
-              Просмотр JSON
-            </button>
-            <button class="mk-btn-ghost" @click="singleClear">
-              <Trash2 :size="13" />
-              Очистить
-            </button>
-          </div>
-
-          <!-- Result block -->
-          <div
-            v-if="singleState !== 'idle'"
-            class="mk-result"
-            style="display: flex"
-          >
-            <!-- Error -->
-            <div
-              v-if="singleState === 'error'"
-              class="mk-err"
-              style="display: flex"
-            >
-              <div class="mk-err-icon">
-                <XCircle :size="15" />
-              </div>
-              <div class="mk-err-text">{{ singleErrorMsg }}</div>
-            </div>
-
-            <!-- OK -->
-            <div
-              v-if="singleState === 'ok'"
-              class="mk-ok"
-              style="display: flex"
-            >
-              <div class="mk-ok-pill">
-                <CheckCircle2 :size="14" />
-                <span>Ключ обновлён успешно</span>
-                <span class="mk-summary" style="margin-left: auto; text-align: right">
-                  {{ singleSummary }}
-                </span>
-              </div>
-
-              <div>
-                <div class="mk-label">
-                  <Key :size="11" />
-                  Готовый ключ
-                </div>
-                <div class="mk-out-row">
-                  <textarea
-                    :value="singleOutput"
-                    class="mk-ta"
-                    rows="3"
-                    readonly
-                  ></textarea>
-                  <div class="mk-out-actions">
-                    <button
-                      class="mk-btn-sec"
-                      :class="{ copied: isCopied('singleCopy') }"
-                      title="Копировать"
-                      @click="copyToClipboard(singleOutput, 'singleCopy')"
-                    >
-                      <template v-if="isCopied('singleCopy')">
-                        ✓ Скопировано!
-                      </template>
-                      <template v-else>
-                        <Copy :size="13" />
-                        Копировать
-                      </template>
-                    </button>
-                    <button
-                      class="mk-btn-ghost"
-                      title="Скачать JSON"
-                      @click="downloadResult(singleOutput)"
-                    >
-                      <Download :size="13" />
-                      JSON
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Preview (decode only) -->
-            <div
-              v-if="singleState === 'preview'"
-              class="mk-preview"
-              style="display: flex"
-            >
-              <div class="mk-preview-label">
-                <FileJson :size="11" style="vertical-align: middle" />
-                Содержимое ключа (только просмотр)
-              </div>
-              <pre class="mk-preview-code">{{ singlePreviewJson }}</pre>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div v-show="activeTab === 'editor'" class="mk-pane visible">
+      <ConfigEditor
+        :pending-cfg="pendingCfg"
+        :pending-ver="pendingVer"
+        :is-copied="isCopied"
+        @copy="copyToClipboard"
+        @download="downloadText"
+      />
     </div>
-    <!-- /update pane -->
+    <!-- /editor pane -->
 
     <!-- ═══════════════════════════════════════════════════════════
          PANE 2 — Merge containers
@@ -504,7 +267,7 @@ function pillIcon(color: string) {
                     title="Просмотр JSON"
                     @click="mergeDecodeSlot(idx)"
                   >
-                    <Eye :size="13" />
+                    <FileJson :size="13" />
                   </button>
                   <button
                     class="mk-btn-icon mk-btn-icon-danger"
@@ -611,7 +374,8 @@ function pillIcon(color: string) {
                       @click="copyToClipboard(mergeOutput, 'mergeCopy')"
                     >
                       <template v-if="isCopied('mergeCopy')">
-                        ✓ Скопировано!
+                        <Check :size="13" />
+                        Скопировано!
                       </template>
                       <template v-else>
                         <Copy :size="13" />
@@ -648,112 +412,6 @@ function pillIcon(color: string) {
       </div>
     </div>
     <!-- /merge pane -->
-
-    <!-- ═══════════════════════════════════════════════════════════
-         PANE 3 — Key Inspector
-         ═══════════════════════════════════════════════════════════ -->
-    <div v-if="activeTab === 'inspect'" class="mk-pane">
-      <div class="mk-card">
-        <div class="mk-card-head">
-          <Eye :size="16" class="icon-accent" />
-          <span class="mk-card-title">Инспектор ключей</span>
-        </div>
-
-        <div class="mk-card-body">
-          <!-- Input -->
-          <label class="mk-label">VPN-ключ</label>
-          <textarea
-            v-model="inspectInput"
-            class="mk-ta"
-            rows="3"
-            placeholder="vpn://..."
-          ></textarea>
-          <div class="mk-field-hint">
-            Вставьте vpn://-ключ, чтобы увидеть и отредактировать его содержимое.
-            Все операции локальны — данные не покидают браузер.
-          </div>
-
-          <!-- Actions -->
-          <div class="mk-actions">
-            <button class="mk-btn-primary" @click="inspectKey">
-              <Eye :size="14" />
-              Декодировать
-            </button>
-            <button class="mk-btn-ghost" @click="clearInspect">
-              <X :size="14" />
-              Очистить
-            </button>
-          </div>
-
-          <!-- Error -->
-          <div v-if="inspectState === 'error'" class="mk-err">
-            <XCircle :size="16" />
-            <span>{{ inspectError }}</span>
-          </div>
-
-          <!-- Parsed result -->
-          <div v-if="inspectState === 'parsed' && inspectParsed">
-            <div class="mk-ok">
-              <CheckCircle2 :size="16" />
-              <span class="mk-ok-pill">Декодировано</span>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="inspect-toolbar">
-              <button
-                v-if="!inspectEditing"
-                class="mk-btn-sec"
-                @click="startEditing"
-              >
-                <Settings2 :size="14" />
-                Редактировать
-              </button>
-              <template v-else>
-                <button class="mk-btn-primary" @click="saveEdit">
-                  <Check :size="14" />
-                  Сохранить
-                </button>
-                <button class="mk-btn-ghost" @click="cancelEdit">
-                  <X :size="14" />
-                  Отмена
-                </button>
-              </template>
-              <button
-                class="mk-btn-ghost"
-                @click="copyToClipboard(inspectInput, 'inspect-key')"
-              >
-                <component
-                  :is="isCopied('inspect-key') ? Check : Copy"
-                  :size="14"
-                />
-                {{ isCopied("inspect-key") ? "Скопировано" : "Скопировать ключ" }}
-              </button>
-            </div>
-
-            <!-- View mode: highlighted JSON -->
-            <pre
-              v-if="!inspectEditing"
-              class="inspect-json"
-            ><code v-html="highlightJson(inspectParsed)" /></pre>
-
-            <!-- Edit mode: textarea -->
-            <textarea
-              v-else
-              v-model="inspectEditJson"
-              class="mk-ta mk-ta-mono"
-              rows="20"
-            ></textarea>
-
-            <!-- Edit error -->
-            <div v-if="inspectEditing && inspectError" class="mk-err">
-              <XCircle :size="14" />
-              <span>{{ inspectError }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- /inspect pane -->
   </div>
 </template>
 
@@ -1288,39 +946,6 @@ function pillIcon(color: string) {
   background: rgba(232, 168, 64, 0.03);
 }
 
-/* Info pills row */
-.mk-info-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.mk-info-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 0.65rem;
-  font-family: var(--fm);
-  font-weight: 600;
-  border: 1px solid;
-}
-.mk-pill-amber {
-  background: rgba(232, 168, 64, 0.08);
-  border-color: rgba(232, 168, 64, 0.25);
-  color: var(--amber2);
-}
-.mk-pill-red {
-  background: rgba(212, 96, 74, 0.07);
-  border-color: rgba(212, 96, 74, 0.2);
-  color: var(--red);
-}
-.mk-pill-green {
-  background: rgba(92, 184, 122, 0.07);
-  border-color: rgba(92, 184, 122, 0.2);
-  color: var(--green2);
-}
-
 /* Section divider */
 .mk-divider {
   height: 1px;
@@ -1418,7 +1043,7 @@ function pillIcon(color: string) {
   line-height: 1.5;
 }
 
-/* Version compat warning */
+/* Version compat info */
 .mk-compat {
   display: flex;
   align-items: flex-start;
@@ -1428,11 +1053,6 @@ function pillIcon(color: string) {
   font-size: 0.73rem;
   line-height: 1.5;
   margin-top: 4px;
-}
-.mk-compat-warn {
-  background: rgba(255, 152, 0, 0.06);
-  border: 1px solid rgba(255, 152, 0, 0.22);
-  color: #ffb74d;
 }
 .mk-compat-info {
   background: rgba(100, 212, 224, 0.05);
@@ -1462,6 +1082,17 @@ function pillIcon(color: string) {
 
 .fade-in {
   animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Notice link */
+.mk-notice-link {
+  cursor: pointer;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.mk-notice-link:hover {
+  color: var(--amber3);
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */
@@ -1512,98 +1143,5 @@ function pillIcon(color: string) {
     margin-left: 0 !important;
     text-align: left !important;
   }
-}
-
-/* ── Inspector ──────────────────────────────────────────────────────── */
-
-.inspect-toolbar {
-  display: flex;
-  gap: 8px;
-  margin: 14px 0;
-  flex-wrap: wrap;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border2);
-}
-
-.inspect-json {
-  background: #060503;
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  padding: 18px;
-  overflow-x: auto;
-  font-family: var(--fm);
-  font-size: 0.72rem;
-  line-height: 1.7;
-  max-height: 550px;
-  overflow-y: auto;
-  color: var(--text);
-  white-space: pre;
-  word-wrap: break-word;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* Scrollbar styling for JSON viewer */
-.inspect-json::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.inspect-json::-webkit-scrollbar-track {
-  background: transparent;
-}
-.inspect-json::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-/*
- * v-html inserts spans inside <code>. In scoped CSS, :deep() penetrates
- * the scoped attribute boundary so the child spans actually get styled.
- */
-.inspect-json :deep(.json-key) {
-  color: var(--amber2);
-}
-
-.inspect-json :deep(.json-string) {
-  color: var(--green2);
-  word-break: break-all;
-}
-
-.inspect-json :deep(.json-number) {
-  color: var(--blue);
-}
-
-.inspect-json :deep(.json-bool) {
-  color: var(--text3);
-}
-
-.mk-ta-mono {
-  font-family: var(--fm);
-  font-size: 0.72rem;
-  line-height: 1.5;
-  min-height: 300px;
-}
-
-/* Notice link */
-.mk-notice-link {
-  cursor: pointer;
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.mk-notice-link:hover {
-  color: var(--amber3);
-}
-
-/* Accent icon in card head */
-.icon-accent {
-  color: var(--amber);
-}
-
-/* Field hint under textarea */
-.mk-field-hint {
-  font-size: 0.7rem;
-  color: var(--text3);
-  line-height: 1.4;
-  margin-top: -8px;
 }
 </style>
