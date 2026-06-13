@@ -585,17 +585,35 @@ const statCards = [
 }
 
 .hero-badge {
+    position: relative;
     margin-bottom: 1rem;
+}
+
+/* Composited opacity pulse (see HomeView for rationale). */
+.hero-badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+    opacity: 0;
+    pointer-events: none;
     animation: badgePulse 3s ease-in-out infinite;
 }
 
 @keyframes badgePulse {
     0%,
     100% {
-        box-shadow: 0 0 0 0 rgba(232, 168, 64, 0);
+        opacity: 0;
     }
     50% {
-        box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-badge::after {
+        animation: none;
     }
 }
 
@@ -1205,6 +1223,7 @@ const statCards = [
 }
 
 .legal-icon {
+    position: relative;
     width: 56px;
     height: 56px;
     display: flex;
@@ -1214,12 +1233,25 @@ const statCards = [
     border: 1px solid rgba(239, 68, 68, 0.15);
     border-radius: 50%;
     color: #ef4444;
+}
+
+/* Reuses the shared opacity-only `badgePulse` keyframe; colour stays here on
+   the static shadow so the animation itself never touches the main thread. */
+.legal-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.1);
+    opacity: 0;
+    pointer-events: none;
     animation: badgePulse 3s ease-in-out infinite;
 }
 
-@keyframes badgePulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    50% { box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.1); }
+@media (prefers-reduced-motion: reduce) {
+    .legal-icon::after {
+        animation: none;
+    }
 }
 
 .legal-section h2 {

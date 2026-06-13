@@ -1486,17 +1486,37 @@ AWG-клиент будет вести себя как обычный WireGuard.
 }
 
 .hero-badge {
+    position: relative;
     margin-bottom: 1rem;
+}
+
+/* Glow lives on a pseudo-element so we animate opacity (GPU-composited)
+   instead of box-shadow (forces a main-thread repaint every frame during
+   the critical load window). */
+.hero-badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+    opacity: 0;
+    pointer-events: none;
     animation: badgePulse 3s ease-in-out infinite;
 }
 
 @keyframes badgePulse {
     0%,
     100% {
-        box-shadow: 0 0 0 0 rgba(232, 168, 64, 0);
+        opacity: 0;
     }
     50% {
-        box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-badge::after {
+        animation: none;
     }
 }
 

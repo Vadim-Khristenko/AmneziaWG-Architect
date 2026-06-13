@@ -295,6 +295,24 @@ function createSpaFallbackPlugin(): Plugin {
       fs.writeFileSync(cfPages, rewriteRules, "utf-8");
       fs.writeFileSync(gitlabPages, rawIndex, "utf-8");
 
+      // Cloudflare Pages / Netlify _headers — hashed assets are content-addressed
+      // and never mutate, so let clients cache them for a year. Recovers the
+      // ~357 kB of re-downloaded bytes the perf trace flagged on repeat visits.
+      const headersRules = [
+        "/assets/*",
+        "  Cache-Control: public, max-age=31536000, immutable",
+        "/*.js",
+        "  Cache-Control: public, max-age=31536000, immutable",
+        "/*.css",
+        "  Cache-Control: public, max-age=31536000, immutable",
+        "/*.woff2",
+        "  Cache-Control: public, max-age=31536000, immutable",
+        // HTML must stay fresh so new deploys are picked up immediately.
+        "/*.html",
+        "  Cache-Control: public, max-age=0, must-revalidate",
+      ].join("\n");
+      fs.writeFileSync(path.join(outDir, "_headers"), headersRules, "utf-8");
+
       // We no longer write a manual HTML 404 because Vue Router handles it via 200/404 rewrites
       // or the index fallback. If needed by simple hosts, we point 404 to index
       fs.writeFileSync(fallback404, rawIndex, "utf-8");
@@ -336,7 +354,37 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     minify: "esbuild",
-    sourcemap: true,
+    // Prod source maps shipped 1:1 with the bundle — pure deploy bloat and
+    // source exposure. Keep them off for the public build.
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        /**
+         * Collapse the per-icon chunk waterfall.
+         *
+         * lucide-vue-next ships every icon as its own ES module, so Vite was
+         * emitting a separate network request per icon (zap.js, sparkles.js,
+         * shield-check.js, git-merge.js, trash-2.js, triangle-alert.js …) that
+         * loaded *after* index.js — adding ~1.2 s to the LCP render delay.
+         *
+         * Pin all icons into one shared `icons` chunk and the Vue runtime into
+         * a `vue` chunk so the critical path is a couple of cached requests,
+         * not a dozen round-trips.
+         */
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("lucide-vue-next")) return "icons";
+          if (
+            id.includes("/vue/") ||
+            id.includes("/@vue/") ||
+            id.includes("/vue-router/")
+          ) {
+            return "vue";
+          }
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: "0.0.0.0",

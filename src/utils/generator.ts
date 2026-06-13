@@ -2003,9 +2003,10 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   };
   let jmax = rnd(jmaxRanges[intensity][0], jmaxRanges[intensity][1]);
 
-  // Гарантируем Jmax > Jmin + 64
+  // Гарантируем Jmax > Jmin + 64 (строго больше — иначе при jmax === jmin+64
+  // фактический зазор схлопывается ровно до границы и нарушает инвариант).
   const minJmax = jmin + 64;
-  if (jmax < minJmax) {
+  if (jmax <= minJmax) {
     jmax = minJmax + rnd(64, 256);
   }
 

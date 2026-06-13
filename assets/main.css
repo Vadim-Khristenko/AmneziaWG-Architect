@@ -3,6 +3,32 @@
    Redesigned: 2026 — Rich Dark Amber / Technical Precision
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Metric-matched fallback faces ──────────────────────────────────────────
+   Synthesised from @capsizecss/metrics so the system fallback occupies exactly
+   the same box as the web font (xWidthAvg-normalised against Arial). Result:
+   the font swap is dimensionally invisible → no layout shift (CLS ≈ 0).
+   local() chain covers Arial (Win/macOS) and Liberation Sans (Linux). */
+@font-face {
+    font-family: "Manrope Fallback";
+    src:
+        local("Arial"),
+        local("Liberation Sans");
+    size-adjust: 103.19%;
+    ascent-override: 103.31%;
+    descent-override: 29.07%;
+    line-gap-override: 0%;
+}
+@font-face {
+    font-family: "Unbounded Fallback";
+    src:
+        local("Arial"),
+        local("Liberation Sans");
+    size-adjust: 134.59%;
+    ascent-override: 73.93%;
+    descent-override: 18.2%;
+    line-gap-override: 0%;
+}
+
 /* ── Palette ──────────────────────────────────────────────────────────────── */
 :root {
     /* Backgrounds — layered depth */
@@ -64,10 +90,13 @@
     --radius-lg: 16px;
     --radius-xl: 20px;
 
-    /* Fonts */
-    --fw: "Manrope", sans-serif;
-    --fu: "Unbounded", sans-serif;
-    --fm: "JetBrains Mono", monospace;
+    /* Fonts — self-hosted variable faces (bundled via @fontsource-variable in
+       main.ts) with metric-matched fallback faces (see @font-face above) so a
+       font swap causes ~0 reflow. */
+    --fw: "Manrope Variable", "Manrope Fallback", sans-serif;
+    --fu: "Unbounded Variable", "Unbounded Fallback", sans-serif;
+    --fm: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono",
+        "Segoe UI Mono", "Liberation Mono", monospace;
 
     /* Animation */
     --ease: cubic-bezier(0.23, 1, 0.32, 1);

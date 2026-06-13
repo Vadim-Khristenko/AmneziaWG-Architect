@@ -2,10 +2,27 @@
 <html lang="ru">
     <head>
         <meta charset="UTF-8" />
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- Critical inline CSS: paint the dark canvas and reserve the viewport
+             height before Vue mounts. Kills the white flash and the blank→app
+             layout shift that was driving CLS to ~1.0 on first paint. -->
+        <style>
+            html {
+                background: #0a0806;
+            }
+            body {
+                margin: 0;
+                min-height: 100dvh;
+                background: #0a0806;
+                color: #e0d4b8;
+                font-family:
+                    "Manrope Variable", system-ui, -apple-system, sans-serif;
+            }
+            #app {
+                min-height: 100dvh;
+            }
+        </style>
 
         <title>AmneziaWG Architect — Генератор конфигураций</title>
         <meta
@@ -42,13 +59,9 @@
         <meta property="og:image" content="/assets/og-image.png" />
         <meta name="apple-mobile-web-app-title" content="AWG-AiT" />
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800;900&display=swap"
-            rel="stylesheet"
-        />
+        <!-- Fonts are self-hosted and bundled (see src/main.ts →
+             @fontsource-variable/*). No third-party font requests: the UI stays
+             fully styled even when fonts.gstatic.com is throttled or blocked. -->
     </head>
     <body>
         <div id="app"></div>

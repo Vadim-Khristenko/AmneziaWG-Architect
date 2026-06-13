@@ -73,6 +73,13 @@ onMounted(() => {
     position: relative;
     z-index: 2;
     padding-top: 80px;
+    /* Reserve the viewport below the header so the footer always starts below
+       the fold. Without this, the app shell (header + footer) paints instantly
+       while the lazy-loaded route chunk is still in flight, parking the footer
+       right under the header — then the route content pushes it down a whole
+       page, which was the real CLS ~0.9 culprit (not the font swap). */
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 /* ── Page Transition ──────────────────────────────────────────────────── */
