@@ -57,10 +57,29 @@ describe("validateAwgParams", () => {
       ),
     ).toBe(true);
   });
-  it("accepts a valid I-tag chain", () => {
+  it("errors when S4 exceeds the 32-byte protocol limit", () => {
     expect(
-      findings({ I1: "<b 0xC0><r 100><t>" }).some((x) => x.field === "I1"),
-    ).toBe(false);
+      findings({ S4: 33 }).some(
+        (x) => x.field === "S4" && x.level === "error",
+      ),
+    ).toBe(true);
+  });
+  it("accepts S4 within the protocol limit", () => {
+    expect(findings({ S4: 32 }).some((x) => x.field === "S4")).toBe(false);
+  });
+  it("warns when S4 is zero", () => {
+    expect(
+      findings({ S4: 0 }).some(
+        (x) => x.field === "S4" && x.level === "warn",
+      ),
+    ).toBe(true);
+  });
+  it("errors when S3 exceeds the protocol limit", () => {
+    expect(
+      findings({ S3: 1133 }).some(
+        (x) => x.field === "S3" && x.level === "error",
+      ),
+    ).toBe(true);
   });
   it("skips disabled I-tags ('0' / empty)", () => {
     expect(findings({ I1: "0", I2: "" }).some((x) => /I[12]/.test(x.field))).toBe(

@@ -85,9 +85,11 @@ export function validateAwgParams(
     });
   }
 
-  // ── S1 / S2 ────────────────────────────────────────────────────────────────
+  // ── S1 / S2 / S3 / S4 ─────────────────────────────────────────────────────
   const s1 = num(p.S1);
   const s2 = num(p.S2);
+  const s3 = num(p.S3);
+  const s4 = num(p.S4);
   if (s1 !== null && s2 !== null && s1 + 56 === s2) {
     out.push({
       field: "S2",
@@ -107,6 +109,27 @@ export function validateAwgParams(
       field: "S2",
       level: "error",
       msg: "S2 максимум 1188 (65535 − 92).",
+    });
+  }
+  if (s3 !== null && s3 > 1132) {
+    out.push({
+      field: "S3",
+      level: "error",
+      msg: "S3 максимум 1132 (65535 − 148).",
+    });
+  }
+  if (s4 !== null && s4 > 32) {
+    out.push({
+      field: "S4",
+      level: "error",
+      msg: "S4 максимум 32 — официальные клиенты отклоняют большее значение.",
+    });
+  }
+  if (s4 !== null && s4 === 0) {
+    out.push({
+      field: "S4",
+      level: "warn",
+      msg: "S4 = 0 — обфускация транспортных пакетов отключена.",
     });
   }
 

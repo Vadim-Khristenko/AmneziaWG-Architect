@@ -678,14 +678,14 @@ describe("useExtremeMax mode", () => {
         expect(maxS3).toBeLessThanOrEqual(256);
     });
 
-    it("S4 can reach up to 128 when useExtremeMax=true", () => {
+    it("S4 stays within the 32-byte protocol limit even when useExtremeMax=true", () => {
         let maxS4 = 0;
         for (let i = 0; i < 200; i++) {
             const cfg = genCfg({ ...baseInput, useExtremeMax: true });
             if (cfg.s4 > maxS4) maxS4 = cfg.s4;
         }
-        expect(maxS4).toBeGreaterThan(50); // Should reach at least 50+
-        expect(maxS4).toBeLessThanOrEqual(128);
+        expect(maxS4).toBeGreaterThan(0);
+        expect(maxS4).toBeLessThanOrEqual(32);
     });
 
     it("Jc can reach higher values when useExtremeMax=true and junkLevel is high", () => {

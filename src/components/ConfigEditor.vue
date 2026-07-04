@@ -166,6 +166,18 @@ function dangerFields(): string[] {
     return Object.keys(fields).filter((k) => !OBFUSCATION_KEYS.includes(k));
 }
 
+// Numeric limits for the danger-zone S-fields
+function isSizeField(key: string): boolean {
+    return ["S1", "S2", "S3", "S4"].includes(key);
+}
+
+function maxForField(key: string): number | undefined {
+    if (key === "S1" || key === "S3") return 1132;
+    if (key === "S2") return 1188;
+    if (key === "S4") return 32;
+    return undefined;
+}
+
 // Get finding badge for a field key
 function findingForField(key: string) {
     return findings.value.find((f) =>
