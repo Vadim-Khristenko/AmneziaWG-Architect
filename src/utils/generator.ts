@@ -1216,22 +1216,25 @@ export const BFP: Record<string, BfpTable> = {
 // Утилиты (чистые функции, без DOM)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Случайное целое из диапазона [a, b] включительно */
+import { cryptoRnd, cryptoRh, cryptoPick } from "./rng";
+
+/** Случайное целое из диапазона [a, b] включительно (криптографически стойкое). */
 export function rnd(a: number, b: number): number {
-  return Math.floor(Math.random() * (b - a + 1)) + a;
+  return cryptoRnd(a, b);
 }
 
 /**
  * rh(n) — n байт случайного hex.
  * Всегда возвращает строку длиной ровно n*2 символов (чётная).
+ * Использует crypto.getRandomValues() вместо Math.random().
  */
 export function rh(n: number): string {
-  const bytes = Math.max(0, Math.floor(n));
-  let s = "";
-  for (let i = 0; i < bytes; i++) {
-    s += ("0" + Math.floor(Math.random() * 256).toString(16)).slice(-2);
-  }
-  return s;
+  return cryptoRh(n);
+}
+
+/** Случайный элемент массива (криптографически стойкий). */
+export function pickHost<T>(arr: readonly T[]): T {
+  return cryptoPick(arr);
 }
 
 /**
@@ -1352,7 +1355,7 @@ function getHost(input: GeneratorInput, poolKey: string): string {
   if (input.customHost.trim()) return input.customHost.trim();
   const actualKey = poolKey === "dns_query" ? "dns" : poolKey;
   const pool = hostPools[actualKey] ?? hostPools.tls_client_hello;
-  return pool[rnd(0, pool.length - 1)];
+  return pickHost(pool);
 }
 
 function getFpRange(
