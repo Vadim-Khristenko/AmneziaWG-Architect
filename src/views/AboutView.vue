@@ -8,7 +8,6 @@ import {
     Lock,
     CheckCircle,
     Zap,
-    RefreshCw,
     Code,
     Shield,
     Cpu,
@@ -137,19 +136,35 @@ const timelineEvents = [
     },
     {
         version: "2.1",
-        date: "Сейчас",
-        title: "Инцидент с роутингом и CI/CD",
+        date: "Инфра",
+        title: "Исправление SPA-редиректов и умная 404",
         icon: Bug,
         color: "red",
-        desc: "Инцидент с маршрутизацией: из-за конфликта SPA-редиректов пользователи получали белый экран по прямым ссылкам. Починено! Добавлена умная 404-заглушка с ручным fallback'ом, продвинутый мульти-хостинг (GitLab/GitHub/Cloudflare) и новые автотесты резолва URL, чтобы больше ничего не сломалось.",
+        desc: "Инцидент с маршрутизацией: из-за конфликта SPA-редиректов пользователи получали белый экран по прямым ссылкам. Починено! Добавлена умная 404-заглушка с ручным fallback'ом, продвинутый мульти-хостинг (GitLab/GitHub/Cloudflare) и новые автотесты резолва URL.",
+    },
+    {
+        version: "3.0",
+        date: "Релиз 3.0",
+        title: "Архитектурный апгрейд",
+        icon: Cpu,
+        color: "green",
+        desc: "Рефакторинг монолитного generator.ts в модульную архитектуру (types, constants, validators, profiles, clients). Замена Math.random() на crypto.getRandomValues(). Жёсткий лимит S4 ≤ 32. Матрица совместимости клиентов.",
+    },
+    {
+        version: "3.1",
+        date: "Текущий",
+        title: "Health Checker, Batch, Simulator, Worker",
+        icon: ShieldCheck,
+        color: "amber",
+        desc: "Config Health Checker с клиентской валидацией. Batch Generator до 1000 конфигов с Web Worker. Packet Simulator с визуализацией handshake. Формальный JSON-экспорт Amnezia VpnConfig. Обновлённые зависимости и полный TypeScript coverage.",
     },
 ];
 
 const statCards = [
-    { label: "Профили мимикрии", value: "9+", icon: Eye },
-    { label: "Параметров генерации", value: "18+", icon: FileCode },
-    { label: "Автотестов", value: "150+", icon: Terminal },
-    { label: "Серверов и трекеров", value: "0", icon: ShieldCheck },
+    { label: "Профили мимикрии", value: "11", icon: Eye },
+    { label: "Параметров генерации", value: "20+", icon: FileCode },
+    { label: "Автотестов", value: "270+", icon: Terminal },
+    { label: "Поддерживаемых клиентов", value: "10", icon: ShieldCheck },
 ];
 </script>
 
@@ -236,10 +251,11 @@ const statCards = [
                 <div class="feature-card">
                     <CheckCircle :size="18" class="fc-icon" />
                     <div>
-                        <b>Простая интеграция</b>
+                        <b>11 профилей мимикрии</b>
                         <span
-                            >Параметры H1–H4, S1–S4, I1–I5 точно соответствуют
-                            полям в приложении AmneziaVPN.</span
+                            >QUIC, TLS, DTLS, SIP, HTTP/3, Noise_IK и другие
+                            протоколы. Параметры H1–H4, S1–S4, I1–I5 точно
+                            соответствуют полям AmneziaVPN.</span
                         >
                     </div>
                 </div>
@@ -249,17 +265,20 @@ const statCards = [
                         <b>Умная генерация</b>
                         <span
                             >Не случайные числа, а структуры реальных сетевых
-                            пакетов для максимальной правдоподобности.</span
+                            пакетов. Выбор целевого клиента и матрица
+                            совместимости исключают несовместимые
+                            параметры.</span
                         >
                     </div>
                 </div>
                 <div class="feature-card">
-                    <RefreshCw :size="18" class="fc-icon" />
+                    <ShieldCheck :size="18" class="fc-icon" />
                     <div>
-                        <b>Режим «Не работает»</b>
+                        <b>Проверка конфигов</b>
                         <span
-                            >Конфиг заблокировали? Один клик — генератор усилит
-                            параметры и выдаст новую итерацию.</span
+                            >Config Health Checker находит ошибки в .conf до
+                            передачи в клиент. Batch-генератор создаёт до 1000
+                            конфигов с Web Worker.</span
                         >
                     </div>
                 </div>
@@ -268,8 +287,9 @@ const statCards = [
                     <div>
                         <b>Для продвинутых</b>
                         <span
-                            >Ручное управление CPS-тегами, MTU, профилями
-                            мимикрии, Browser Fingerprint.</span
+                            >Packet Simulator визуализирует handshake, ручное
+                            управление CPS-тегами, MTU, профилями мимикрии и
+                            Browser Fingerprint.</span
                         >
                     </div>
                 </div>
@@ -371,25 +391,33 @@ const statCards = [
             </div>
         </section>
 
-        <!-- ── Privacy & Security ──────────────────────────────────────── -->
+        <!-- ── Privacy Manifesto ───────────────────────────────────────── -->
         <section class="about-section privacy-section a-stagger-6">
             <div class="section-icon-wrap section-icon-green">
                 <Lock :size="22" />
             </div>
-            <h2>Полная приватность и безопасность</h2>
+            <h2>Манифест приватности</h2>
+            <p class="privacy-manifesto">
+                <b>Мы не собираем от вас никаких данных.</b> У нас нет своих
+                серверов, нет аналитики, нет трекеров, нет баз данных и нет
+                скрытых запросов куда-либо. Всё, что вы видите на этой странице,
+                работает исключительно внутри вашего браузера. Исходный код
+                полностью открыт — любой может проверить, что здесь нет ничего
+                лишнего, форкнуть репозиторий и запустить Architect на своём
+                компьютере без интернета и без нас.
+            </p>
 
             <div class="privacy-grid">
                 <div class="privacy-card">
                     <div class="priv-icon-wrap">
                         <Cpu :size="24" />
                     </div>
-                    <h3>100% Client-Side</h3>
+                    <h3>Только ваш браузер</h3>
                     <p>
-                        Весь код выполняется в вашем браузере. Генерация
-                        обфускации, декодирование vpn://-ключей, патчинг
-                        параметров — всё происходит
-                        <b>локально</b>. Мы физически не можем видеть ваши
-                        данные.
+                        Генерация обфускации, декодирование vpn://-ключей,
+                        патчинг параметров и симуляция пакетов выполняются
+                        <b>локально</b> на вашем устройстве. Мы физически не
+                        можем видеть ваши конфиги, ключи или выбор параметров.
                     </p>
                 </div>
                 <div class="privacy-card">
@@ -398,21 +426,35 @@ const statCards = [
                     </div>
                     <h3>Ноль метрик и трекеров</h3>
                     <p>
-                        Нет аналитики. Нет серверов. Нет баз данных. Нет
-                        cookies. Нет Google Analytics, Yandex.Metrika или
-                        чего-то подобного. Мы ничего не собираем и не храним —
-                        ни для себя, ни для каких-либо контор.
+                        Нет Google Analytics, Yandex.Metrika, Amplitude или
+                        самописной аналитики. Нет cookies, fingerprinting и
+                        сторонних скриптов. Мы ничего не собираем, не логируем и
+                        не передаём — ни для себя, ни для третьих лиц.
                     </p>
                 </div>
                 <div class="privacy-card">
                     <div class="priv-icon-wrap">
                         <Globe :size="24" />
                     </div>
-                    <h3>Offline Ready</h3>
+                    <h3>Работает без интернета</h3>
                     <p>
-                        Сохраните страницу — и пользуйтесь без интернета. Вся
-                        логика генерации и работы с ключами работает оффлайн.
-                        Никаких внешних API-запросов.
+                        Сохраните страницу через <kbd>Ctrl+S</kbd> / <kbd>Cmd+S</kbd> — и
+                        пользуйтесь ей оффлайн. Вся логика генерации, проверки
+                        конфигов и работы с ключами не требует сети или наших
+                        серверов.
+                    </p>
+                </div>
+                <div class="privacy-card">
+                    <div class="priv-icon-wrap">
+                        <FileCode :size="24" />
+                    </div>
+                    <h3>Открытый код и локальный запуск</h3>
+                    <p>
+                        Весь исходный код доступен на GitHub. Вы можете
+                        просмотреть его, провести аудит, собрать проект локально
+                        через <code>npm install && npm run build</code> и
+                        запустить на своём компьютере — без какой-либо зависимости
+                        от нас.
                     </p>
                 </div>
             </div>
@@ -1010,9 +1052,25 @@ const statCards = [
 }
 
 /* ── Privacy Grid ─────────────────────────────────────────────────────── */
+.privacy-manifesto {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--text);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 18px 20px;
+    background: rgba(92, 184, 122, 0.06);
+    border: 1px solid rgba(92, 184, 122, 0.12);
+    border-radius: var(--radius-lg);
+}
+
+.privacy-manifesto b {
+    color: var(--green);
+}
+
 .privacy-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 14px;
     margin-top: 20px;
 }
