@@ -24,6 +24,7 @@ import {
     Braces,
     Layers,
     ArrowLeft,
+    ShieldCheck,
 } from "lucide-vue-next";
 import {
     useConfigEditor,
@@ -68,6 +69,11 @@ const {
     exitFocus,
     highlighted,
     canExportConf,
+    healthFindings,
+    healthClientId,
+    showHealth,
+    CLIENTS,
+    CLIENT_IDS,
     load,
     toVpnConfig,
     patchField,
@@ -593,6 +599,50 @@ function onJcSlider(ev: Event) {
                         </div>
                     </details>
                 </template>
+            </div>
+
+            <!-- ── Health Check ─────────────────────────────────────────────────── -->
+            <div class="mk-ed-health">
+                <div class="mk-ed-health-head">
+                    <button
+                        class="mk-ed-health-toggle"
+                        :class="{ active: showHealth }"
+                        @click="showHealth = !showHealth"
+                    >
+                        <ShieldCheck :size="13" />
+                        {{ showHealth ? "Скрыть" : "Проверить" }} конфиг
+                    </button>
+                    <select
+                        v-if="showHealth"
+                        v-model="healthClientId"
+                        class="mk-ed-select"
+                        @change="showHealth = true"
+                    >
+                        <option
+                            v-for="id in CLIENT_IDS"
+                            :key="id"
+                            :value="id"
+                        >
+                            {{ CLIENTS[id].name }}
+                        </option>
+                    </select>
+                </div>
+                <ul v-if="showHealth && healthFindings.length > 0" class="mk-ed-findings">
+                    <li
+                        v-for="(f, i) in healthFindings"
+                        :key="i"
+                        :class="f.level"
+                    >
+                        {{ f.field }}: {{ f.msg }}
+                    </li>
+                </ul>
+                <div
+                    v-else-if="showHealth"
+                    class="mk-ed-health-ok"
+                >
+                    <CheckCircle2 :size="14" />
+                    Проблем не найдено.
+                </div>
             </div>
 
             <!-- ── Findings list ──────────────────────────────────────────────── -->
@@ -1131,6 +1181,51 @@ function onJcSlider(ev: Event) {
 }
 .mk-ed-danger-body {
     padding: 4px 14px 14px;
+}
+
+/* ── Health-check toggle styling ───────────────────────────────────────── */
+.mk-ed-health {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.mk-ed-health-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.mk-ed-health-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-family: var(--fm);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--green2);
+    background: var(--green-bg);
+    border: 1px solid var(--gd);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--trans-fast);
+}
+.mk-ed-health-toggle:hover,
+.mk-ed-health-toggle.active {
+    background: var(--green2);
+    color: var(--bg);
+    border-color: var(--green2);
+}
+.mk-ed-health-ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: var(--green2);
+    background: var(--green-bg);
+    border: 1px solid var(--gd);
+    border-radius: var(--radius-sm);
 }
 
 /* ── Findings ──────────────────────────────────────────────────────────── */

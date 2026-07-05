@@ -19,8 +19,10 @@ import {
   type AwgFormat,
 } from "@/utils/awgFormat";
 import { validateAwgParams, type Finding } from "@/utils/awgValidate";
+import { healthCheckConf } from "@/utils/healthCheck";
 import { highlight } from "@/utils/awgHighlight";
 import { pluralRu } from "@/utils/plural";
+import { CLIENTS, DEFAULT_CLIENT_ID } from "@/utils/generator/clients";
 import {
   vpnDecode,
   vpnEncode,
@@ -59,6 +61,8 @@ export function useConfigEditor() {
   const awgContainerNames = ref<string[]>([]);
   const selectedContainer = ref<string>("");
   const activeKeyIndex = ref(0);
+  const healthClientId = ref(DEFAULT_CLIENT_ID);
+  const showHealth = ref(false);
 
   /* ── Multi-key detection ──────────────────────────────────────────────── */
 
@@ -331,12 +335,30 @@ export function useConfigEditor() {
     findings.value = validateAwgParams(params);
   }
 
+  /** Run the full config health check against the active .conf. */
+  function runHealthCheck(): Finding[] {
+    try {
+      const cfg = toVpnConfig();
+      const { conf } = vpnToConf(cfg, selectedContainer.value);
+      return healthCheckConf(conf, healthClientId.value);
+    } catch {
+      return [];
+    }
+  }
+
+  const healthFindings = computed((): Finding[] => {
+    if (!showHealth.value) return [];
+    return runHealthCheck();
+  });
+
   function clear() {
     rawText.value = "";
     format.value = "unknown";
     errorMsg.value = "";
     successMsg.value = "";
     findings.value = [];
+    healthClientId.value = DEFAULT_CLIENT_ID;
+    showHealth.value = false;
     awgContainerNames.value = [];
     selectedContainer.value = "";
     activeKeyIndex.value = 0;
@@ -352,6 +374,9 @@ export function useConfigEditor() {
     errorMsg,
     successMsg,
     findings,
+    healthFindings,
+    healthClientId,
+    showHealth,
     awgContainerNames,
     selectedContainer,
     activeKeyIndex,
@@ -375,6 +400,7 @@ export function useConfigEditor() {
     exportVpn,
     exportConf,
     revalidate,
+    runHealthCheck,
     clear,
   };
 }
