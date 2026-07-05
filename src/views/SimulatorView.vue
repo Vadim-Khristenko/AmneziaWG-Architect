@@ -23,34 +23,34 @@ onMounted(() => {
   try {
     const raw = sessionStorage.getItem("awg_pending_cfg");
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.cfg) {
-        const c = parsed.cfg;
-        cfg.value = {
-          version: parsed.ver || "2.0",
-          profile: "quic_initial",
-          h1: c.h1 || "100000000-100000100",
-          h2: c.h2 || "1200000000-1200000100",
-          h3: c.h3 || "2400000000-2400000100",
-          h4: c.h4 || "3600000000-3600000100",
-          h1s: 100_000_000,
-          h2s: 1_200_000_000,
-          h3s: 2_400_000_000,
-          h4s: 3_600_000_000,
-          s1: c.s1 ?? 10,
-          s2: c.s2 ?? 10,
-          s3: c.s3 ?? 10,
-          s4: c.s4 ?? 10,
-          jc: c.jc ?? 5,
-          jmin: c.jmin ?? 100,
-          jmax: c.jmax ?? 200,
-          i1: c.i1 || "",
-          i2: c.i2 || "",
-          i3: c.i3 || "",
-          i4: c.i4 || "",
-          i5: c.i5 || "",
-        };
-      }
+            const parsed = JSON.parse(raw);
+            if (parsed.cfg) {
+                const c = parsed.cfg;
+                cfg.value = {
+                    version: parsed.ver || "2.0",
+                    profile: parsed.profile || "quic_initial",
+                    h1: c.h1 || "100000000-100000100",
+                    h2: c.h2 || "1200000000-1200000100",
+                    h3: c.h3 || "2400000000-2400000100",
+                    h4: c.h4 || "3600000000-3600000100",
+                    h1s: 100_000_000,
+                    h2s: 1_200_000_000,
+                    h3s: 2_400_000_000,
+                    h4s: 3_600_000_000,
+                    s1: c.s1 ?? 10,
+                    s2: c.s2 ?? 10,
+                    s3: c.s3 ?? 10,
+                    s4: c.s4 ?? 10,
+                    jc: c.jc ?? 5,
+                    jmin: c.jmin ?? 100,
+                    jmax: c.jmax ?? 200,
+                    i1: c.i1 || "",
+                    i2: c.i2 || "",
+                    i3: c.i3 || "",
+                    i4: c.i4 || "",
+                    i5: c.i5 || "",
+                };
+            }
     }
   } catch {
     cfg.value = null;

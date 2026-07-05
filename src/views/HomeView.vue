@@ -39,6 +39,8 @@ import {
     ClipboardCheck,
     Braces,
     Activity,
+    FileJson,
+    Boxes,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
@@ -191,6 +193,39 @@ function generateAndSave() {
     setTimeout(() => {
         justGenerated.value = false;
     }, 800);
+
+    // Persist current obfuscation params for Simulator / MergeKeys
+    if (currentAwg.value) {
+        const awg = currentAwg.value;
+        const payload = {
+            cfg: {
+                jc: awg.jc,
+                jmin: awg.jmin,
+                jmax: awg.jmax,
+                s1: awg.s1,
+                s2: awg.s2,
+                s3: awg.s3,
+                s4: awg.s4,
+                h1: awg.h1,
+                h2: awg.h2,
+                h3: awg.h3,
+                h4: awg.h4,
+                i1: awg.i1,
+                i2: awg.i2,
+                i3: awg.i3,
+                i4: awg.i4,
+                i5: awg.i5,
+            },
+            profile: awg.profile,
+            ver: version.value,
+        };
+        try {
+            sessionStorage.setItem("awg_pending_cfg", JSON.stringify(payload));
+        } catch {
+            /* quota exceeded — ignore */
+        }
+    }
+
     nextTick(() => {
         setTimeout(() => saveToHistory(), 20);
     });
@@ -1096,8 +1131,14 @@ AWG-клиент будет вести себя как обычный WireGuard.
                         </div>
 
                         <!-- Batch Generator -->
-                        <div class="field-group">
-                            <label class="field-label">Batch генератор</label>
+                        <div class="batch-card">
+                            <div class="batch-head">
+                                <Boxes :size="14" class="text-accent" />
+                                <span class="batch-title">Batch генератор</span>
+                            </div>
+                            <p class="batch-hint">
+                                Сгенерируйте сразу несколько независимых конфигов.
+                            </p>
                             <div class="batch-row">
                                 <input
                                     type="number"
@@ -1107,15 +1148,15 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                     max="1000"
                                 />
                                 <button
-                                    class="btn btn-secondary"
+                                    class="btn btn-secondary batch-btn"
                                     @click="runBatch"
                                 >
-                                    Сгенерировать {{ batchCount }}
+                                    Сгенерировать
                                 </button>
                             </div>
                             <button
                                 v-if="batchResults.length"
-                                class="btn btn-primary w-full mt-2"
+                                class="btn btn-primary batch-download"
                                 @click="downloadBatch"
                             >
                                 <Download :size="15" />
@@ -1327,53 +1368,61 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                     </div>
                                 </div>
 
-                                <!-- Copy All / Download row -->
-                                <div class="config-actions-row">
-                                    <button
-                                        class="btn btn-secondary config-action-btn"
-                                        :class="{ 'copy-ok': copyFeedback }"
-                                        @click="handleCopy"
-                                    >
-                                        <ClipboardCheck
-                                            v-if="copyFeedback"
-                                            :size="15"
-                                        />
-                                        <Copy v-else :size="15" />
-                                        {{
-                                            copyFeedback
-                                                ? "Скопировано!"
-                                                : "Копировать конфиг"
-                                        }}
-                                    </button>
-                                    <button
-                                        class="btn btn-primary config-action-btn"
-                                        @click="downloadConfig"
-                                    >
-                                        <Download :size="15" />
-                                        Скачать .conf
-                                    </button>
-                                    <button
-                                        class="btn btn-sec config-action-btn"
-                                        @click="copyJson"
-                                    >
-                                        <Braces :size="15" />
-                                        Копировать JSON
-                                    </button>
-                                    <button
-                                        class="btn btn-sec config-action-btn"
-                                        @click="downloadJson"
-                                    >
-                                        <Download :size="15" />
-                                        Скачать JSON
-                                    </button>
+                                <!-- Export actions -->
+                                <div class="export-card">
+                                    <div class="export-title">
+                                        <Download :size="14" class="text-accent" />
+                                        <span>Экспорт конфигурации</span>
+                                    </div>
+                                    <div class="export-grid">
+                                        <button
+                                            class="btn btn-secondary export-btn"
+                                            :class="{ 'copy-ok': copyFeedback }"
+                                            @click="handleCopy"
+                                        >
+                                            <ClipboardCheck
+                                                v-if="copyFeedback"
+                                                :size="15"
+                                            />
+                                            <Copy v-else :size="15" />
+                                            <span>
+                                                {{
+                                                    copyFeedback
+                                                        ? "Скопировано!"
+                                                        : "Копировать .conf"
+                                                }}
+                                            </span>
+                                        </button>
+                                        <button
+                                            class="btn btn-primary export-btn"
+                                            @click="downloadConfig"
+                                        >
+                                            <Download :size="15" />
+                                            <span>Скачать .conf</span>
+                                        </button>
+                                        <button
+                                            class="btn btn-ghost export-btn"
+                                            @click="copyJson"
+                                        >
+                                            <Braces :size="15" />
+                                            <span>Копировать JSON</span>
+                                        </button>
+                                        <button
+                                            class="btn btn-ghost export-btn"
+                                            @click="downloadJson"
+                                        >
+                                            <FileJson :size="15" />
+                                            <span>Скачать JSON</span>
+                                        </button>
+                                        <router-link
+                                            to="/simulator"
+                                            class="btn btn-ghost export-btn export-sim"
+                                        >
+                                            <Activity :size="15" />
+                                            <span>Симулятор handshake</span>
+                                        </router-link>
+                                    </div>
                                 </div>
-                                <router-link
-                                    to="/simulator"
-                                    class="btn btn-sec config-action-btn"
-                                >
-                                    <Activity :size="15" />
-                                    Симулятор handshake
-                                </router-link>
                             </template>
                         </div>
                     </div>
@@ -2513,25 +2562,119 @@ AWG-клиент будет вести себя как обычный WireGuard.
     }
 }
 
-/* ── Config Actions Row ───────────────────────────────────────────────── */
-.config-actions-row {
+/* ── Export card ──────────────────────────────────────────────────────── */
+.export-card {
+    margin-top: 10px;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.export-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.export-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.export-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 9px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+.export-btn.export-sim {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+    .export-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .export-btn.export-sim {
+        grid-column: auto;
+    }
+}
+
+/* ── Config Actions Row (legacy) ─────────────────────────────────────── */
+/* ── Config Actions Row (legacy) ─────────────────────────────────────── */
+/* ── Batch card ───────────────────────────────────────────────────────── */
+.batch-card {
+    margin-top: 18px;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.batch-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.batch-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.batch-hint {
+    margin: 0 0 12px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.batch-row {
     display: flex;
     gap: 10px;
-    margin-top: 4px;
+    align-items: stretch;
 }
 
-.config-action-btn {
+.batch-input {
+    width: 80px;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+}
+
+.batch-btn {
     flex: 1;
-    height: 42px;
     font-size: 0.8rem;
-    font-family: var(--fw);
 }
 
-.config-action-btn:active {
-    transform: scale(0.97);
+.batch-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+    font-size: 0.8rem;
 }
 
-/* ── Preview card ─────────────────────────────────────────────────────── */
+/* ── Export card (continued) ──────────────────────────────────────────── */
 .preview-card {
     background: var(--bg2);
     border: 1px solid var(--border2);
@@ -2866,7 +3009,15 @@ AWG-клиент будет вести себя как обычный WireGuard.
     }
 
     .config-actions-row {
-        flex-direction: column;
+        display: none;
+    }
+
+    .export-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .export-btn.export-sim {
+        grid-column: auto;
     }
 
     .param-group-grid {
