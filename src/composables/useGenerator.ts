@@ -15,6 +15,8 @@
 import { ref, reactive, computed } from "vue";
 import {
   genCfg,
+  CLIENTS,
+  DEFAULT_CLIENT_ID,
   type AWGConfig,
   type AWGVersion,
   type Intensity,
@@ -53,8 +55,10 @@ export function useGenerator() {
     mimicAll: false,
 
     // Теги CPS
-    useTagC: false, // <c> — счётчик пакетов. Отключён по умолчанию: старые версии AWG-go
-    // не реализуют этот тег и возвращают ErrorCode 1000.
+    useTagC: false, // <c> — счётчик пакетов.
+    // ⚠️ Не работает в старых версиях AWG-go (ErrorCode 1000).
+    // Разработчики Amnezia позднее отказались от него; он может
+    // перестать работать в новых релизах клиентов.
     useTagT: true,
     useTagR: true,
     useTagRC: true,
@@ -73,8 +77,11 @@ export function useGenerator() {
     // Режим роутера (минимальные шумы для слабых устройств)
     routerMode: false,
 
-    // Экстремальные максимумы (Jc до 128, S3/S4 расширенные, H разброс 10M)
+    // Экстремальные максимумы (Jc до 128, S3 расширенный, H разброс 10M)
     useExtremeMax: false,
+
+    // Целевой клиент для фильтрации совместимости
+    clientId: DEFAULT_CLIENT_ID,
   });
 
   // ── Состояние UI ──────────────────────────────────────────────────────────
@@ -123,6 +130,7 @@ export function useGenerator() {
       iterCount: iterCount.value,
       routerMode: config.routerMode,
       useExtremeMax: config.useExtremeMax,
+      clientId: config.clientId,
     });
 
     const label = PROFILE_LABELS[config.profile] ?? config.profile;

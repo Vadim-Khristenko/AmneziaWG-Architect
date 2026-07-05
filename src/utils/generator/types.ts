@@ -56,6 +56,9 @@ export interface GeneratorInput {
 
   /** Use extreme parameter ceilings. */
   useExtremeMax: boolean;
+
+  /** Target client for compatibility filtering. */
+  clientId: string;
 }
 
 /** Generated AmneziaWG obfuscation configuration. */

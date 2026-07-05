@@ -39,7 +39,7 @@ import {
     ClipboardCheck,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
-import { YANDEX_UNSTABLE_PROFILES } from "@/utils/generator";
+import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
 import type { AWGVersion, Intensity } from "@/utils/generator";
 
 const router = useRouter();
@@ -692,6 +692,31 @@ AWG-клиент будет вести себя как обычный WireGuard.
                     </div>
 
                     <div class="panel-body">
+                        <!-- Target Client -->
+                        <div class="field-group">
+                            <div class="field-label-row">
+                                <Cpu :size="14" class="text-accent" />
+                                <label class="field-label">Целевой клиент</label>
+                            </div>
+                            <select
+                                v-model="config.clientId"
+                                class="select-field"
+                                @change="generate"
+                            >
+                                <option
+                                    v-for="id in CLIENT_IDS"
+                                    :key="id"
+                                    :value="id"
+                                >
+                                    {{ CLIENTS[id].name }}
+                                </option>
+                            </select>
+                            <div class="field-hint">
+                                Параметры фильтруются под возможности выбранного
+                                клиента.
+                            </div>
+                        </div>
+
                         <!-- Profile Select -->
                         <div class="field-group">
                             <label class="field-label">Профиль мимикрии</label>
@@ -829,8 +854,11 @@ AWG-клиент будет вести себя как обычный WireGuard.
                             <div class="alert alert-info small-alert mt-2">
                                 <Info :size="12" class="alert-icon" />
                                 <div class="alert-content">
-                                    Тег <code>&lt;c&gt;</code> может вызывать
-                                    <b>ErrorCode 1000</b> в старых версиях.
+                                    Тег <code>&lt;c&gt;</code> не работает в старых
+                                    версиях AWG-go (ErrorCode 1000). Разработчики
+                                    Amnezia позднее отказались от него, поэтому он
+                                    может перестать работать и в новых версиях
+                                    клиентов.
                                 </div>
                             </div>
                         </div>
@@ -1021,7 +1049,7 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                 >
                                     <TriangleAlert :size="14" />
                                     <div>
-                                        <b>Extreme mode:</b> Jc до 128, S3 до 256, S4 до 128, H1-H4 разброс 10M.
+                                        <b>Extreme mode:</b> Jc до 128, S3 до 256, H1-H4 разброс 10M.
                                         Может увеличить оверхед трафика.
                                     </div>
                                 </div>

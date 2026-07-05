@@ -13,6 +13,7 @@ import type {
   MimicProfile,
 } from "./types";
 import { PROFILE_LABELS } from "./constants";
+import { CLIENTS, DEFAULT_CLIENT_ID } from "./clients";
 import { rnd, rRange } from "./utils";
 import {
   mkQUICi,
@@ -26,7 +27,6 @@ import {
   mkEntropy,
 } from "./profiles";
 import { validateGeneratedConfig } from "./validators";
-import { DEFAULT_CLIENT_ID } from "./clients";
 
 export * from "./types";
 export * from "./constants";
@@ -74,6 +74,16 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   const { version, intensity, profile, iterCount, junkLevel, useExtremeMax } =
     input;
 
+  const client = CLIENTS[input.clientId] ?? CLIENTS[DEFAULT_CLIENT_ID];
+
+  // Enforce client capability limits without mutating the caller's input.
+  const effectiveInput: GeneratorInput = {
+    ...input,
+    useTagC: client.supportsCpsTagC && input.useTagC,
+    useTagRC: client.supportsCpsTagRC && input.useTagRC,
+    useTagRD: client.supportsCpsTagRD && input.useTagRD,
+  };
+
   const imap: Record<Intensity, number> = { low: 1, medium: 2, high: 3 };
   const iv = imap[intensity] + (iterCount > 3 ? 1 : 0);
 
@@ -107,7 +117,8 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   }
 
   // S4 is hard-capped at 32 bytes by the AmneziaWG protocol.
-  let s4 = rnd(1, 32);
+  // Client-specific maxS4 may be even lower.
+  let s4 = rnd(1, Math.min(32, client.maxS4));
 
   if (useExtremeMax) {
     s3 = rnd(65, 256);
@@ -119,7 +130,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   }
 
   const minJc = version === "1.0" ? 4 : 3;
-  const maxJc = useExtremeMax ? 128 : 15;
+  const maxJc = Math.min(useExtremeMax ? 128 : 15, client.maxJc);
 
   let jcv = junkLevel;
   if (version === "1.0") {
@@ -130,7 +141,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   }
 
   if (useExtremeMax && junkLevel === 0 && version !== "1.0") {
-    jcv = rnd(1, 8);
+    jcv = rnd(1, Math.min(8, maxJc));
   }
 
   const jminRanges: Record<Intensity, [number, number]> = {
@@ -160,7 +171,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     s1 = Math.min(s1, 20);
     s2 = Math.min(s2, 20);
     if (s2 === s1 + 56) s2 = Math.min(s2 + 1, 20);
-    jcv = Math.max(minJc, Math.min(jcv, 2));
+    jcv = Math.max(minJc, Math.min(jcv, Math.min(2, client.maxJc)));
     jmin = Math.min(jmin, 40);
     jmax = Math.min(jmax, 128);
   }
@@ -178,29 +189,45 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   if (!hasCPS) {
     // AWG 1.0 — без CPS
   } else if (isComposite && profile === "tls_to_quic") {
-    i1 = mkTLS(input, iv);
-    i2 = mkQUICi(input, iv);
-    i3 = mkEntropy(input, 2, iv);
-    i4 = mkEntropy(input, 3, iv);
-    i5 = mkEntropy(input, 4, iv);
+    i1 = mkTLS(effectiveInput, iv);
+    i2 = mkQUICi(effectiveInput, iv);
+    i3 = mkEntropy(effectiveInput, 2, iv);
+    i4 = mkEntropy(effectiveInput, 3, iv);
+    i5 = mkEntropy(effectiveInput, 4, iv);
   } else if (isComposite && profile === "quic_burst") {
-    i1 = mkQUICi(input, iv);
-    i2 = mkQUIC0(input, iv);
-    i3 = mkHTTP3(input, iv);
-    i4 = mkEntropy(input, 3, iv);
-    i5 = mkEntropy(input, 4, iv);
+    i1 = mkQUICi(effectiveInput, iv);
+    i2 = mkQUIC0(effectiveInput, iv);
+    i3 = mkHTTP3(effectiveInput, iv);
+    i4 = mkEntropy(effectiveInput, 3, iv);
+    i5 = mkEntropy(effectiveInput, 4, iv);
   } else if (isDns) {
-    i1 = mkDNS(input, iv);
-    i2 = input.mimicAll ? mkDNS(input, iv + 1) : mkEntropy(input, 1, iv);
-    i3 = input.mimicAll ? mkDNS(input, iv + 2) : mkEntropy(input, 2, iv);
-    i4 = input.mimicAll ? mkDNS(input, iv + 3) : mkEntropy(input, 3, iv);
-    i5 = input.mimicAll ? mkDNS(input, iv + 4) : mkEntropy(input, 4, iv);
+    i1 = mkDNS(effectiveInput, iv);
+    i2 = input.mimicAll
+      ? mkDNS(effectiveInput, iv + 1)
+      : mkEntropy(effectiveInput, 1, iv);
+    i3 = input.mimicAll
+      ? mkDNS(effectiveInput, iv + 2)
+      : mkEntropy(effectiveInput, 2, iv);
+    i4 = input.mimicAll
+      ? mkDNS(effectiveInput, iv + 3)
+      : mkEntropy(effectiveInput, 3, iv);
+    i5 = input.mimicAll
+      ? mkDNS(effectiveInput, iv + 4)
+      : mkEntropy(effectiveInput, 4, iv);
   } else {
-    i1 = genI1(input, profile, iv);
-    i2 = input.mimicAll ? genI1(input, profile, iv) : mkEntropy(input, 1, iv);
-    i3 = input.mimicAll ? genI1(input, profile, iv) : mkEntropy(input, 2, iv);
-    i4 = input.mimicAll ? genI1(input, profile, iv) : mkEntropy(input, 3, iv);
-    i5 = input.mimicAll ? genI1(input, profile, iv) : mkEntropy(input, 4, iv);
+    i1 = genI1(effectiveInput, profile, iv);
+    i2 = input.mimicAll
+      ? genI1(effectiveInput, profile, iv)
+      : mkEntropy(effectiveInput, 1, iv);
+    i3 = input.mimicAll
+      ? genI1(effectiveInput, profile, iv)
+      : mkEntropy(effectiveInput, 2, iv);
+    i4 = input.mimicAll
+      ? genI1(effectiveInput, profile, iv)
+      : mkEntropy(effectiveInput, 3, iv);
+    i5 = input.mimicAll
+      ? genI1(effectiveInput, profile, iv)
+      : mkEntropy(effectiveInput, 4, iv);
   }
 
   if (input.routerMode && hasCPS) {
@@ -236,7 +263,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   };
 
   // Safety net: throw if we ever emit a config that fails our own validators.
-  const findings = validateGeneratedConfig(cfg, DEFAULT_CLIENT_ID);
+  const findings = validateGeneratedConfig(cfg, input.clientId);
   const fatal = findings.filter((f) => f.level === "error");
   if (fatal.length > 0) {
     throw new Error(
