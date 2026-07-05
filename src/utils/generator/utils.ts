@@ -48,10 +48,11 @@ export function assertEvenHex(hex: string, label = "?"): string {
  * Если передан maxEnd, конец диапазона не превысит его.
  */
 export function rRange(base: number, spread = 500_000, maxEnd?: number): string {
-  const start = base + rnd(0, spread);
+  let start = base + rnd(0, spread);
   let end = start + rnd(1000, 50_000);
   if (maxEnd !== undefined) {
     end = Math.min(end, maxEnd);
+    start = Math.min(start, maxEnd);
     if (end < start) end = start;
   }
   return `${start}-${end}`;

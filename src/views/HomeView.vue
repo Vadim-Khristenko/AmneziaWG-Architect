@@ -55,6 +55,10 @@ const {
     log,
     isGenerating,
     generate,
+    runBatch,
+    downloadBatch,
+    batchCount,
+    batchResults,
     setVersion,
     setIntensity,
     feedback,
@@ -1089,6 +1093,34 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                     </div>
                                 </div>
                             </transition>
+                        </div>
+
+                        <!-- Batch Generator -->
+                        <div class="field-group">
+                            <label class="field-label">Batch генератор</label>
+                            <div class="batch-row">
+                                <input
+                                    type="number"
+                                    v-model.number="batchCount"
+                                    class="input-field batch-input"
+                                    min="1"
+                                    max="1000"
+                                />
+                                <button
+                                    class="btn btn-secondary"
+                                    @click="runBatch"
+                                >
+                                    Сгенерировать {{ batchCount }}
+                                </button>
+                            </div>
+                            <button
+                                v-if="batchResults.length"
+                                class="btn btn-primary w-full mt-2"
+                                @click="downloadBatch"
+                            >
+                                <Download :size="15" />
+                                Скачать {{ batchResults.length }} конфигов
+                            </button>
                         </div>
 
                         <!-- Generate Button -->

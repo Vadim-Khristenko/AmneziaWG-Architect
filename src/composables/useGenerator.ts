@@ -15,6 +15,7 @@
 import { ref, reactive, computed } from "vue";
 import {
   genCfg,
+  generateBatch,
   CLIENTS,
   DEFAULT_CLIENT_ID,
   type AWGConfig,
@@ -100,21 +101,17 @@ export function useGenerator() {
   /** Флаг анимации кнопки генерации */
   const isGenerating = ref(false);
 
+  /** Batch generation state */
+  const batchCount = ref(10);
+  const batchResults = ref<AWGConfig[]>([]);
+
   // ── Генерация ─────────────────────────────────────────────────────────────
 
   /**
-   * generate() — собирает GeneratorInput из текущего состояния и вызывает genCfg.
-   * Автоматически добавляет запись в лог.
+   * buildInput — собирает GeneratorInput из текущего состояния UI.
    */
-  function generate() {
-    isGenerating.value = true;
-
-    // Небольшой тайм-аут для shimmer-анимации
-    setTimeout(() => {
-      isGenerating.value = false;
-    }, 650);
-
-    currentAwg.value = genCfg({
+  function buildInput(): GeneratorInput {
+    return {
       version: version.value,
       intensity: intensity.value,
       profile: config.profile,
@@ -133,13 +130,115 @@ export function useGenerator() {
       routerMode: config.routerMode,
       useExtremeMax: config.useExtremeMax,
       clientId: config.clientId,
-    });
+    };
+  }
+
+  /**
+   * generate() — главная точка входа.
+   */
+  function generate() {
+    isGenerating.value = true;
+
+    setTimeout(() => {
+      isGenerating.value = false;
+    }, 650);
+
+    currentAwg.value = genCfg(buildInput());
 
     const label = PROFILE_LABELS[config.profile] ?? config.profile;
     addLog(`✦ Сгенерирован — ${label}`, "info");
     if (config.routerMode) {
       addLog("⚡ Роутер-режим: минимальные шумы", "warn");
     }
+  }
+
+  /**
+   * runBatch — generate `batchCount` independent configs.
+   */
+  function runBatch() {
+    const count = batchCount.value;
+    if (count < 1 || count > 1000) {
+      addLog("⚠ Количество должно быть от 1 до 1000", "bad");
+      return;
+    }
+    batchResults.value = generateBatch(buildInput(), count);
+    addLog(`✦ Сгенерировано ${count} конфигов`, "ok");
+  }
+
+  /**
+   * downloadBatch — download all batch configs as a single .txt file.
+   */
+  function downloadBatch() {
+    if (!batchResults.value.length) {
+      addLog("⚠ Сначала сгенерируйте batch", "bad");
+      return;
+    }
+
+    const blocks = batchResults.value.map((p, idx) => {
+      const lines: string[] = [
+        `# AmneziaWG ${p.version} — config ${idx + 1}/${batchResults.value.length}`,
+        "[Interface]",
+        "# PrivateKey = <ключ>",
+        "# Address = 10.0.0.2/32",
+      ];
+
+      if (p.version === "2.0") {
+        lines.push(
+          `H1 = ${p.h1}`,
+          `H2 = ${p.h2}`,
+          `H3 = ${p.h3}`,
+          `H4 = ${p.h4}`,
+          `S1 = ${p.s1}`,
+          `S2 = ${p.s2}`,
+          `S3 = ${p.s3}`,
+          `S4 = ${p.s4}`,
+          `Jc = ${p.jc}`,
+          `Jmin = ${p.jmin}`,
+          `Jmax = ${p.jmax}`,
+          `I1 = ${p.i1}`,
+          `I2 = ${p.i2}`,
+          `I3 = ${p.i3}`,
+          `I4 = ${p.i4}`,
+          `I5 = ${p.i5}`,
+        );
+      } else if (p.version === "1.5") {
+        lines.push(
+          `H1 = ${p.h1s}`,
+          `H2 = ${p.h2s}`,
+          `H3 = ${p.h3s}`,
+          `H4 = ${p.h4s}`,
+          `S1 = ${p.s1}`,
+          `S2 = ${p.s2}`,
+          `Jc = ${p.jc}`,
+          `Jmin = ${p.jmin}`,
+          `Jmax = ${p.jmax}`,
+          `I1 = ${p.i1}`,
+          `I2 = ${p.i2}`,
+          `I3 = ${p.i3}`,
+          `I4 = ${p.i4}`,
+          `I5 = ${p.i5}`,
+        );
+      } else {
+        lines.push(
+          `H1 = ${p.h1s}`,
+          `H2 = ${p.h2s}`,
+          `H3 = ${p.h3s}`,
+          `H4 = ${p.h4s}`,
+          `S1 = ${p.s1}`,
+          `S2 = ${p.s2}`,
+          `Jc = ${p.jc}`,
+          `Jmin = ${p.jmin}`,
+          `Jmax = ${p.jmax}`,
+        );
+      }
+      return lines.join("\n");
+    });
+
+    downloadBlob(
+      blocks.join("\n\n" + "=".repeat(40) + "\n\n"),
+      `amneziawg-batch-${batchResults.value.length}-${Date.now()}.txt`,
+      "text/plain",
+    );
   }
 
   // ── Переключение версии / интенсивности ───────────────────────────────────
@@ -550,6 +649,8 @@ export function useGenerator() {
 
     // Действия
     generate,
+    runBatch,
+    downloadBatch,
     setVersion,
     setIntensity,
     feedback,
@@ -572,6 +673,10 @@ export function useGenerator() {
     iterDots,
     hintMap,
     placeholderMap,
+
+    // Batch
+    batchCount,
+    batchResults,
 
     // Проверка доменов
     domainStatus,
