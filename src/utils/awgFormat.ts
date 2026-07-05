@@ -132,8 +132,8 @@ const OBF_MIRROR_FIELDS = [
   "I5",
 ] as const;
 
-/** Wrap an AmneziaWG .conf into a minimal valid VpnConfig and encode it. */
-export function confToVpn(confText: string): string {
+/** Wrap an AmneziaWG .conf into a minimal valid VpnConfig object. */
+export function buildVpnConfig(confText: string): VpnConfig {
   const parsed = parseConf(confText);
   const endpoint = getField(parsed, "Endpoint") || "";
   // IPv6 endpoints look like "[::1]:51820"; strip the port from the end only.
@@ -155,7 +155,7 @@ export function confToVpn(confText: string): string {
     for (const e of s.entries) flat[e.key] = e.value;
   awg.last_config = JSON.stringify({ ...flat, config: confText }, null, 4);
 
-  const cfg: VpnConfig = {
+  return {
     containers: [{ container: "amneziawg", awg }],
     defaultContainer: "amneziawg",
     description: "AmneziaWG",
@@ -164,7 +164,11 @@ export function confToVpn(confText: string): string {
     dns2: dns[1] || "",
     nameOverriddenByUser: false,
   };
-  return vpnEncode(cfg);
+}
+
+/** Wrap an AmneziaWG .conf into a minimal valid VpnConfig and encode it. */
+export function confToVpn(confText: string): string {
+  return vpnEncode(buildVpnConfig(confText));
 }
 
 export interface VpnToConfResult {

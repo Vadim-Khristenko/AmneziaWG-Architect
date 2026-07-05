@@ -24,6 +24,8 @@ import {
   type BrowserProfile,
   PROFILE_LABELS,
 } from "../utils/generator";
+import { confToVpn, buildVpnConfig, type VpnConfig } from "../utils/awgFormat";
+import type { AwgContainer } from "../utils/mergekeys";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы
@@ -343,21 +345,68 @@ export function useGenerator() {
   });
 
   /**
+   * jsonPayload — формальный Amnezia VpnConfig JSON (как в vpn://).
+   */
+  const jsonPayload = computed((): VpnConfig | null => {
+    const text = plainText.value;
+    if (!text) return null;
+    try {
+      return buildVpnConfig(text);
+    } catch {
+      return null;
+    }
+  });
+
+  const jsonText = computed(() =>
+    jsonPayload.value ? JSON.stringify(jsonPayload.value, null, 4) : "",
+  );
+
+  /**
    * copyConfig — копирует plainText в буфер обмена.
    * Возвращает Promise<boolean>: true = успех, false = ошибка.
    */
   async function copyConfig(): Promise<boolean> {
-    const text = plainText.value;
+    return copyToClipboard(plainText.value, "Конфиг скопирован в буфер");
+  }
+
+  /**
+   * downloadConfig — скачивает конфиг как .conf файл.
+   */
+  function downloadConfig() {
+    downloadBlob(
+      plainText.value,
+      `amneziawg-${version.value}-${Date.now()}.conf`,
+      "text/plain",
+    );
+  }
+
+  /**
+   * copyJson — копирует JSON-представление конфигурации.
+   */
+  async function copyJson(): Promise<boolean> {
+    return copyToClipboard(jsonText.value, "JSON скопирован в буфер");
+  }
+
+  /**
+   * downloadJson — скачивает JSON-представление конфигурации.
+   */
+  function downloadJson() {
+    downloadBlob(
+      jsonText.value,
+      `amneziawg-${version.value}-${Date.now()}.json`,
+      "application/json",
+    );
+  }
+
+  async function copyToClipboard(text: string, okMsg: string): Promise<boolean> {
     if (!text) {
       addLog("⚠ Сначала сгенерируйте конфиг", "bad");
       return false;
     }
-
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback для старых браузеров / HTTP-контекста
         const ta = document.createElement("textarea");
         ta.value = text;
         ta.style.cssText = "position:fixed;left:-9999px;top:0";
@@ -366,7 +415,7 @@ export function useGenerator() {
         document.execCommand("copy");
         document.body.removeChild(ta);
       }
-      addLog("✓ Конфиг скопирован в буфер", "ok");
+      addLog(`✓ ${okMsg}`, "ok");
       return true;
     } catch {
       addLog("⚠ Не удалось скопировать в буфер", "bad");
@@ -374,20 +423,16 @@ export function useGenerator() {
     }
   }
 
-  /**
-   * downloadConfig — скачивает конфиг как .conf файл.
-   */
-  function downloadConfig() {
-    const text = plainText.value;
+  function downloadBlob(text: string, filename: string, mime: string) {
     if (!text) {
       addLog("⚠ Сначала сгенерируйте конфиг", "bad");
       return;
     }
-    const blob = new Blob([text], { type: "text/plain" });
+    const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `amneziawg-${version.value}-${Date.now()}.conf`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
     addLog("↓ Конфиг сохранён в файл", "info");
@@ -510,11 +555,15 @@ export function useGenerator() {
     feedback,
     copyConfig,
     downloadConfig,
+    copyJson,
+    downloadJson,
     addLog,
 
     // Вычисляемые
     plainText,
     previewLines,
+    jsonPayload,
+    jsonText,
     showCustomHost,
     isCPSSupported,
     isFullObfuscation,

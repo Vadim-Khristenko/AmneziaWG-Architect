@@ -58,6 +58,8 @@ const {
     feedback,
     copyConfig,
     downloadConfig,
+    copyJson,
+    downloadJson,
     plainText,
     previewLines,
     showCustomHost,
@@ -1315,6 +1317,20 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                     >
                                         <Download :size="15" />
                                         Скачать .conf
+                                    </button>
+                                    <button
+                                        class="btn btn-sec config-action-btn"
+                                        @click="copyJson"
+                                    >
+                                        <Braces :size="15" />
+                                        Копировать JSON
+                                    </button>
+                                    <button
+                                        class="btn btn-sec config-action-btn"
+                                        @click="downloadJson"
+                                    >
+                                        <Download :size="15" />
+                                        Скачать JSON
                                     </button>
                                 </div>
                             </template>
