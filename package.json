@@ -1,7 +1,7 @@
 {
   "name": "amneziawg-architect",
-  "version": "2.4.0",
-  "description": "AmneziaWG Architect — Professional Config Generator",
+  "version": "3.1.0",
+  "description": "AmneziaWG Architect — advanced config generator, batch tooling, packet simulator and health checker for AmneziaWG obfuscation.",
   "author": "Vadim Khristenko <just@vai-prog.ru>",
   "private": true,
   "type": "module",
