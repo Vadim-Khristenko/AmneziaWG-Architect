@@ -22,7 +22,7 @@ import { validateAwgParams, type Finding } from "@/utils/awgValidate";
 import { healthCheckConf } from "@/utils/healthCheck";
 import { highlight } from "@/utils/awgHighlight";
 import { pluralRu } from "@/utils/plural";
-import { CLIENTS, DEFAULT_CLIENT_ID } from "@/utils/generator/clients";
+import { CLIENTS, CLIENT_IDS, DEFAULT_CLIENT_ID } from "@/utils/generator/clients";
 import {
   vpnDecode,
   vpnEncode,
@@ -388,9 +388,11 @@ export function useConfigEditor() {
     focusIndex,
     focusActiveKey,
     exitFocus,
-    // derived
     highlighted,
     canExportConf,
+    // clients (for health selector)
+    CLIENTS,
+    CLIENT_IDS,
     // operations
     load,
     toVpnConfig,

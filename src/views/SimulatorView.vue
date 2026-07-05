@@ -180,8 +180,7 @@ const stats = computed(() => {
                                 @click="selectPacket(p)"
                             >
                                 <span class="packet-step">{{ p.step }}</span>
-                                <span class="packet-badge"
-003e
+                                <span class="packet-badge">
                                     {{ kindLabel(p.kind) }}
                                 </span>
                                 <component

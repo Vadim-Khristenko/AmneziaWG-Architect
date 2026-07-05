@@ -25,8 +25,10 @@ import {
   type BrowserProfile,
   PROFILE_LABELS,
 } from "../utils/generator";
-import { confToVpn, buildVpnConfig, type VpnConfig } from "../utils/awgFormat";
+import { confToVpn, buildVpnConfig } from "../utils/awgFormat";
+import type { VpnConfig } from "../utils/awgFormat";
 import type { AwgContainer } from "../utils/mergekeys";
+import type { GeneratorInput } from "../utils/generator";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы
@@ -112,9 +114,6 @@ export function useGenerator() {
 
   // ── Генерация ─────────────────────────────────────────────────────────────
 
-  /**
-   * buildInput — собирает GeneratorInput из текущего состояния UI.
-   */
   function buildInput(): GeneratorInput {
     return {
       version: version.value,

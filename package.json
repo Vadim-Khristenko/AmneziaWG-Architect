@@ -12,7 +12,7 @@
     "test": "bun run vitest",
     "test:run": "bun run vitest run",
     "test:coverage": "bun run vitest run --coverage",
-    "typecheck": "bun run vue-tsc --noEmit"
+    "typecheck": "bun run vue-tsc --noEmit --skipLibCheck"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -23,19 +23,19 @@
     "@fontsource-variable/manrope": "^5.2.8",
     "@fontsource-variable/unbounded": "^5.2.8",
     "lucide-vue-next": "^0.577.0",
-    "pako": "^2.1.0",
-    "vue": "^3.5.13",
-    "vue-router": "^5.0.3"
+    "pako": "^2.2.0",
+    "vue": "^3.5.39",
+    "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
+    "@types/node": "^25.9.4",
     "@types/pako": "^2.0.4",
-    "@vitejs/plugin-vue": "^6.0.4",
-    "@vitest/coverage-v8": "^4.1.0",
-    "typescript": "^5.7.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.1.0",
-    "vue-tsc": "^3.2.5"
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vitest/coverage-v8": "^4.1.9",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.9",
+    "vue-tsc": "^3.3.6"
   },
   "repository": {
     "type": "git",

@@ -18,6 +18,9 @@ import type { VpnConfig, AwgContainer } from "@/utils/mergekeys";
 
 export type AwgFormat = "vpn" | "conf" | "json" | "unknown";
 
+/* Re-export container types so consumers don't depend on mergekeys directly. */
+export type { VpnConfig, AwgContainer, ContainerEntry } from "@/utils/mergekeys";
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Detection
    ═══════════════════════════════════════════════════════════════════════════ */

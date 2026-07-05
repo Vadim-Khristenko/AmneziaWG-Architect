@@ -213,50 +213,6 @@ function saveToHistory() {
     }
 }
 
-function generateAndSave() {
-    generate();
-    justGenerated.value = true;
-    setTimeout(() => {
-        justGenerated.value = false;
-    }, 800);
-
-    // Persist current obfuscation params for Simulator / MergeKeys
-    if (currentAwg.value) {
-        const awg = currentAwg.value;
-        const payload = {
-            cfg: {
-                jc: awg.jc,
-                jmin: awg.jmin,
-                jmax: awg.jmax,
-                s1: awg.s1,
-                s2: awg.s2,
-                s3: awg.s3,
-                s4: awg.s4,
-                h1: awg.h1,
-                h2: awg.h2,
-                h3: awg.h3,
-                h4: awg.h4,
-                i1: awg.i1,
-                i2: awg.i2,
-                i3: awg.i3,
-                i4: awg.i4,
-                i5: awg.i5,
-            },
-            profile: awg.profile,
-            ver: version.value,
-        };
-        try {
-            sessionStorage.setItem("awg_pending_cfg", JSON.stringify(payload));
-        } catch {
-            /* quota exceeded — ignore */
-        }
-    }
-
-    nextTick(() => {
-        setTimeout(() => saveToHistory(), 20);
-    });
-}
-
 function restoreFromHistory(entry: HistoryEntry) {
     navigator.clipboard?.writeText(entry.text).catch(() => {});
     showHistory.value = false;
@@ -1155,7 +1111,6 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                 </div>
                             </transition>
                         </div>
-
                         <!-- Batch Generator -->
                         <div class="batch-card">
                             <div class="batch-head">
@@ -1163,7 +1118,10 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                 <span class="batch-title">Batch генератор</span>
                             </div>
                             <p class="batch-hint">
-                                Сгенерируйте сразу несколько независимых конфигов.
+                                Сгенерируйте сразу несколько независимых
+                                конфигов. Для больших пакетов (более 50)
+                                генерация выполняется в фоновом Web Worker,
+                                чтобы интерфейс не зависал.
                             </p>
                             <div class="batch-row">
                                 <input
@@ -1172,17 +1130,31 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                     class="input-field batch-input"
                                     min="1"
                                     max="1000"
+                                    :disabled="isWorkerRunning"
                                 />
                                 <button
                                     class="btn btn-secondary batch-btn"
+                                    :class="{ running: isWorkerRunning }"
+                                    :disabled="isWorkerRunning"
                                     @click="runBatch"
                                 >
-                                    Сгенерировать
+                                    <RefreshCw
+                                        v-if="isWorkerRunning"
+                                        :size="15"
+                                        class="spin-anim"
+                                    />
+                                    <Boxes v-else :size="15" />
+                                    {{
+                                        isWorkerRunning
+                                            ? `Генерация ${batchCount}…`
+                                            : "Сгенерировать"
+                                    }}
                                 </button>
                             </div>
                             <button
                                 v-if="batchResults.length"
                                 class="btn btn-primary batch-download"
+                                :class="{ 'pop-in': batchResults.length }"
                                 @click="downloadBatch"
                             >
                                 <Download :size="15" />
@@ -2631,18 +2603,6 @@ AWG-клиент будет вести себя как обычный WireGuard.
     grid-column: 1 / -1;
 }
 
-@media (max-width: 640px) {
-    .export-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .export-btn.export-sim {
-        grid-column: auto;
-    }
-}
-
-/* ── Config Actions Row (legacy) ─────────────────────────────────────── */
-/* ── Config Actions Row (legacy) ─────────────────────────────────────── */
 /* ── Batch card ───────────────────────────────────────────────────────── */
 .batch-card {
     margin-top: 18px;
@@ -2690,6 +2650,20 @@ AWG-клиент будет вести себя как обычный WireGuard.
     font-size: 0.8rem;
 }
 
+.batch-btn.running {
+    animation: pulseBtn 1.2s infinite;
+}
+
+@keyframes pulseBtn {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.65;
+    }
+}
+
 .batch-download {
     display: inline-flex;
     align-items: center;
@@ -2700,7 +2674,22 @@ AWG-клиент будет вести себя как обычный WireGuard.
     font-size: 0.8rem;
 }
 
-/* ── Export card (continued) ──────────────────────────────────────────── */
+.batch-download.pop-in {
+    animation: popIn 0.35s var(--ease-bounce);
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ── Preview card ─────────────────────────────────────────────────────── */
 .preview-card {
     background: var(--bg2);
     border: 1px solid var(--border2);
@@ -2723,7 +2712,8 @@ AWG-клиент будет вести себя как обычный WireGuard.
     line-height: 1.7;
     color: var(--text2);
     white-space: pre-wrap;
-    max-height: 300px;
+    min-height: 420px;
+    max-height: 560px;
     overflow-y: auto;
     margin: 0;
     background: transparent;

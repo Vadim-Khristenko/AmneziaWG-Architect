@@ -19,6 +19,7 @@ const baseInput: GeneratorInput = {
     iterCount: 0,
     routerMode: false,
     useExtremeMax: false,
+    clientId: "amneziavpn",
 };
 
 const profiles: MimicProfile[] = [
