@@ -37,6 +37,8 @@ import {
     Sparkles,
     Clipboard,
     ClipboardCheck,
+    Braces,
+    Activity,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
@@ -1333,6 +1335,13 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                         Скачать JSON
                                     </button>
                                 </div>
+                                <router-link
+                                    to="/simulator"
+                                    class="btn btn-sec config-action-btn"
+                                >
+                                    <Activity :size="15" />
+                                    Симулятор handshake
+                                </router-link>
                             </template>
                         </div>
                     </div>

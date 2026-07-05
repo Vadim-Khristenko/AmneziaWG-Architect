@@ -5,6 +5,7 @@
  *   /           → HomeView      (Generator)
  *   /mergekeys  → MergeKeysView (MergeKeys tool)
  *   /about      → AboutView     (About page)
+ *   /simulator → SimulatorView (Packet simulator)
  *   /iaa        → IaaView       (Install AmneziaWG Anywhere)
  *
  * Uses HTML5 history mode (createWebHistory) for clean URLs (no /#/ prefix).
@@ -63,6 +64,20 @@ const routes: RouteRecordRaw[] = [
       ogDescription:
         "Объединяй ключи Amnezia VPN, обновляй обфускацию — всё локально в браузере.",
       ogImage: `${import.meta.env.BASE_URL}assets/og-mergekeys.png`,
+    },
+  },
+  {
+    path: "/simulator",
+    name: "simulator",
+    component: () => import("@/views/SimulatorView.vue"),
+    meta: {
+      title: "Packet Simulator — AmneziaWG Architect",
+      description:
+        "Визуализация handshake и симуляция пакетов AmneziaWG.",
+      ogTitle: "Packet Simulator — AmneziaWG Architect",
+      ogDescription:
+        "Посмотрите, как выглядит старт сессии AmneziaWG: CPS, junk-train, handshake, data.",
+      ogImage: `${import.meta.env.BASE_URL}assets/og-image.png`,
     },
   },
   {
