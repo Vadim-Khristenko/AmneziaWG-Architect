@@ -3,22 +3,27 @@
 #
 # Architecture:
 #
-#   ┌──────────┐     ┌───────────┐     ┌──────────────┐
-#   │  lint &  │     │   build   │     │   deploy     │
-#   │  test    ├────►│ + bundle  ├──┬─►│  gh-pages    │
-#   └──────────┘     └───────────┘  │  └──────────────┘
-#                                   │  ┌──────────────┐
-#                                   ├─►│  release     │
-#                                   │  └──────────────┘
-#                                   │  ┌──────────────┐
-#                                   └─►│  standalone  │
-#                                      │  artifact    │
-#                                      └──────────────┘
+#   ┌──────────────┐
+#   │   preflight   │  ← парсит commit message на [skip ci], [skip test] и т.д.
+#   └──────┬───────┘
+#          │
+#   ┌──────┴──────┐     ┌───────────┐     ┌──────────────┐
+#   │  lint &     │     │   build   │     │   deploy     │
+#   │  test       ├────►│ + bundle  ├──┬─►│  gh-pages    │
+#   └─────────────┘     └───────────┘  │  └──────────────┘
+#                                      │  ┌──────────────┐
+#                                      ├─►│  release     │
+#                                      │  └──────────────┘
+#                                      │  ┌──────────────┐
+#                                      └─►│  standalone  │
+#                                         │  artifact    │
+#                                         └──────────────┘
 #
-# - lint+test and build run in PARALLEL (both need install, but test doesn't
-#   need build output and build doesn't need test results)
-# - deploy + release fan out from build (parallel when tag push)
-# - standalone artifact is always uploaded from build
+# Commit message directives:
+#   [skip ci]    / [ci skip]       — skip entire pipeline
+#   [skip test]  / [test skip]     — skip lint/typecheck/test job
+#   [skip deploy]/ [deploy skip]   — skip deployment to GitHub Pages
+#
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: CI/CD Pipeline
@@ -34,17 +39,22 @@ on:
       debug:
         description: "Enable debug logging"
         required: false
-        default: "false"
+        default: false
         type: boolean
       skip_deploy:
         description: "Skip deployment (build + test only)"
         required: false
-        default: "false"
+        default: false
+        type: boolean
+      skip_test:
+        description: "Skip lint & test job"
+        required: false
+        default: false
         type: boolean
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: write
@@ -58,16 +68,73 @@ env:
 # ═══════════════════════════════════════════════════════════════════════════════
 jobs:
   # ───────────────────────────────────────────────────────────────────────────
+  # JOB 0 — Preflight: parse commit directives & set flags
+  # ───────────────────────────────────────────────────────────────────────────
+  preflight:
+    name: 🔎 Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    # Skip the entire workflow on [skip ci] / [ci skip]
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
+
+    outputs:
+      skip_test: ${{ steps.flags.outputs.skip_test }}
+      skip_deploy: ${{ steps.flags.outputs.skip_deploy }}
+      is_tag: ${{ steps.flags.outputs.is_tag }}
+      is_pr: ${{ steps.flags.outputs.is_pr }}
+      short_sha: ${{ steps.flags.outputs.short_sha }}
+
+    steps:
+      - name: 🏷️ Parse commit directives
+        id: flags
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+
+          # [skip test] / [test skip]
+          if echo "$MSG" | grep -qiE '\[(skip test|test skip|no test)\]'; then
+            echo "skip_test=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_test=${{ inputs.skip_test || 'false' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+          # [skip deploy] / [deploy skip]
+          if echo "$MSG" | grep -qiE '\[(skip deploy|deploy skip|no deploy)\]'; then
+            echo "skip_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_deploy=${{ inputs.skip_deploy || 'false' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "is_tag=${{ github.ref_type == 'tag' }}" >> "$GITHUB_OUTPUT"
+          echo "is_pr=${{ github.event_name == 'pull_request' }}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: 📋 Preflight summary
+        run: |
+          echo "### 🔎 Preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flag | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| skip_test | \`${{ steps.flags.outputs.skip_test }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| skip_deploy | \`${{ steps.flags.outputs.skip_deploy }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| is_tag | \`${{ steps.flags.outputs.is_tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| is_pr | \`${{ steps.flags.outputs.is_pr }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| short_sha | \`${{ steps.flags.outputs.short_sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────────────────────────────────────────────────────────
   # JOB 1 — Lint & Test (runs in parallel with build)
   # ───────────────────────────────────────────────────────────────────────────
   test:
     name: 🧪 Lint, Type-check & Test
+    needs: [preflight]
+    if: needs.preflight.outputs.skip_test != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 🥟 Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -97,7 +164,14 @@ jobs:
           echo "### 🧪 Test Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ -f coverage/coverage-summary.json ]; then
-            LINES=$(cat coverage/coverage-summary.json | python3 -c "import sys,json; d=json.load(sys.stdin)['total']['lines']; print(f\"{d['pct']}%\")" 2>/dev/null || echo "N/A")
+            LINES=$(python3 -c "
+          import json, sys
+          try:
+              d = json.load(open('coverage/coverage-summary.json'))['total']['lines']
+              print(f\"{d['pct']}%\")
+          except Exception:
+              print('N/A')
+          " 2>/dev/null || echo "N/A")
             echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
             echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
             echo "| Line coverage | ${LINES} |" >> "$GITHUB_STEP_SUMMARY"
@@ -108,6 +182,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   build:
     name: 🔨 Build
+    needs: [preflight]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -119,7 +194,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -136,10 +211,10 @@ jobs:
 
       - name: 📋 Copy launcher scripts
         run: |
-          cp scripts/serve.sh dist/serve.sh
-          cp scripts/serve.ps1 dist/serve.ps1
-          cp scripts/serve.bat dist/serve.bat
-          chmod +x dist/serve.sh
+          for f in serve.sh serve.ps1 serve.bat; do
+            [ -f "scripts/$f" ] && cp "scripts/$f" "dist/$f"
+          done
+          [ -f dist/serve.sh ] && chmod +x dist/serve.sh
 
       - name: 📊 Collect metadata
         id: meta
@@ -147,24 +222,29 @@ jobs:
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           DIST_SIZE=$(du -sh dist | cut -f1)
           FILE_COUNT=$(find dist -type f | wc -l | tr -d ' ')
-          VERSION=$(cat package.json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+          VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
 
-          echo "build-time=$BUILD_TIME"  >> "$GITHUB_OUTPUT"
-          echo "dist-size=$DIST_SIZE"    >> "$GITHUB_OUTPUT"
-          echo "file-count=$FILE_COUNT"  >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"        >> "$GITHUB_OUTPUT"
+          {
+            echo "build-time=$BUILD_TIME"
+            echo "dist-size=$DIST_SIZE"
+            echo "file-count=$FILE_COUNT"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
 
-          echo "### 🔨 Build Metadata" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Version | \`${VERSION}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build time | ${BUILD_TIME} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Dist size | ${DIST_SIZE} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Files | ${FILE_COUNT} |" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### 🔨 Build Metadata
+
+          | Metric | Value |
+          |--------|-------|
+          | Version | \`${VERSION}\` |
+          | Build time | ${BUILD_TIME} |
+          | Dist size | ${DIST_SIZE} |
+          | Files | ${FILE_COUNT} |
+          | Commit | \`${GITHUB_SHA::7}\` |
+          EOF
 
       - name: 📤 Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
@@ -188,14 +268,18 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 3 — Deploy to GitHub Pages
   #   Runs after BOTH test + build pass (on branch push only)
+  #   When test is skipped, only build is required.
   # ───────────────────────────────────────────────────────────────────────────
   deploy:
     name: 🚀 Deploy to GitHub Pages
     if: |
-      github.ref_type == 'branch' &&
-      github.event_name != 'pull_request' &&
-      inputs.skip_deploy != 'true'
-    needs: [test, build]
+      always() &&
+      needs.build.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      needs.preflight.outputs.is_pr != 'true' &&
+      needs.preflight.outputs.skip_deploy != 'true' &&
+      github.ref_type == 'branch'
+    needs: [preflight, test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -206,34 +290,39 @@ jobs:
     steps:
       - name: 🌐 Deploy
         id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: 📋 Summary
         run: |
-          echo "### 🚀 Deployed to GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| | |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| URL | ${{ steps.deploy.outputs.page_url }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Version | \`${{ needs.build.outputs.version }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Built at | ${{ needs.build.outputs.build-time }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Size | ${{ needs.build.outputs.dist-size }} (${{ needs.build.outputs.file-count }} files) |" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### 🚀 Deployed to GitHub Pages
+
+          | | |
+          |---|---|
+          | URL | ${{ steps.deploy.outputs.page_url }} |
+          | Version | \`${{ needs.build.outputs.version }}\` |
+          | Built at | ${{ needs.build.outputs.build-time }} |
+          | Size | ${{ needs.build.outputs.dist-size }} (${{ needs.build.outputs.file-count }} files) |
+          EOF
 
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 4 — Create GitHub Release
   #   Runs after BOTH test + build pass (on tag push only)
-  #   Parallel with deploy (when tag also triggers deploy)
   # ───────────────────────────────────────────────────────────────────────────
   release:
     name: 🏷️ GitHub Release
-    if: github.ref_type == 'tag'
-    needs: [test, build]
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.ref_type == 'tag'
+    needs: [preflight, test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -246,14 +335,15 @@ jobs:
       - name: 🗜️ Create archives
         run: |
           TAG="${{ github.ref_name }}"
-          VERSION="${{ needs.build.outputs.version }}"
 
-          # ZIP and TAR.GZ of dist
           zip -r "amneziawg-architect-${TAG}.zip" dist/ scripts/
           tar -czf "amneziawg-architect-${TAG}.tar.gz" dist/ scripts/
 
+          # Generate checksums
+          sha256sum amneziawg-architect-${TAG}.* > "checksums-${TAG}.sha256"
+
           echo "✅ Archives:"
-          ls -lh amneziawg-architect-${TAG}.*
+          ls -lh amneziawg-architect-${TAG}.* checksums-${TAG}.sha256
 
       - name: 📝 Generate release notes
         run: |
@@ -269,24 +359,25 @@ jobs:
             echo "| **Version** | \`${VERSION}\` |"
             echo "| **Built at** | ${{ needs.build.outputs.build-time }} |"
             echo "| **Dist size** | ${{ needs.build.outputs.dist-size }} (${{ needs.build.outputs.file-count }} files) |"
+            echo "| **Commit** | \`${GITHUB_SHA::7}\` |"
             echo ""
 
             if [ -n "$PREV_TAG" ]; then
               echo "## Changes since \`${PREV_TAG}\`"
               echo ""
-              # Group by conventional commit prefix
-              for prefix in feat fix refactor perf test docs style chore; do
+              for prefix in feat fix refactor perf test docs style chore ci; do
                 COMMITS=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --no-merges | grep -i "^- ${prefix}" || true)
                 if [ -n "$COMMITS" ]; then
                   case $prefix in
-                    feat)     LABEL="Features" ;;
-                    fix)      LABEL="Bug Fixes" ;;
-                    refactor) LABEL="Refactoring" ;;
-                    perf)     LABEL="Performance" ;;
-                    test)     LABEL="Tests" ;;
-                    docs)     LABEL="Documentation" ;;
-                    style)    LABEL="Styling" ;;
-                    chore)    LABEL="Maintenance" ;;
+                    feat)     LABEL="🚀 Features" ;;
+                    fix)      LABEL="🐛 Bug Fixes" ;;
+                    refactor) LABEL="♻️ Refactoring" ;;
+                    perf)     LABEL="⚡ Performance" ;;
+                    test)     LABEL="🧪 Tests" ;;
+                    docs)     LABEL="📚 Documentation" ;;
+                    style)    LABEL="💄 Styling" ;;
+                    chore)    LABEL="🔧 Maintenance" ;;
+                    ci)       LABEL="👷 CI/CD" ;;
                   esac
                   echo "### ${LABEL}"
                   echo "$COMMITS"
@@ -294,10 +385,9 @@ jobs:
                 fi
               done
 
-              # Uncategorized commits
-              OTHER=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --no-merges | grep -iv "^- \(feat\|fix\|refactor\|perf\|test\|docs\|style\|chore\)" || true)
+              OTHER=$(git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --no-merges | grep -iv "^- \(feat\|fix\|refactor\|perf\|test\|docs\|style\|chore\|ci\)" || true)
               if [ -n "$OTHER" ]; then
-                echo "### Other"
+                echo "### 📦 Other"
                 echo "$OTHER"
                 echo ""
               fi
@@ -325,10 +415,16 @@ jobs:
             echo '```'
             echo ""
             echo "The script auto-detects bun/npm/python or installs bun."
+            echo ""
+            echo "## Checksums"
+            echo ""
+            echo '```'
+            cat "checksums-${TAG}.sha256"
+            echo '```'
           } > RELEASE_NOTES.md
 
       - name: 🚀 Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: "AmneziaWG Architect ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
@@ -339,12 +435,16 @@ jobs:
           files: |
             amneziawg-architect-${{ github.ref_name }}.zip
             amneziawg-architect-${{ github.ref_name }}.tar.gz
+            checksums-${{ github.ref_name }}.sha256
 
       - name: 📋 Summary
         run: |
-          echo "### 🏷️ Release \`${{ github.ref_name }}\` created" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| File | |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|------|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| amneziawg-architect-${{ github.ref_name }}.zip | ✅ |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| amneziawg-architect-${{ github.ref_name }}.tar.gz | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### 🏷️ Release \`${{ github.ref_name }}\` created
+
+          | File | |
+          |------|---|
+          | amneziawg-architect-${{ github.ref_name }}.zip | ✅ |
+          | amneziawg-architect-${{ github.ref_name }}.tar.gz | ✅ |
+          | checksums-${{ github.ref_name }}.sha256 | ✅ |
+          EOF
