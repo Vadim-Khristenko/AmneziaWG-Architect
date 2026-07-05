@@ -92,16 +92,43 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   const h3Spread = useExtremeMax ? 10_000_000 : 100_000_000;
   const h4Spread = useExtremeMax ? 15_000_000 : 150_000_000;
 
-  const h1 = rRange(rnd(100_000_000, 900_000_000), h1Spread);
-  const h2 = rRange(rnd(1_200_000_000, 2_000_000_000), h2Spread);
-  const h3 = rRange(rnd(2_400_000_000, 3_200_000_000), h3Spread);
-  const h4 = rRange(rnd(3_600_000_000, 4_000_000_000), h4Spread);
+  const maxH = client.maxHValue;
+
+  /**
+   * Build non-overlapping H ranges that always fit into `maxH`.
+   * For INT32_MAX-limited clients the absolute pools are lowered so all four
+   * ranges stay below the cap and do not overlap.
+   */
+  const hPools = (() => {
+    if (maxH >= 4_294_967_295) {
+      return {
+        h1: { min: 100_000_000, max: 900_000_000, spread: h1Spread },
+        h2: { min: 1_200_000_000, max: 2_000_000_000, spread: h2Spread },
+        h3: { min: 2_400_000_000, max: 3_200_000_000, spread: h3Spread },
+        h4: { min: 3_600_000_000, max: 4_000_000_000, spread: h4Spread },
+      };
+    }
+
+    const top = maxH;
+    const zone = Math.floor(top / 5);
+    return {
+      h1: { min: zone, max: zone * 2 - 10_000, spread: Math.min(h1Spread, zone - 10_000) },
+      h2: { min: zone * 2, max: zone * 3 - 10_000, spread: Math.min(h2Spread, zone - 10_000) },
+      h3: { min: zone * 3, max: zone * 4 - 10_000, spread: Math.min(h3Spread, zone - 10_000) },
+      h4: { min: zone * 4, max: top, spread: Math.min(h4Spread, zone - 10_000) },
+    };
+  })();
+
+  const h1 = rRange(rnd(hPools.h1.min, hPools.h1.max), hPools.h1.spread, maxH);
+  const h2 = rRange(rnd(hPools.h2.min, hPools.h2.max), hPools.h2.spread, maxH);
+  const h3 = rRange(rnd(hPools.h3.min, hPools.h3.max), hPools.h3.spread, maxH);
+  const h4 = rRange(rnd(hPools.h4.min, hPools.h4.max), hPools.h4.spread, maxH);
 
   const h1sSpread = useExtremeMax ? 10_000_000 : 4_000_000;
-  const h1s = 100_000_000 + rnd(0, h1sSpread);
-  const h2s = 1_200_000_000 + rnd(0, h2Spread);
-  const h3s = 2_400_000_000 + rnd(0, h3Spread);
-  const h4s = 3_600_000_000 + rnd(0, h4Spread);
+  const h1s = Math.min(100_000_000 + rnd(0, h1sSpread), maxH);
+  const h2s = Math.min(1_200_000_000 + rnd(0, h2Spread), maxH);
+  const h3s = Math.min(2_400_000_000 + rnd(0, h3Spread), maxH);
+  const h4s = Math.min(3_600_000_000 + rnd(0, h4Spread), maxH);
 
   let s1 = rnd(1, 150);
   let s2 = rnd(1, 150);
@@ -272,6 +299,29 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   }
 
   return cfg;
+}
+
+/**
+ * Generate multiple independent configurations at once.
+ * Each config is generated from a fresh random seed, but with the same
+ * input preferences (version, intensity, profile, client, etc.).
+ */
+export function generateBatch(
+  input: GeneratorInput,
+  count: number,
+): AWGConfig[] {
+  if (!Number.isFinite(count) || count < 1) {
+    throw new RangeError("generateBatch: count must be a positive integer");
+  }
+  if (count > 1000) {
+    throw new RangeError("generateBatch: count must not exceed 1000");
+  }
+
+  const out: AWGConfig[] = [];
+  for (let i = 0; i < count; i++) {
+    out.push(genCfg({ ...input, iterCount: input.iterCount + i }));
+  }
+  return out;
 }
 
 /** Convenience re-export of profile labels for the UI. */

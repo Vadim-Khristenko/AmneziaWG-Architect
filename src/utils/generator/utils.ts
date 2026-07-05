@@ -44,11 +44,17 @@ export function assertEvenHex(hex: string, label = "?"): string {
 }
 
 /**
- * rRange(base, spread?) — генерирует строку-диапазон "start-end" для H1–H4.
+ * rRange(base, spread?, maxEnd?) — генерирует строку-диапазон "start-end" для H1–H4.
+ * Если передан maxEnd, конец диапазона не превысит его.
  */
-export function rRange(base: number, spread = 500_000): string {
-  const s = base + rnd(0, spread);
-  return `${s}-${s + rnd(1000, 50_000)}`;
+export function rRange(base: number, spread = 500_000, maxEnd?: number): string {
+  const start = base + rnd(0, spread);
+  let end = start + rnd(1000, 50_000);
+  if (maxEnd !== undefined) {
+    end = Math.min(end, maxEnd);
+    if (end < start) end = start;
+  }
+  return `${start}-${end}`;
 }
 
 /**
