@@ -20,7 +20,6 @@ describe("vite.config.ts URL and CI helpers", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    vi.resetModules();
     process.env = { ...originalEnv };
 
     // Clear CI/CD specific environment variables
