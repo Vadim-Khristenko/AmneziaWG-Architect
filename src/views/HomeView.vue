@@ -56,6 +56,7 @@ const {
     iterCount,
     log,
     isGenerating,
+    isWorkerRunning,
     generate,
     runBatch,
     downloadBatch,
@@ -92,33 +93,58 @@ const isYandexUnstable = () =>
     config.useBrowserFp &&
     YANDEX_UNSTABLE_PROFILES.includes(config.browserProfile as any);
 
-onMounted(() => {
+function persistCurrentConfig() {
+    if (!currentAwg.value) return;
+    const awg = currentAwg.value;
+    const payload = {
+        cfg: {
+            jc: awg.jc,
+            jmin: awg.jmin,
+            jmax: awg.jmax,
+            s1: awg.s1,
+            s2: awg.s2,
+            s3: awg.s3,
+            s4: awg.s4,
+            h1: awg.h1,
+            h2: awg.h2,
+            h3: awg.h3,
+            h4: awg.h4,
+            i1: awg.i1,
+            i2: awg.i2,
+            i3: awg.i3,
+            i4: awg.i4,
+            i5: awg.i5,
+        },
+        profile: awg.profile,
+        ver: version.value,
+    };
+    try {
+        sessionStorage.setItem("awg_pending_cfg", JSON.stringify(payload));
+    } catch {
+        /* quota exceeded — ignore */
+    }
+}
+
+function generateAndSave() {
     generate();
+    justGenerated.value = true;
+    setTimeout(() => {
+        justGenerated.value = false;
+    }, 800);
+
+    persistCurrentConfig();
+
+    nextTick(() => {
+        setTimeout(() => saveToHistory(), 20);
+    });
+}
+
+onMounted(() => {
+    generateAndSave();
 });
 
 const openMergeKeys = (tab: "update" | "merge") => {
-    // Write current AWG config to sessionStorage so MergeKeys can pick it up
-    const awg = currentAwg.value;
-    if (awg) {
-        const payload = {
-            cfg: {
-                jc: awg.jc,
-                jmin: awg.jmin,
-                jmax: awg.jmax,
-                i1: awg.i1,
-                i2: awg.i2,
-                i3: awg.i3,
-                i4: awg.i4,
-                i5: awg.i5,
-            },
-            ver: version.value,
-        };
-        try {
-            sessionStorage.setItem("awg_pending_cfg", JSON.stringify(payload));
-        } catch {
-            /* quota exceeded — ignore */
-        }
-    }
+    persistCurrentConfig();
     router.push({ path: "/mergekeys", query: { tab } });
 };
 

@@ -40,11 +40,16 @@ export interface LogEntry {
   ts: number;
 }
 
+import { useGeneratorWorker } from "./useGeneratorWorker";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Composable
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useGenerator() {
+  // Worker instance for large batches
+  const { isRunning: isWorkerRunning, generateInWorker } = useGeneratorWorker();
+
   // ── Версия и интенсивность ────────────────────────────────────────────────
 
   const version = ref<AWGVersion>("2.0");
@@ -154,15 +159,27 @@ export function useGenerator() {
 
   /**
    * runBatch — generate `batchCount` independent configs.
+   * Uses a Web Worker when count > 50 to keep the UI responsive.
    */
-  function runBatch() {
+  async function runBatch() {
     const count = batchCount.value;
     if (count < 1 || count > 1000) {
       addLog("⚠ Количество должно быть от 1 до 1000", "bad");
       return;
     }
-    batchResults.value = generateBatch(buildInput(), count);
-    addLog(`✦ Сгенерировано ${count} конфигов`, "ok");
+
+    try {
+      batchResults.value =
+        count > 50
+          ? await generateInWorker(buildInput(), count)
+          : generateBatch(buildInput(), count);
+      addLog(`✦ Сгенерировано ${count} конфигов`, "ok");
+    } catch (e) {
+      addLog(
+        `⚠ Batch ошибка: ${e instanceof Error ? e.message : String(e)}`,
+        "bad",
+      );
+    }
   }
 
   /**
@@ -677,6 +694,9 @@ export function useGenerator() {
     // Batch
     batchCount,
     batchResults,
+
+    // Worker
+    isWorkerRunning,
 
     // Проверка доменов
     domainStatus,
