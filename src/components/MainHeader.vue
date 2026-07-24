@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, onMounted, onUnmounted, type Component } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
     Menu,
     X,
@@ -8,33 +8,81 @@ import {
     Layers,
     Info,
     Download,
-    ExternalLink,
+    HelpCircle,
+    Rocket,
+    Languages,
+    Check,
     ChevronRight,
 } from "lucide-vue-next";
+import {
+    LOCALES,
+    LOCALE_NAMES,
+    localizePath,
+    splitLocalePath,
+    useI18n,
+    type Locale,
+    type MessageKey,
+} from "@/i18n";
 
 interface NavLink {
-    name: string;
+    /** Catalog key, resolved at render so the label follows the locale. */
+    labelKey: MessageKey;
+    /** Bare path; the locale prefix is applied when rendering. */
     to: string;
-    icon: any;
+    icon: Component;
 }
 
 const route = useRoute();
+const router = useRouter();
+const { locale, t, setLocale } = useI18n();
+
 const isMenuOpen = ref(false);
 const isScrolled = ref(false);
+const isLangOpen = ref(false);
 
 const faviconUrl = `${import.meta.env.BASE_URL}assets/favicon.svg`;
 
 const navLinks: NavLink[] = [
-    { name: "Генератор", to: "/", icon: Layers },
-    { name: "MergeKeys", to: "/mergekeys", icon: Download },
-    { name: "Установка", to: "/iaa", icon: ExternalLink },
-    { name: "О проекте", to: "/about", icon: Info },
+    { labelKey: "nav.generator", to: "/", icon: Layers },
+    { labelKey: "nav.mergekeys", to: "/mergekeys", icon: Download },
+    { labelKey: "nav.faq", to: "/faq", icon: HelpCircle },
+    { labelKey: "nav.vaiexia", to: "/vaiexia", icon: Rocket },
+    { labelKey: "nav.about", to: "/about", icon: Info },
 ];
 
-const isActive = (linkTo: string): boolean => {
-    if (linkTo === "/") return route.path === "/";
-    return route.path.startsWith(linkTo);
+/** Nav targets carry the active locale's prefix. */
+const resolvedLinks = computed(() =>
+    navLinks.map((link) => ({
+        ...link,
+        href: localizePath(link.to, locale.value),
+        label: t(link.labelKey),
+    })),
+);
+
+const isActive = (href: string): boolean => {
+    const root = localizePath("/", locale.value) || "/";
+    if (href === root) return route.path === href || route.path === `${href}/`;
+    return route.path === href || route.path.startsWith(`${href}/`);
 };
+
+/**
+ * Switch language while staying on the same page: strip the current prefix,
+ * re-apply the target one, and keep any hash so a deep-linked FAQ answer
+ * survives the switch.
+ */
+async function switchLocale(next: Locale): Promise<void> {
+    isLangOpen.value = false;
+    if (next === locale.value) return;
+
+    const { path } = splitLocalePath(route.path);
+    await setLocale(next);
+    await router.push({ path: localizePath(path, next), hash: route.hash });
+}
+
+function closeLang(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest(".lang-wrap")) isLangOpen.value = false;
+}
 
 const toggleMenu = () => {
     isMenuOpen.value = !isMenuOpen.value;
@@ -51,10 +99,14 @@ const handleScroll = () => {
 
 onMounted(() => {
     window.addEventListener("scroll", handleScroll);
+    document.addEventListener("click", closeLang);
 });
 
 onUnmounted(() => {
     window.removeEventListener("scroll", handleScroll);
+    document.removeEventListener("click", closeLang);
+    // Leaving with the menu open would strand the body scroll lock.
+    document.body.style.overflow = "";
 });
 </script>
 
@@ -62,7 +114,11 @@ onUnmounted(() => {
     <header class="header" :class="{ 'is-scrolled': isScrolled }">
         <div class="header-inner container">
             <!-- Brand Logo -->
-            <router-link to="/" class="brand" @click="isMenuOpen = false">
+            <router-link
+                :to="localizePath('/', locale)"
+                class="brand"
+                @click="isMenuOpen = false"
+            >
                 <div class="brand-logo">
                     <img :src="faviconUrl" alt="AWG Logo" />
                 </div>
@@ -76,22 +132,56 @@ onUnmounted(() => {
             <nav class="nav-desktop">
                 <div class="nav-list">
                     <router-link
-                        v-for="link in navLinks"
-                        :key="link.to"
-                        :to="link.to"
+                        v-for="link in resolvedLinks"
+                        :key="link.href"
+                        :to="link.href"
                         class="nav-link"
-                        :class="{ 'router-link-active': isActive(link.to) }"
+                        :class="{ 'router-link-active': isActive(link.href) }"
                     >
-                        <span>{{ link.name }}</span>
+                        <span>{{ link.label }}</span>
                     </router-link>
                 </div>
                 <div class="nav-sep"></div>
+
+                <!-- Language switcher -->
+                <div class="lang-wrap">
+                    <button
+                        class="lang-btn"
+                        :aria-label="t('lang.switch')"
+                        :aria-expanded="isLangOpen"
+                        aria-haspopup="listbox"
+                        @click="isLangOpen = !isLangOpen"
+                    >
+                        <Languages :size="18" />
+                        <span class="lang-code">{{
+                            locale.toUpperCase()
+                        }}</span>
+                    </button>
+
+                    <transition name="fade">
+                        <ul v-if="isLangOpen" class="lang-menu" role="listbox">
+                            <li v-for="loc in LOCALES" :key="loc">
+                                <button
+                                    class="lang-opt"
+                                    :class="{ active: loc === locale }"
+                                    role="option"
+                                    :aria-selected="loc === locale"
+                                    @click="switchLocale(loc)"
+                                >
+                                    <span>{{ LOCALE_NAMES[loc] }}</span>
+                                    <Check v-if="loc === locale" :size="14" />
+                                </button>
+                            </li>
+                        </ul>
+                    </transition>
+                </div>
+
                 <a
                     href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="gh-link"
-                    title="GitHub Repository"
+                    :title="t('nav.github')"
                 >
                     <Github :size="20" />
                 </a>
@@ -121,31 +211,53 @@ onUnmounted(() => {
         <transition name="slide">
             <div v-if="isMenuOpen" class="mobile-panel">
                 <div class="mobile-head">
-                    <span class="mobile-title">Меню</span>
+                    <span class="mobile-title">{{ t("nav.menu") }}</span>
                 </div>
                 <div class="mobile-links">
                     <router-link
-                        v-for="link in navLinks"
-                        :key="link.to"
-                        :to="link.to"
+                        v-for="link in resolvedLinks"
+                        :key="link.href"
+                        :to="link.href"
                         class="mobile-item"
-                        :class="{ active: isActive(link.to) }"
+                        :class="{ active: isActive(link.href) }"
                         @click="toggleMenu"
                     >
                         <component :is="link.icon" :size="20" class="m-icon" />
-                        <span class="m-text">{{ link.name }}</span>
+                        <span class="m-text">{{ link.label }}</span>
                         <ChevronRight :size="16" class="m-arrow" />
                     </router-link>
+                </div>
+
+                <div class="mobile-lang">
+                    <span class="mobile-lang-label">
+                        <Languages :size="15" />
+                        {{ t("lang.label") }}
+                    </span>
+                    <div class="mobile-lang-opts">
+                        <button
+                            v-for="loc in LOCALES"
+                            :key="loc"
+                            class="mobile-lang-opt"
+                            :class="{ active: loc === locale }"
+                            @click="
+                                switchLocale(loc);
+                                toggleMenu();
+                            "
+                        >
+                            {{ LOCALE_NAMES[loc] }}
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mobile-footer">
                     <a
                         href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                         target="_blank"
+                        rel="noopener noreferrer"
                         class="mobile-gh"
                     >
                         <Github :size="18" />
-                        <span>GitHub Repository</span>
+                        <span>{{ t("nav.github") }}</span>
                     </a>
                 </div>
             </div>
@@ -310,6 +422,125 @@ onUnmounted(() => {
     color: var(--accent);
     background: var(--bg2);
     border-color: var(--border);
+}
+
+/* ── Language switcher ────────────────────────────────────────────────── */
+.lang-wrap {
+    position: relative;
+}
+
+.lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 100px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lang-btn:hover,
+.lang-btn[aria-expanded="true"] {
+    color: var(--accent);
+    background: var(--bg2);
+    border-color: var(--border);
+}
+
+.lang-code {
+    letter-spacing: 0.04em;
+}
+
+.lang-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 60;
+    min-width: 150px;
+    margin: 0;
+    padding: 5px;
+    list-style: none;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.lang-opt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--fw);
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.lang-opt:hover {
+    background: var(--bg4);
+    color: var(--text);
+}
+
+.lang-opt.active {
+    color: var(--amber);
+}
+
+/* ── Mobile language switcher ─────────────────────────────────────────── */
+.mobile-lang {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.mobile-lang-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    color: var(--text2);
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mobile-lang-opts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.mobile-lang-opt {
+    padding: 9px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--bg2);
+    color: var(--text2);
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.mobile-lang-opt.active {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: var(--bg);
 }
 
 /* ── Mobile Toggle ────────────────────────────────────────────────────── */

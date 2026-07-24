@@ -46,6 +46,9 @@ import {
 import { useGenerator } from "@/composables/useGenerator";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
 import type { AWGVersion, Intensity } from "@/utils/generator";
+import { localizePath, useI18n } from "@/i18n";
+
+const { locale } = useI18n();
 
 const router = useRouter();
 
@@ -167,6 +170,9 @@ let historyIdCounter = 0;
 
 /** AWG 2.0 and 3.0 share the same S3/S4 + ranged-header parameter shape. */
 const isModernVersion = (v: AWGVersion) => v === "2.0" || v === "3.0";
+
+/** FAQ link, prefixed for the active locale. */
+const faqPath = computed(() => localizePath("/faq", locale.value));
 
 function saveToHistory() {
     if (!currentAwg.value || !plainText.value) return;
@@ -412,157 +418,6 @@ const paramGroups = computed((): ParamGroup[] => {
 
     return groups;
 });
-
-// ── FAQ data ───────────────────────────────────────────────────────────────
-
-const faqItems = [
-    {
-        icon: AlertTriangle,
-        title: "Важное ограничение — когда обфускация не помогает",
-        body: `<p>Обфускация параметров (H1–H4, S1–S4, I1–I5) позволяет скрыть
-<strong>тип трафика</strong> от систем глубокой инспекции пакетов (DPI).
-Однако она не влияет на доступность по <strong>IP-адресу сервера</strong>.</p>
-<p>Существует два принципиально разных метода блокировки:</p>
-<ul>
-<li><strong>DPI-блокировка</strong> — анализирует структуру пакетов. Здесь
-обфускация AWG работает в полную силу: DPI «видит» QUIC, TLS или SIP,
-а не WireGuard.</li>
-<li><strong>Блокировка по IP-адресу / «белые списки»</strong> — если провайдер
-полностью запрещает весь внешний трафик кроме явно разрешённых IP-адресов
-(или отключает внешний интернет), обфускация бессильна.</li>
-</ul>`,
-    },
-    {
-        icon: ShieldCheck,
-        title: "Динамические заголовки H1–H4",
-        body: `<p>WireGuard идентифицирует тип каждого пакета по первым байтам:
-<code>0x01</code> = Init, <code>0x02</code> = Response, <code>0x03</code> = Cookie Reply,
-<code>0x04</code> = Data. DPI-системы давно научились распознавать этот паттерн.</p>
-<p>AmneziaWG заменяет предсказуемые идентификаторы случайными значениями
-из заданных диапазонов:</p>
-<ul>
-<li><strong>H1</strong> — Init (инициализация хендшейка)</li>
-<li><strong>H2</strong> — Response (ответ сервера)</li>
-<li><strong>H3</strong> — Cookie Reply (защита от DoS)</li>
-<li><strong>H4</strong> — Data (передача данных)</li>
-</ul>
-<p>При старте тоннеля для каждого из 4 типов выбирается случайное число
-из заданного диапазона. Благодаря этому заголовок становится непредсказуемым для DPI.</p>`,
-    },
-    {
-        icon: Box,
-        title: "Рандомизация длин S1–S4",
-        body: `<p>В классическом WireGuard длина каждого типа пакета строго фиксирована.
-Это делает WireGuard тривиально идентифицируемым по статистике размеров пакетов.</p>
-<p>AmneziaWG добавляет псевдослучайный префикс к каждому типу пакетов:</p>
-<ul>
-<li><code>len(init) = 148 + random(0..S1)</code></li>
-<li><code>len(resp) = 92 + random(0..S2)</code></li>
-<li><code>len(cookie) = 64 + random(1..S3)</code></li>
-<li><code>len(data) = payload + random(1..S4)</code></li>
-</ul>
-<p><strong>Ограничения:</strong> <code>S1 + 56 ≠ S2</code> и <code>S4 ≤ 32</code>.
-Генератор проверяет эти правила автоматически.</p>`,
-    },
-    {
-        icon: VenetianMask,
-        title: "Сигнатуры CPS (I1–I5) — Custom Protocol Signature",
-        body: `<p>Перед отправкой первого реального пакета хендшейка
-клиент может послать до пяти кастомных UDP-пакетов, описанных в формате CPS.
-Главный — <strong>I1</strong> — содержит «снимок» реального протокола
-(например, QUIC Initial handshake). Остальные I2–I5 наращивают энтропию.</p>
-<p><strong>Типы тегов:</strong></p>
-<ul>
-<li><code>&lt;b 0x...&gt;</code> — статические байты</li>
-<li><code>&lt;c&gt;</code> — счётчик пакетов (32-bit)</li>
-<li><code>&lt;t&gt;</code> — Unix timestamp (32-bit)</li>
-<li><code>&lt;r N&gt;</code> — криптостойкие случайные байты</li>
-<li><code>&lt;rc N&gt;</code> — случайные ASCII-символы</li>
-<li><code>&lt;rd N&gt;</code> — случайные десятичные цифры</li>
-</ul>
-<p class="notice">⚠ Тег <code>&lt;c&gt;</code> может вызывать <strong>ErrorCode 1000</strong>
-в старых версиях AWG-go.</p>`,
-    },
-    {
-        icon: TrainFront,
-        title: "Junk-train (Jc, Jmin, Jmax)",
-        body: `<p>Сразу после отправки CPS-цепочки следует серия из
-<strong>Jc</strong> псевдослучайных пакетов, длина каждого — случайное число
-в диапазоне от <strong>Jmin</strong> до <strong>Jmax</strong> байт.</p>
-<p>Цель — <strong>размыть временной и размерный профиль</strong> старта сессии.</p>
-<ul>
-<li>Jc = 3–7 — оптимальный баланс</li>
-<li>Jc > 10 — замедляет установку соединения</li>
-<li>Для AWG 1.0: Jc ≥ 4 и Jmax > 81</li>
-</ul>`,
-    },
-    {
-        icon: VenetianMask,
-        title: "Профили мимикрии — как работает маскировка",
-        body: `<p>DPI-системы анализируют первые байты соединения. Профили мимикрии подделывают
-структуру пакетов под популярные протоколы:</p>
-<ul>
-<li><strong>QUIC Initial</strong> — наиболее надёжный в 2026 году</li>
-<li><strong>QUIC 0-RTT</strong> — Early Data при возобновлении сессии</li>
-<li><strong>TLS 1.3 Client Hello</strong> — HTTPS-подобный трафик</li>
-<li><strong>DTLS 1.3</strong> — WebRTC/STUN рукопожатие</li>
-<li><strong>HTTP/3</strong> — расширенный набор QUIC-типов</li>
-<li><strong>SIP</strong> — VoIP-сигнализация</li>
-<li><strong>WireGuard Noise_IK</strong> — без мимикрии, с BFP-паддингом</li>
-</ul>`,
-    },
-    {
-        icon: Cookie,
-        title: "Пакет Cookie Reply (H3, S3)",
-        body: `<p>Cookie Reply используется для защиты от DoS-атак.
-AmneziaWG маскирует его аналогично другим типам пакетов:</p>
-<ul>
-<li>Тип сообщения заменяется на случайное значение из диапазона <strong>H3</strong></li>
-<li>Добавляется случайный префикс длиной 1..<strong>S3</strong> байт</li>
-</ul>
-<p>Поддерживается только в AWG 2.0.</p>`,
-    },
-    {
-        icon: Lock,
-        title: "Безопасность и аудит",
-        body: `<p>Криптографически AmneziaWG идентичен оригинальному WireGuard:
-<strong>Curve25519</strong>, <strong>ChaCha20-Poly1305</strong>,
-<strong>Noise_IK</strong>, <strong>BLAKE2s</strong>.</p>
-<p>Обфускация работает исключительно на транспортном уровне — зашифрованная
-полезная нагрузка остаётся нетронутой. Все результаты аудитов WireGuard
-применимы к AmneziaWG.</p>`,
-    },
-    {
-        icon: Router,
-        title: "Настройка на роутерах",
-        body: `<ul>
-<li><strong>Keenetic</strong> — через OPKG-пакет <code>amneziawg-go</code></li>
-<li><strong>OpenWrt</strong> — пакеты <code>kmod-amneziawg</code> и <code>amneziawg-tools</code></li>
-<li><strong>MikroTik</strong> — нет нативной поддержки, нужна Linux VM</li>
-</ul>
-<p>При настройке на роутере рекомендуется MTU 1280–1360 байт.</p>`,
-    },
-    {
-        icon: ShieldCheck,
-        title: "Совместимость с обычным WireGuard",
-        body: `<p>Клиент AWG с включённой обфускацией <strong>не подключится</strong>
-к стандартному WireGuard-серверу. Однако если выставить все параметры в ноль —
-AWG-клиент будет вести себя как обычный WireGuard.</p>
-<p>Обратная совместимость: стандартный WireGuard-клиент не сможет подключиться
-к AWG-серверу с обфускацией.</p>`,
-    },
-    {
-        icon: Gauge,
-        title: "Что делать, если скорость упала?",
-        body: `<ol>
-<li>Уменьшите Junk-train (Jc до 3 или 0)</li>
-<li>Проверьте MTU (попробуйте 1280 или 1360)</li>
-<li>Снизьте интенсивность (HIGH → MEDIUM)</li>
-<li>Попробуйте другой профиль мимикрии</li>
-<li>Отключите Browser Fingerprint</li>
-</ol>`,
-    },
-];
 </script>
 
 <template>
@@ -1610,54 +1465,23 @@ AWG-клиент будет вести себя как обычный WireGuard.
                 </div>
             </div>
 
-            <!-- ── FAQ / Knowledge Base ─────────────────────────────────── -->
-            <section class="faq-section">
-                <div class="faq-section-head">
-                    <BookOpen :size="22" class="text-accent" />
-                    <h2>База знаний</h2>
+            <!-- ── Knowledge base → FAQ ─────────────────────────────────── -->
+            <section class="kb-cta">
+                <div class="kb-cta-icon">
+                    <BookOpen :size="22" />
                 </div>
-
-                <div class="alert alert-warn">
-                    <AlertTriangle :size="16" class="alert-icon" />
-                    <div class="alert-content">
-                        <b>Блокировка по IP.</b> Если провайдер блокирует
-                        диапазоны IP-адресов датацентров, обфускация не поможет.
-                        Она скрывает только тип протокола.
-                    </div>
+                <div class="kb-cta-body">
+                    <h2>База знаний переехала в FAQ</h2>
+                    <p>
+                        Разбор параметров, различия версий 1.0–3.0, подбор
+                        конфигурации и типичные проблемы — теперь в одном месте,
+                        с поиском и фильтрами.
+                    </p>
                 </div>
-
-                <div class="faq-list">
-                    <div
-                        v-for="(item, idx) in faqItems"
-                        :key="idx"
-                        class="faq-item"
-                        :class="{ open: activeFaqIdx === idx }"
-                    >
-                        <button
-                            class="faq-trigger"
-                            @click="
-                                activeFaqIdx = activeFaqIdx === idx ? null : idx
-                            "
-                        >
-                            <component
-                                :is="item.icon"
-                                :size="18"
-                                class="faq-icon"
-                            />
-                            <span class="faq-title">{{ item.title }}</span>
-                            <ChevronDown
-                                :size="16"
-                                class="faq-arrow"
-                                :class="{ rotated: activeFaqIdx === idx }"
-                            />
-                        </button>
-                        <transition name="expand">
-                            <div v-show="activeFaqIdx === idx" class="faq-body">
-                                <div v-html="item.body" class="prose"></div>
-                            </div>
-                        </transition>
-                    </div>
-                </div>
+                <router-link :to="faqPath" class="btn btn-secondary kb-cta-btn">
+                    <span>Открыть FAQ</span>
+                    <ArrowRight :size="15" />
+                </router-link>
             </section>
         </div>
     </div>
@@ -3072,158 +2896,53 @@ AWG-клиент будет вести себя как обычный WireGuard.
     flex-shrink: 0;
 }
 
-/* ── FAQ Section ──────────────────────────────────────────────────────── */
-.faq-section {
-    margin-top: 4rem;
-}
-
-.faq-section-head {
+/* ── Knowledge base → FAQ ─────────────────────────────────────────────── */
+.kb-cta {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-}
-
-.faq-section-head h2 {
-    margin: 0;
-}
-
-.faq-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 1.5rem;
-}
-
-@media (min-width: 1100px) {
-    .faq-list {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-}
-
-.faq-item {
+    gap: 16px;
+    margin-top: 2rem;
+    padding: 20px;
     background: var(--bg2);
     border: 1px solid var(--border2);
-    border-radius: var(--radius);
-    overflow: hidden;
-    transition: all var(--trans-fast);
+    border-radius: var(--radius-lg);
 }
 
-.faq-item.open {
-    border-color: var(--border);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-@media (min-width: 1100px) {
-    .faq-item.open {
-        grid-column: 1 / -1;
-    }
-}
-
-.faq-trigger {
-    width: 100%;
-    padding: 14px 18px;
+.kb-cta-icon {
     display: flex;
     align-items: center;
-    gap: 14px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-family: var(--fw);
-    text-align: left;
-    transition: background var(--trans-fast);
-}
-
-.faq-trigger:hover {
-    background: var(--surface);
-}
-
-.faq-icon {
-    color: var(--accent);
+    justify-content: center;
     flex-shrink: 0;
-    opacity: 0.7;
-    transition: all var(--trans-fast);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius);
+    background: var(--bg4);
+    color: var(--amber);
 }
 
-.faq-item.open .faq-icon {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.faq-title {
+.kb-cta-body {
     flex: 1;
-    font-weight: 600;
-    font-size: 0.9rem;
-    line-height: 1.3;
+    min-width: 0;
 }
 
-.faq-arrow {
-    color: var(--text3);
-    transition: transform 0.25s var(--ease);
-    flex-shrink: 0;
-}
-
-.faq-arrow.rotated {
-    transform: rotate(180deg);
-}
-
-.faq-body {
-    padding: 0 18px 18px 50px;
-}
-
-/* Prose: styled HTML content from FAQ */
-.prose {
-    color: var(--text2);
-    font-size: 0.88rem;
-    line-height: 1.7;
-}
-
-.prose :deep(p) {
-    margin-bottom: 12px;
-}
-
-.prose :deep(ul),
-.prose :deep(ol) {
-    margin-bottom: 12px;
-    padding-left: 20px;
-}
-
-.prose :deep(li) {
-    margin-bottom: 6px;
-}
-
-.prose :deep(code) {
-    background: rgba(232, 168, 64, 0.08);
-    border: 1px solid rgba(232, 168, 64, 0.1);
-    color: var(--amber2);
-    padding: 1px 5px;
-    border-radius: 4px;
-    font-size: 0.85em;
-}
-
-.prose :deep(pre) {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    font-size: 0.8rem;
-    overflow-x: auto;
-    margin-bottom: 12px;
-}
-
-.prose :deep(strong) {
+.kb-cta-body h2 {
+    margin: 0 0 5px;
+    font-family: var(--fw);
+    font-weight: 800;
+    font-size: 1rem;
     color: var(--text);
 }
 
-.prose :deep(.notice) {
-    padding: 10px 14px;
-    background: var(--surface);
-    border-left: 3px solid var(--amber);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    font-size: 0.84rem;
+.kb-cta-body p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
     color: var(--text2);
+    text-wrap: pretty;
+}
+
+.kb-cta-btn {
+    flex-shrink: 0;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
@@ -3267,17 +2986,15 @@ AWG-клиент будет вести себя как обычный WireGuard.
         flex: 1;
     }
 
-    .faq-body {
-        padding: 0 14px 14px 14px;
+    .kb-cta {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
     }
 
-    .faq-trigger {
-        padding: 12px 14px;
-        gap: 10px;
-    }
-
-    .faq-title {
-        font-size: 0.84rem;
+    .kb-cta-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .history-entry {
