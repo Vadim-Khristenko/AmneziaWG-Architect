@@ -2,7 +2,7 @@
  * AmneziaWG Architect — Generator public types.
  */
 
-export type AWGVersion = "1.0" | "1.5" | "2.0";
+export type AWGVersion = "1.0" | "1.5" | "2.0" | "3.0";
 export type Intensity = "low" | "medium" | "high";
 
 export type MimicProfile =
@@ -59,6 +59,42 @@ export interface GeneratorInput {
 
   /** Target client for compatibility filtering. */
   clientId: string;
+
+  /**
+   * AWG 3.0 — emit a HeaderProtectionKey (ChaCha20 header/message encryption).
+   * Forces S1–S4 ≥ 12, because the cipher nonce is read from the S-padding.
+   */
+  useHeaderProtection: boolean;
+
+  /** AWG 3.0 — emit ContentPaddingAddition (extra random transport padding). */
+  useContentPadding: boolean;
+
+  /** AWG 3.0 — randomise the protocol timers instead of the fixed constants. */
+  useRandomTimings: boolean;
+}
+
+/**
+ * AWG 3.0 parameter block.
+ *
+ * Verified against amneziawg-go v3.0.1 (`device/uapi.go`, `device/send.go`,
+ * `device/timers.go`) and amneziawg-tools `feat/awg3` (`src/config.c`).
+ */
+export interface AWG3Params {
+  /**
+   * 32-byte ChaCha20 key, base64 with padding — the same encoding `.conf`
+   * uses for PrivateKey/PresharedKey. Empty string = feature disabled.
+   */
+  headerProtectionKey: string;
+
+  /** Extra random padding per transport packet, "lo-hi" seconds-free range. */
+  contentPaddingAddition: string;
+
+  /** Randomised protocol timers, each a "lo-hi" range. Empty = client default. */
+  rekeyAfterTime: string;
+  rekeyTimeout: string;
+  rejectAfterTime: string;
+  keepaliveTimeout: string;
+  maxHandshakeAttempts: string;
 }
 
 /** Generated AmneziaWG obfuscation configuration. */
@@ -95,6 +131,9 @@ export interface AWGConfig {
   i3: string;
   i4: string;
   i5: string;
+
+  /** AWG 3.0 block — present only when version === "3.0". */
+  awg3?: AWG3Params;
 }
 
 /** Validation result for a single AWG parameter. */
@@ -102,6 +141,11 @@ export interface ValidationFinding {
   field: string;
   level: "error" | "warn";
   msg: string;
+  /**
+   * Stable machine-readable identifier for the rule that fired. `msg` stays the
+   * human-readable Russian fallback; the UI translates by `code` when it can.
+   */
+  code?: string;
 }
 
 /** Compatibility descriptor for a concrete AWG client implementation. */

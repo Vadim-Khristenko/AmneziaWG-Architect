@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, computed, nextTick, type Component } from "vue";
 import { useRouter } from "vue-router";
 import {
+    KeyRound,
     Cpu,
     Settings2,
     RefreshCw,
@@ -164,6 +165,9 @@ const historyEntries = ref<HistoryEntry[]>([]);
 const showHistory = ref(false);
 let historyIdCounter = 0;
 
+/** AWG 2.0 and 3.0 share the same S3/S4 + ranged-header parameter shape. */
+const isModernVersion = (v: AWGVersion) => v === "2.0" || v === "3.0";
+
 function saveToHistory() {
     if (!currentAwg.value || !plainText.value) return;
     const awg = currentAwg.value;
@@ -176,7 +180,7 @@ function saveToHistory() {
         S2: awg.s2,
     };
 
-    if (v === "2.0") {
+    if (isModernVersion(v)) {
         params.S3 = awg.s3 ?? 0;
         params.S4 = awg.s4 ?? 0;
         params.H1 = awg.h1;
@@ -282,7 +286,7 @@ interface ParamItem {
 interface ParamGroup {
     key: string;
     title: string;
-    icon: string;
+    icon: Component;
     items: ParamItem[];
     copyText: string;
 }
@@ -302,7 +306,7 @@ const paramGroups = computed((): ParamGroup[] => {
     groups.push({
         key: "junk",
         title: "Junk Train",
-        icon: "🚂",
+        icon: TrainFront,
         items: junkItems,
         copyText: junkItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
     });
@@ -319,7 +323,7 @@ const paramGroups = computed((): ParamGroup[] => {
     groups.push({
         key: "sizes",
         title: "Размеры пакетов",
-        icon: "📦",
+        icon: Box,
         items: sizeItems,
         copyText: sizeItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
     });
@@ -344,7 +348,7 @@ const paramGroups = computed((): ParamGroup[] => {
     groups.push({
         key: "headers",
         title: "Заголовки",
-        icon: "🔑",
+        icon: KeyRound,
         items: headerItems,
         copyText: headerItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
     });
@@ -361,10 +365,49 @@ const paramGroups = computed((): ParamGroup[] => {
         groups.push({
             key: "cps",
             title: v === "1.5" ? "CPS (только клиент)" : "CPS Signatures",
-            icon: "🎭",
+            icon: VenetianMask,
             items: cpsItems,
             copyText: cpsItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
         });
+    }
+
+    // AWG 3.0 — only the parameters that are actually enabled
+    if (v === "3.0" && p.awg3) {
+        const a = p.awg3;
+        const awg3Items: ParamItem[] = [];
+        if (a.headerProtectionKey)
+            awg3Items.push({
+                label: "HeaderProtectionKey",
+                value: a.headerProtectionKey,
+                wide: true,
+            });
+        if (a.contentPaddingAddition)
+            awg3Items.push({
+                label: "ContentPaddingAddition",
+                value: a.contentPaddingAddition,
+                wide: true,
+            });
+        for (const [label, value] of [
+            ["RekeyAfterTime", a.rekeyAfterTime],
+            ["RekeyTimeout", a.rekeyTimeout],
+            ["RejectAfterTime", a.rejectAfterTime],
+            ["KeepaliveTimeout", a.keepaliveTimeout],
+            ["MaxHandshakeAttempts", a.maxHandshakeAttempts],
+        ] as const) {
+            if (value) awg3Items.push({ label, value, wide: true });
+        }
+
+        if (awg3Items.length) {
+            groups.push({
+                key: "awg3",
+                title: "AmneziaWG 3.0",
+                icon: ShieldCheck,
+                items: awg3Items,
+                copyText: awg3Items
+                    .map((i) => `${i.label} = ${i.value}`)
+                    .join("\n"),
+            });
+        }
     }
 
     return groups;
@@ -528,7 +571,7 @@ AWG-клиент будет вести себя как обычный WireGuard.
             <!-- ── Hero ────────────────────────────────────────────────── -->
             <header class="hero">
                 <div class="hero-badge badge badge-amber">
-                    <Sparkles :size="12" /> AWG 2.0 READY
+                    <Sparkles :size="12" /> AWG 3.0 READY
                 </div>
                 <h1 class="hero-title">
                     <span class="hero-brand">AmneziaWG</span>
@@ -543,6 +586,15 @@ AWG-клиент будет вести себя как обычный WireGuard.
             <!-- ── Version Tabs ────────────────────────────────────────── -->
             <div class="version-bar">
                 <div class="ver-tabs">
+                    <button
+                        class="ver-tab ver-tab-new"
+                        :class="{ active: version === '3.0' }"
+                        @click="setVersion('3.0' as AWGVersion)"
+                    >
+                        <ShieldCheck :size="14" />
+                        <span>AWG 3.0</span>
+                        <span class="ver-tag">NEW</span>
+                    </button>
                     <button
                         class="ver-tab"
                         :class="{ active: version === '2.0' }"
@@ -598,6 +650,89 @@ AWG-клиент будет вести себя как обычный WireGuard.
                         <b>AWG 1.5:</b> S3, S4 не поддерживаются. I1–I5 работают
                         только на стороне клиента.
                     </div>
+                </div>
+            </transition>
+
+            <transition name="fade">
+                <div v-if="version === '3.0'" class="alert alert-info">
+                    <ShieldCheck :size="16" class="alert-icon" />
+                    <div class="alert-content">
+                        <b>AWG 3.0:</b> шифрование заголовков ChaCha20,
+                        случайный паддинг транспорта и рандомизация таймеров.
+                        Требуется <code>amneziawg-go&nbsp;≥&nbsp;3.0.1</code> и
+                        <code>amneziawg-tools</code> с поддержкой 3.0 —
+                        <b>на обеих сторонах</b>: ключ
+                        <code>HeaderProtectionKey</code> общий, клиент и сервер
+                        должны совпадать.
+                    </div>
+                </div>
+            </transition>
+
+            <!-- ── AWG 3.0 options ─────────────────────────────────────── -->
+            <transition name="expand">
+                <div v-if="version === '3.0'" class="awg3-panel">
+                    <div class="awg3-head">
+                        <ShieldCheck :size="16" />
+                        <span>Параметры AmneziaWG 3.0</span>
+                    </div>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useHeaderProtection"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>HeaderProtectionKey</b>
+                            <small>
+                                ChaCha20 поверх заголовков. Хендшейк и cookie
+                                шифруются целиком, транспорт — только заголовок.
+                                Nonce берётся из паддинга, поэтому S1–S4
+                                автоматически поднимаются до&nbsp;12&nbsp;байт.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useContentPadding"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>ContentPaddingAddition</b>
+                            <small>
+                                Случайный добавочный паддинг каждого
+                                транспортного пакета вместо выравнивания по 16
+                                байт — размывает гистограмму размеров.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useRandomTimings"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>Рандомизация таймеров</b>
+                            <small>
+                                RekeyAfterTime, RekeyTimeout, RejectAfterTime,
+                                KeepaliveTimeout и MaxHandshakeAttempts задаются
+                                диапазонами — фиксированный ритм хендшейков
+                                перестаёт быть отпечатком.
+                            </small>
+                        </span>
+                    </label>
+
+                    <p class="awg3-note">
+                        <Info :size="13" />
+                        Теги <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code> и
+                        <code>&lt;dz&gt;</code> в v3.0.1 разбираются, но ещё не
+                        подключены к отправке пакетов — это задел под AWG 4.0,
+                        поэтому генератор их не выдаёт.
+                    </p>
                 </div>
             </transition>
 
@@ -1275,9 +1410,11 @@ AWG-клиент будет вести себя как обычный WireGuard.
                                 >
                                     <div class="param-group-head">
                                         <div class="param-group-title">
-                                            <span class="param-group-icon">{{
-                                                group.icon
-                                            }}</span>
+                                            <component
+                                                :is="group.icon"
+                                                :size="14"
+                                                class="param-group-icon"
+                                            />
                                             <span>{{ group.title }}</span>
                                         </div>
                                         <button
@@ -1729,6 +1866,112 @@ AWG-клиент будет вести себя как обычный WireGuard.
     background: var(--amber);
     color: var(--bg);
     box-shadow: 0 2px 8px rgba(232, 168, 64, 0.25);
+}
+
+/* ── AWG 3.0 ──────────────────────────────────────────────────────────── */
+.ver-tag {
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--green-bg);
+    color: var(--green);
+    line-height: 1;
+}
+
+.ver-tab.active .ver-tag {
+    background: rgba(10, 8, 6, 0.22);
+    color: var(--bg);
+}
+
+.awg3-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+}
+
+.awg3-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--amber);
+    font-family: var(--fw);
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+}
+
+.awg3-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: border-color var(--trans-fast), background var(--trans-fast);
+}
+
+.awg3-opt:hover {
+    border-color: var(--border3);
+    background: var(--surface-hover);
+}
+
+.awg3-opt input {
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: var(--amber);
+    cursor: pointer;
+}
+
+.awg3-opt-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.awg3-opt-body b {
+    font-family: var(--fm);
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+.awg3-opt-body small {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--text3);
+}
+
+.awg3-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--text4);
+}
+
+.awg3-note svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.awg3-note code,
+.alert-content code {
+    font-family: var(--fm);
+    font-size: 0.92em;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--bg4);
+    color: var(--amber2);
 }
 
 /* ── History Toggle + Badge ───────────────────────────────────────────── */
@@ -2427,7 +2670,8 @@ AWG-клиент будет вести себя как обычный WireGuard.
 }
 
 .param-group-icon {
-    font-size: 0.9rem;
+    flex-shrink: 0;
+    color: var(--amber);
 }
 
 .param-group-grid {

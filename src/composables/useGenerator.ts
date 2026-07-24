@@ -24,6 +24,8 @@ import {
   type MimicProfile,
   type BrowserProfile,
   PROFILE_LABELS,
+  renderConf,
+  renderConfLines,
 } from "../utils/generator";
 import { confToVpn, buildVpnConfig } from "../utils/awgFormat";
 import type { VpnConfig } from "../utils/awgFormat";
@@ -92,6 +94,15 @@ export function useGenerator() {
 
     // Целевой клиент для фильтрации совместимости
     clientId: DEFAULT_CLIENT_ID,
+
+    // ── AWG 3.0 ─────────────────────────────────────────────────────────────
+    // Защита заголовков ChaCha20. Поднимает S1–S4 до 12 байт: из паддинга
+    // берётся nonce шифра.
+    useHeaderProtection: true,
+    // Случайный паддинг транспортных пакетов (вместо выравнивания по 16).
+    useContentPadding: true,
+    // Рандомизация таймеров протокола вместо фиксированных констант.
+    useRandomTimings: true,
   });
 
   // ── Состояние UI ──────────────────────────────────────────────────────────
@@ -134,6 +145,9 @@ export function useGenerator() {
       routerMode: config.routerMode,
       useExtremeMax: config.useExtremeMax,
       clientId: config.clientId,
+      useHeaderProtection: config.useHeaderProtection,
+      useContentPadding: config.useContentPadding,
+      useRandomTimings: config.useRandomTimings,
     };
   }
 
@@ -190,65 +204,11 @@ export function useGenerator() {
       return;
     }
 
-    const blocks = batchResults.value.map((p, idx) => {
-      const lines: string[] = [
-        `# AmneziaWG ${p.version} — config ${idx + 1}/${batchResults.value.length}`,
-        "[Interface]",
-        "# PrivateKey = <ключ>",
-        "# Address = 10.0.0.2/32",
-      ];
-
-      if (p.version === "2.0") {
-        lines.push(
-          `H1 = ${p.h1}`,
-          `H2 = ${p.h2}`,
-          `H3 = ${p.h3}`,
-          `H4 = ${p.h4}`,
-          `S1 = ${p.s1}`,
-          `S2 = ${p.s2}`,
-          `S3 = ${p.s3}`,
-          `S4 = ${p.s4}`,
-          `Jc = ${p.jc}`,
-          `Jmin = ${p.jmin}`,
-          `Jmax = ${p.jmax}`,
-          `I1 = ${p.i1}`,
-          `I2 = ${p.i2}`,
-          `I3 = ${p.i3}`,
-          `I4 = ${p.i4}`,
-          `I5 = ${p.i5}`,
-        );
-      } else if (p.version === "1.5") {
-        lines.push(
-          `H1 = ${p.h1s}`,
-          `H2 = ${p.h2s}`,
-          `H3 = ${p.h3s}`,
-          `H4 = ${p.h4s}`,
-          `S1 = ${p.s1}`,
-          `S2 = ${p.s2}`,
-          `Jc = ${p.jc}`,
-          `Jmin = ${p.jmin}`,
-          `Jmax = ${p.jmax}`,
-          `I1 = ${p.i1}`,
-          `I2 = ${p.i2}`,
-          `I3 = ${p.i3}`,
-          `I4 = ${p.i4}`,
-          `I5 = ${p.i5}`,
-        );
-      } else {
-        lines.push(
-          `H1 = ${p.h1s}`,
-          `H2 = ${p.h2s}`,
-          `H3 = ${p.h3s}`,
-          `H4 = ${p.h4s}`,
-          `S1 = ${p.s1}`,
-          `S2 = ${p.s2}`,
-          `Jc = ${p.jc}`,
-          `Jmin = ${p.jmin}`,
-          `Jmax = ${p.jmax}`,
-        );
-      }
-      return lines.join("\n");
-    });
+    const blocks = batchResults.value.map((p, idx) =>
+      renderConf(p, {
+        caption: `config ${idx + 1}/${batchResults.value.length}`,
+      }),
+    );
 
     downloadBlob(
       blocks.join("\n\n" + "=".repeat(40) + "\n\n"),
@@ -303,68 +263,7 @@ export function useGenerator() {
   const plainText = computed((): string => {
     const p = currentAwg.value;
     if (!p) return "";
-    const v = version.value;
-
-    const lines: string[] = [
-      `# AmneziaWG ${v}`,
-      "[Interface]",
-      "# PrivateKey = <ключ>",
-      "# Address = 10.0.0.2/32",
-    ];
-
-    if (v === "2.0") {
-      lines.push(
-        `H1 = ${p.h1}`,
-        `H2 = ${p.h2}`,
-        `H3 = ${p.h3}`,
-        `H4 = ${p.h4}`,
-        `S1 = ${p.s1}`,
-        `S2 = ${p.s2}`,
-        `S3 = ${p.s3}`,
-        `S4 = ${p.s4}`,
-        `Jc = ${p.jc}`,
-        `Jmin = ${p.jmin}`,
-        `Jmax = ${p.jmax}`,
-        `I1 = ${p.i1}`,
-        `I2 = ${p.i2}`,
-        `I3 = ${p.i3}`,
-        `I4 = ${p.i4}`,
-        `I5 = ${p.i5}`,
-      );
-    } else if (v === "1.5") {
-      lines.push(
-        `H1 = ${p.h1s}`,
-        `H2 = ${p.h2s}`,
-        `H3 = ${p.h3s}`,
-        `H4 = ${p.h4s}`,
-        `S1 = ${p.s1}`,
-        `S2 = ${p.s2}`,
-        `Jc = ${p.jc}`,
-        `Jmin = ${p.jmin}`,
-        `Jmax = ${p.jmax}`,
-        "# I1-I5 только клиент (AWG 1.5):",
-        `I1 = ${p.i1}`,
-        `I2 = ${p.i2}`,
-        `I3 = ${p.i3}`,
-        `I4 = ${p.i4}`,
-        `I5 = ${p.i5}`,
-      );
-    } else {
-      // AWG 1.0 — нет CPS
-      lines.push(
-        `H1 = ${p.h1s}`,
-        `H2 = ${p.h2s}`,
-        `H3 = ${p.h3s}`,
-        `H4 = ${p.h4s}`,
-        `S1 = ${p.s1}`,
-        `S2 = ${p.s2}`,
-        `Jc = ${p.jc}`,
-        `Jmin = ${p.jmin}`,
-        `Jmax = ${p.jmax}`,
-      );
-    }
-
-    return lines.join("\n");
+    return renderConf(p);
   });
 
   /**
@@ -374,89 +273,7 @@ export function useGenerator() {
   const previewLines = computed(() => {
     const p = currentAwg.value;
     if (!p) return [];
-    const v = version.value;
-
-    type LineType = "comment" | "kv" | "section";
-    const lines: { key: string; value: string; type: LineType }[] = [];
-
-    const cm = (v: string) => ({
-      key: "",
-      value: v,
-      type: "comment" as LineType,
-    });
-    const kv = (k: string, val: string) => ({
-      key: k,
-      value: val,
-      type: "kv" as LineType,
-    });
-
-    lines.push(cm(`# AmneziaWG ${v}`));
-    lines.push(cm("[Interface]"));
-    lines.push(cm("# PrivateKey = <ключ>  Address = 10.0.0.2/32"));
-
-    if (v === "2.0") {
-      lines.push(
-        kv("H1", p.h1),
-        kv("H2", p.h2),
-        kv("H3", p.h3),
-        kv("H4", p.h4),
-      );
-      lines.push(
-        kv("S1", String(p.s1)),
-        kv("S2", String(p.s2)),
-        kv("S3", String(p.s3)),
-        kv("S4", String(p.s4)),
-      );
-      lines.push(
-        kv("Jc", String(p.jc)),
-        kv("Jmin", String(p.jmin)),
-        kv("Jmax", String(p.jmax)),
-      );
-      lines.push(
-        kv("I1", p.i1),
-        kv("I2", p.i2),
-        kv("I3", p.i3),
-        kv("I4", p.i4),
-        kv("I5", p.i5),
-      );
-    } else if (v === "1.5") {
-      lines.push(
-        kv("H1", String(p.h1s)),
-        kv("H2", String(p.h2s)),
-        kv("H3", String(p.h3s)),
-        kv("H4", String(p.h4s)),
-      );
-      lines.push(kv("S1", String(p.s1)), kv("S2", String(p.s2)));
-      lines.push(
-        kv("Jc", String(p.jc)),
-        kv("Jmin", String(p.jmin)),
-        kv("Jmax", String(p.jmax)),
-      );
-      lines.push(cm("# I1-I5 только клиент (AWG 1.5):"));
-      lines.push(
-        kv("I1", p.i1),
-        kv("I2", p.i2),
-        kv("I3", p.i3),
-        kv("I4", p.i4),
-        kv("I5", p.i5),
-      );
-    } else {
-      lines.push(
-        kv("H1", String(p.h1s)),
-        kv("H2", String(p.h2s)),
-        kv("H3", String(p.h3s)),
-        kv("H4", String(p.h4s)),
-      );
-      lines.push(kv("S1", String(p.s1)), kv("S2", String(p.s2)));
-      lines.push(
-        kv("Jc", String(p.jc)),
-        kv("Jmin", String(p.jmin)),
-        kv("Jmax", String(p.jmax)),
-      );
-      lines.push(cm("# I1-I5 не поддерживаются в AWG 1.0"));
-    }
-
-    return lines;
+    return renderConfLines(p, { preview: true });
   });
 
   /**
@@ -639,8 +456,13 @@ export function useGenerator() {
   /** true для AWG 1.0 (CPS не поддерживается) */
   const isCPSSupported = computed(() => version.value !== "1.0");
 
-  /** true для AWG 2.0 (S3/S4/H3/H4 диапазоны) */
-  const isFullObfuscation = computed(() => version.value === "2.0");
+  /** true для AWG 2.0+ (S3/S4 и H1–H4 диапазонами) */
+  const isFullObfuscation = computed(
+    () => version.value === "2.0" || version.value === "3.0",
+  );
+
+  /** true только для AWG 3.0 (защита заголовков, паддинг, тайминги) */
+  const isAwg3 = computed(() => version.value === "3.0");
 
   /** Метка режима интенсивности (для отображения в UI) */
   const intensityLabel = computed(() => intensity.value.toUpperCase());
@@ -684,6 +506,7 @@ export function useGenerator() {
     showCustomHost,
     isCPSSupported,
     isFullObfuscation,
+    isAwg3,
     isRouterMode,
     intensityLabel,
     iterDots,

@@ -21,6 +21,9 @@ const baseInput: GeneratorInput = {
   routerMode: false,
   useExtremeMax: false,
   clientId: "amneziavpn",
+  useHeaderProtection: true,
+  useContentPadding: true,
+  useRandomTimings: true,
 };
 
 describe("generateBatch", () => {

@@ -2,8 +2,17 @@
  * AmneziaWG Architect — cross-parameter validators for generated configs.
  */
 
-import type { AWGConfig, ValidationFinding, ClientCapability } from "./types";
+import type {
+  AWGConfig,
+  AWG3Params,
+  ValidationFinding,
+  ClientCapability,
+} from "./types";
 import { CLIENTS } from "./clients";
+import {
+  HEADER_PROTECTION_KEY_BYTES,
+  MIN_S_WITH_HEADER_PROTECTION,
+} from "./awg3";
 
 /** Parse a magic-header range string "N-M" or "N" into [min, max]. */
 export function parseRange(rangeStr: string): [number, number] | null {
@@ -173,6 +182,175 @@ export function validateConfigForClient(
   return out;
 }
 
+/* ── AWG 3.0 ─────────────────────────────────────────────────────────────── */
+
+/** Base64 of exactly 32 bytes: 43 payload chars + one '=' of padding. */
+const B64_32_BYTES = /^[A-Za-z0-9+/]{43}=$/;
+
+/**
+ * Validate the AWG 3.0 block.
+ *
+ * The interesting rules come from reading amneziawg-go v3.0.1 rather than the
+ * docs — see `awg3.ts` for the exact source references.
+ */
+export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
+  const p = cfg.awg3;
+  const out: ValidationFinding[] = [];
+  if (!p) return out;
+
+  if (cfg.version !== "3.0") {
+    const active = Object.values(p).some((v) => v !== "");
+    if (active) {
+      out.push({
+        field: "AWG3",
+        level: "error",
+        code: "awg3.version_mismatch",
+        msg: `Параметры AWG 3.0 заданы, но версия конфига — ${cfg.version}.`,
+      });
+    }
+    return out;
+  }
+
+  /* HeaderProtectionKey — 32 bytes, base64 (same encoding as PrivateKey). */
+  if (p.headerProtectionKey) {
+    if (!B64_32_BYTES.test(p.headerProtectionKey)) {
+      out.push({
+        field: "HeaderProtectionKey",
+        level: "error",
+        code: "awg3.hpk_format",
+        msg: `HeaderProtectionKey должен быть ${HEADER_PROTECTION_KEY_BYTES} байт в base64 (44 символа).`,
+      });
+    }
+
+    /*
+     * The ChaCha20 nonce is read from the first 12 bytes of the S-padding
+     * (send.go: `crypt[:HeaderCipherNonceSize]`). Padding shorter than that
+     * makes the nonce overlap the message body instead of random bytes.
+     */
+    for (const [name, value] of [
+      ["S1", cfg.s1],
+      ["S2", cfg.s2],
+      ["S3", cfg.s3],
+      ["S4", cfg.s4],
+    ] as const) {
+      if (value < MIN_S_WITH_HEADER_PROTECTION) {
+        out.push({
+          field: name,
+          level: "error",
+          code: "awg3.s_below_nonce",
+          msg: `${name}=${value} < ${MIN_S_WITH_HEADER_PROTECTION}: при HeaderProtectionKey из паддинга берётся nonce шифра, короткий паддинг ослабляет защиту.`,
+        });
+      }
+    }
+  }
+
+  /* ContentPaddingAddition — a zero range means "disabled" in the device. */
+  if (p.contentPaddingAddition) {
+    const r = parseRange(p.contentPaddingAddition);
+    if (!r) {
+      out.push({
+        field: "ContentPaddingAddition",
+        level: "error",
+        code: "awg3.cpa_format",
+        msg: "ContentPaddingAddition должен быть числом или диапазоном «мин-макс».",
+      });
+    } else if (r[1] < 1) {
+      out.push({
+        field: "ContentPaddingAddition",
+        level: "warn",
+        code: "awg3.cpa_zero",
+        msg: "ContentPaddingAddition = 0 — дополнительный паддинг отключён.",
+      });
+    }
+  }
+
+  out.push(...validateTimings(p));
+  return out;
+}
+
+/** Timer-range invariants taken from `device/timers.go`. */
+function validateTimings(p: AWG3Params): ValidationFinding[] {
+  const out: ValidationFinding[] = [];
+
+  const fields: Array<[string, string]> = [
+    ["RekeyAfterTime", p.rekeyAfterTime],
+    ["RekeyTimeout", p.rekeyTimeout],
+    ["RejectAfterTime", p.rejectAfterTime],
+    ["KeepaliveTimeout", p.keepaliveTimeout],
+    ["MaxHandshakeAttempts", p.maxHandshakeAttempts],
+  ];
+
+  const parsed: Record<string, [number, number]> = {};
+  for (const [name, raw] of fields) {
+    if (!raw) continue;
+    const r = parseRange(raw);
+    if (!r) {
+      out.push({
+        field: name,
+        level: "error",
+        code: "awg3.timing_format",
+        msg: `${name} должен быть числом или диапазоном «мин-макс».`,
+      });
+      continue;
+    }
+    if (r[0] > r[1]) {
+      out.push({
+        field: name,
+        level: "error",
+        code: "awg3.timing_inverted",
+        msg: `${name}: нижняя граница больше верхней.`,
+      });
+      continue;
+    }
+    parsed[name] = r;
+  }
+
+  const reject = parsed.RejectAfterTime;
+  const keepalive = parsed.KeepaliveTimeout;
+  const rekeyTimeout = parsed.RekeyTimeout;
+  const rekeyAfter = parsed.RekeyAfterTime;
+
+  /*
+   * keyRefreshTimeoutReceiving() = RejectAfterTime − KeepaliveTimeout.Lo
+   *                                              − RekeyTimeout.Lo, min 0.
+   * At zero the receiving side never refreshes its keys and the tunnel dies
+   * once RejectAfterTime elapses.
+   */
+  if (reject && keepalive && rekeyTimeout) {
+    const floor = keepalive[0] + rekeyTimeout[0];
+    if (reject[0] <= floor) {
+      out.push({
+        field: "RejectAfterTime",
+        level: "error",
+        code: "awg3.reject_too_low",
+        msg: `RejectAfterTime (${reject[0]}с) должен быть больше KeepaliveTimeout + RekeyTimeout (${floor}с), иначе обновление ключей на приёме не сработает.`,
+      });
+    }
+  }
+
+  /* A session must rekey before it is rejected. */
+  if (reject && rekeyAfter && rekeyAfter[1] >= reject[0]) {
+    out.push({
+      field: "RekeyAfterTime",
+      level: "error",
+      code: "awg3.rekey_after_reject",
+      msg: `RekeyAfterTime (до ${rekeyAfter[1]}с) должен быть меньше RejectAfterTime (от ${reject[0]}с).`,
+    });
+  }
+
+  const attempts = parsed.MaxHandshakeAttempts;
+  if (attempts && attempts[0] < 1) {
+    out.push({
+      field: "MaxHandshakeAttempts",
+      level: "error",
+      code: "awg3.attempts_zero",
+      msg: "MaxHandshakeAttempts должен быть не меньше 1.",
+    });
+  }
+
+  return out;
+}
+
 /** Run all built-in validations and return a flat finding list. */
 export function validateGeneratedConfig(
   cfg: AWGConfig,
@@ -181,6 +359,7 @@ export function validateGeneratedConfig(
   const out: ValidationFinding[] = [
     ...validateHeaderRanges(cfg.h1, cfg.h2, cfg.h3, cfg.h4),
     ...validateSizes(cfg),
+    ...validateAwg3(cfg),
   ];
   if (clientId) {
     out.push(...validateConfigForClient(cfg, clientId));

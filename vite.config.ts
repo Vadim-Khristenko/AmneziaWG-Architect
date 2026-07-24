@@ -1,4 +1,6 @@
-import { defineConfig } from "vite";
+// `vitest/config` re-exports Vite's defineConfig with the `test` key typed, so
+// the Vitest options below actually reach the runner instead of being dropped.
+import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import path from "node:path";
 import fs from "node:fs";
@@ -339,7 +341,41 @@ function createMultiHostBuildPlugin(): Plugin {
 
 const base = inferBase();
 
+/**
+ * Vitest options.
+ *
+ * Declared up here and passed into `defineConfig` below — when this lived as a
+ * standalone `export const test` after the config object, Vitest never saw it
+ * and silently ran on its defaults (wrong `include`, no coverage scoping).
+ * It stays exported because the config unit tests assert on it.
+ */
+export const test = {
+  globals: true,
+  environment: "node",
+  include: ["src/**/__tests__/**/*.test.ts"],
+  /**
+   * Git worktrees are often created *inside* the repo (e.g. `.claude/worktrees`
+   * by tooling). Without this, their `src/` trees are globbed too and every
+   * suite runs twice against two different checkouts — which silently doubles
+   * the reported test count and can hide a failure behind a stale copy.
+   */
+  exclude: [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.git/**",
+    "**/.claude/**",
+    "**/.worktrees/**",
+  ],
+  coverage: {
+    provider: "v8" as const,
+    reporter: ["text", "json-summary", "html"],
+    include: ["src/utils/**/*.ts"],
+    exclude: ["src/utils/__tests__/**"],
+  },
+};
+
 export default defineConfig({
+  test,
   plugins: [vue(), createSpaFallbackPlugin(), createMultiHostBuildPlugin()],
   base,
   resolve: {
@@ -399,14 +435,3 @@ export default defineConfig({
   },
 });
 
-export const test = {
-  globals: true,
-  environment: "node",
-  include: ["src/**/__tests__/**/*.test.ts"],
-  coverage: {
-    provider: "v8",
-    reporter: ["text", "json-summary", "html"],
-    include: ["src/utils/**/*.ts"],
-    exclude: ["src/utils/__tests__/**"],
-  },
-};

@@ -80,6 +80,30 @@ export function cryptoRh(n: number): string {
 }
 
 /**
+ * Returns `n` cryptographically secure random bytes as a standard base64
+ * string (with padding) — the encoding WireGuard and AmneziaWG use for keys
+ * in `.conf` files (PrivateKey, PresharedKey, HeaderProtectionKey).
+ */
+export function cryptoB64(n: number): string {
+  if (!Number.isFinite(n) || n < 0) {
+    throw new RangeError("cryptoB64: n must be a non-negative finite number");
+  }
+  const bytes = Math.max(0, Math.floor(n));
+  if (bytes === 0) return "";
+
+  const crypto = getCrypto();
+  const buf = new Uint8Array(bytes);
+  crypto.getRandomValues(buf);
+
+  let bin = "";
+  for (let i = 0; i < bytes; i++) bin += String.fromCharCode(buf[i]);
+
+  // btoa exists in browsers, Node 16+ and Bun; fall back to Buffer if not.
+  if (typeof btoa === "function") return btoa(bin);
+  return Buffer.from(buf).toString("base64");
+}
+
+/**
  * Randomly pick an element from an array using a secure draw.
  */
 export function cryptoPick<T>(arr: readonly T[]): T {

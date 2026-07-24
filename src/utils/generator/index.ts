@@ -27,12 +27,15 @@ import {
   mkEntropy,
 } from "./profiles";
 import { validateGeneratedConfig } from "./validators";
+import { genAwg3, MIN_S_WITH_HEADER_PROTECTION } from "./awg3";
 
 export * from "./types";
 export * from "./constants";
 export * from "./utils";
 export * from "./validators";
 export * from "./clients";
+export * from "./awg3";
+export * from "./render";
 
 export { mkQUICi, mkQUIC0, mkHTTP3, mkTLS, mkNoise, mkDTLS, mkSIP, mkDNS, mkEntropy };
 
@@ -203,6 +206,26 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     jmax = Math.min(jmax, 128);
   }
 
+  /*
+   * AWG 3.0 header protection derives its ChaCha20 nonce from the first 12
+   * bytes of the S-padding, so every S has to carry at least that much random
+   * data. Applied last so router-mode clamping cannot pull it back under.
+   */
+  const needsSFloor = version === "3.0" && input.useHeaderProtection;
+  if (needsSFloor) {
+    const floor = MIN_S_WITH_HEADER_PROTECTION;
+    s1 = Math.max(s1, floor);
+    s2 = Math.max(s2, floor);
+    s3 = Math.max(s3, floor);
+    s4 = Math.max(s4, floor);
+
+    // Raising the floor can recreate the size collisions we avoided above.
+    if (s2 === s1 + 56) s2 = s2 + 1;
+    if (s3 === s1 + 56 || s3 === s2 + 92) s3 = s3 + 1;
+    // S4 is capped at 32 by the protocol; the floor still fits.
+    s4 = Math.min(s4, Math.min(32, client.maxS4));
+  }
+
   const hasCPS = version !== "1.0";
   const isComposite = profile === "tls_to_quic" || profile === "quic_burst";
   const isDns = profile === "dns_query";
@@ -287,6 +310,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     i3,
     i4,
     i5,
+    ...(version === "3.0" ? { awg3: genAwg3(input) } : {}),
   };
 
   // Safety net: throw if we ever emit a config that fails our own validators.
