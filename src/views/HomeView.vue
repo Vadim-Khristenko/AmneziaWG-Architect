@@ -728,10 +728,12 @@ AWG-клиент будет вести себя как обычный WireGuard.
 
                     <p class="awg3-note">
                         <Info :size="13" />
-                        Теги <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code> и
-                        <code>&lt;dz&gt;</code> в v3.0.1 разбираются, но ещё не
-                        подключены к отправке пакетов — это задел под AWG 4.0,
-                        поэтому генератор их не выдаёт.
+                        <span>
+                            Теги <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code>
+                            и <code>&lt;dz&gt;</code> в v3.0.1 разбираются, но
+                            ещё не подключены к отправке пакетов — это задел под
+                            AWG 4.0, поэтому генератор их не выдаёт.
+                        </span>
                     </p>
                 </div>
             </transition>
@@ -1945,23 +1947,47 @@ AWG-клиент будет вести себя как обычный WireGuard.
 
 .awg3-opt-body small {
     font-size: 0.75rem;
-    line-height: 1.45;
-    color: var(--text3);
+    line-height: 1.5;
+    color: var(--text2);
+    text-wrap: pretty;
 }
 
 .awg3-note {
     display: flex;
     align-items: flex-start;
-    gap: 7px;
-    margin: 0;
-    font-size: 0.72rem;
-    line-height: 1.45;
-    color: var(--text4);
+    gap: 8px;
+    margin: 2px 0 0;
+    padding: 10px 12px;
+    /* --text3 on --bg3 measures ~2.4:1, well under the 4.5:1 WCAG AA floor
+       for text this size, so this note uses --text2 (~5.5:1). */
+    border-left: 2px solid var(--amber-dim);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--bg3);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--text2);
+    text-wrap: pretty;
 }
 
 .awg3-note svg {
     flex-shrink: 0;
-    margin-top: 2px;
+    margin-top: 3px;
+    color: var(--amber);
+    opacity: 0.75;
+}
+
+/* The prose lives in a single child so it wraps as one text flow. Without it
+   every run between the <code> chips becomes its own anonymous flex item and
+   the tail gets squeezed into a narrow column. min-width:0 lets it shrink
+   below its longest word instead of pushing the flex line wider. */
+.awg3-note > span {
+    min-width: 0;
+    flex: 1;
+}
+
+/* Keep the tag names from being split across lines mid-token. */
+.awg3-note code {
+    white-space: nowrap;
 }
 
 .awg3-note code,
@@ -3290,17 +3316,37 @@ AWG-клиент будет вести себя как обычный WireGuard.
 }
 
 @media (max-width: 480px) {
+    /* Four version tabs never fit on one phone line. Lay them out as a fixed
+       2×2 grid instead of letting flex-wrap break them unevenly. */
     .ver-tabs {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
         border-radius: var(--radius);
     }
 
+    .ver-tab {
+        justify-content: center;
+        padding: 9px 10px;
+    }
+
+    .version-bar {
+        align-items: stretch;
+    }
+
+    /* The CPS tag chips are a checkbox plus a 3-4 character label — two per
+       row fits comfortably even at 320px, so keep the desktop grid. */
     .tags-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .param-group-grid:not(.has-wide) {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .awg3-panel {
+        padding: 12px;
     }
 }
 </style>
