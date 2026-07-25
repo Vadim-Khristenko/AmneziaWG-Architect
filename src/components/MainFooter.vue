@@ -11,9 +11,15 @@ import {
 } from "lucide-vue-next";
 
 import { computed, watch } from "vue";
-import { useI18n } from "@/i18n";
+import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();
+
+/** About page, anchored at the support block. */
+const supportLink = computed(() => ({
+    path: localizePath("/about", locale.value),
+    hash: "#support",
+}));
 
 const lastBuild = ref<string>("");
 
@@ -61,12 +67,9 @@ watch(locale, formatBuild);
                     </div>
                 </div>
 
-                <a
-                    href="https://yoomoney.ru/fundraise/1GA2JV51324.260304"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="donate-card"
-                >
+                <!-- Points at the About page's support section rather than a
+                     single payment provider, so every method is on offer. -->
+                <router-link :to="supportLink" class="donate-card">
                     <div class="dc-icon">
                         <Heart :size="20" fill="currentColor" />
                     </div>
@@ -74,10 +77,12 @@ watch(locale, formatBuild);
                         <span class="dc-title">{{
                             t("footer.donate.title")
                         }}</span>
-                        <span class="dc-desc">Yoomoney</span>
+                        <span class="dc-desc">{{
+                            t("footer.donate.methods")
+                        }}</span>
                     </div>
                     <ChevronRight class="dc-arrow" :size="18" />
-                </a>
+                </router-link>
             </div>
 
             <div class="divider"></div>

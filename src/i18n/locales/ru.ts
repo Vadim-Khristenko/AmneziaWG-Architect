@@ -191,6 +191,7 @@ export const ru = {
   "footer.slogan.accent": "Архитектура свободы",
   "footer.slogan.tail": "— в каждом пакете.",
   "footer.donate.title": "Поддержать проект",
+  "footer.donate.methods": "YooMoney · Patreon · DaLink · крипта",
   "footer.col.resources": "Ресурсы",
   "footer.col.community": "Сообщество",
   "footer.col.research": "Исследования",

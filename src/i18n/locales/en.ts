@@ -192,6 +192,7 @@ export const en: Catalog = {
   "footer.slogan.accent": "An architecture of freedom",
   "footer.slogan.tail": "— in every packet.",
   "footer.donate.title": "Support the project",
+  "footer.donate.methods": "YooMoney · Patreon · DaLink · crypto",
   "footer.col.resources": "Resources",
   "footer.col.community": "Community",
   "footer.col.research": "Research",

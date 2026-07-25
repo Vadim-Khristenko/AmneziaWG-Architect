@@ -36,6 +36,7 @@ import {
     Terminal,
     CircleDot,
 } from "lucide-vue-next";
+import SupportSection from "@/components/SupportSection.vue";
 
 const activeTimeline = ref<number | null>(null);
 const avatarFailed = ref(false);
@@ -562,44 +563,7 @@ const statCards = [
         </section>
 
         <!-- ── Support / Donation ──────────────────────────────────────── -->
-        <section class="about-section donation-section a-stagger-9">
-            <div class="donation-glow"></div>
-            <div class="donation-content">
-                <div class="donation-icon">
-                    <Coffee :size="32" />
-                </div>
-                <h2>Поддержать проект</h2>
-                <p>
-                    Этот проект живёт только благодаря тому, что у меня есть
-                    свободное время и огромный интерес к теме. Здесь нет
-                    рекламы, спонсоров или монетизации.
-                </p>
-                <p>
-                    Но если Architect вам помог — я буду рад, если вы закинете
-                    монетку на кофе. Это лучшая мотивация продолжать развивать
-                    проект.<br />
-                    <b>Спасибо!</b>
-                </p>
-                <div class="donation-actions">
-                    <a
-                        href="https://yoomoney.ru/fundraise/1GA2JV51324.260304"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="cta-btn cta-donate"
-                    >
-                        <Heart :size="15" />
-                        Поддержать автора
-                        <ExternalLink :size="12" />
-                    </a>
-                </div>
-                <p class="donation-thanks">
-                    <Star :size="14" />
-                    Каждый донат — это ещё одна фича, фикс или улучшение.<br />
-                    Спасибо, что пользуетесь Architect!
-                    <Star :size="14" />
-                </p>
-            </div>
-        </section>
+        <SupportSection class="a-stagger-9" />
     </div>
 </template>
 
