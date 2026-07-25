@@ -177,6 +177,19 @@ export const en: Catalog = {
   "action.download": "Download",
   "action.retry": "Try again",
 
+  /* ── 404 ──────────────────────────────────────────────────────────────── */
+  "nf.badge": "PACKET LOST",
+  "nf.title": "Page not found",
+  "nf.desc":
+    "There is no route here — the link may be out of date, or the address mistyped. Your keys and configs are unaffected either way: they only ever lived in your browser.",
+  "nf.requested": "Requested address",
+  "nf.home": "Go home",
+  "nf.back": "Go back",
+  "nf.elsewhere": "Perhaps you were looking for",
+  "nf.link.generator": "Configuration generator",
+  "nf.link.faq": "Answers to common questions",
+  "nf.link.mergekeys": "Working with Amnezia keys",
+
   /* ── Packet simulator ─────────────────────────────────────────────────── */
   "sim.noData": "Nothing to simulate yet. First",
   "sim.noData.link": "generate a config",
