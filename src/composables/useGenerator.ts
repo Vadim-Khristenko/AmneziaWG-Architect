@@ -12,7 +12,7 @@
  *   - hintMap / placeholderMap — подсказки по профилям
  */
 
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, watch } from "vue";
 import {
   genCfg,
   generateBatch,
@@ -58,8 +58,34 @@ export function useGenerator() {
 
   // ── Версия и интенсивность ────────────────────────────────────────────────
 
-  const version = ref<AWGVersion>("2.0");
+  const VERSION_KEY = "awg-architect:version";
+  const VERSIONS: AWGVersion[] = ["1.0", "1.5", "2.0", "3.0"];
+
+  /**
+   * Remember the chosen protocol version across navigations. Without this,
+   * leaving for the simulator and coming back silently reset the generator to
+   * 2.0 and threw away the user's selection.
+   */
+  function loadVersion(): AWGVersion {
+    try {
+      const raw = localStorage.getItem(VERSION_KEY);
+      if (raw && (VERSIONS as string[]).includes(raw)) return raw as AWGVersion;
+    } catch {
+      // Storage blocked — fall through to the default.
+    }
+    return "2.0";
+  }
+
+  const version = ref<AWGVersion>(loadVersion());
   const intensity = ref<Intensity>("medium");
+
+  watch(version, (v) => {
+    try {
+      localStorage.setItem(VERSION_KEY, v);
+    } catch {
+      // Nothing to do; the in-memory value still drives this session.
+    }
+  });
 
   // ── Настройки генератора ──────────────────────────────────────────────────
 

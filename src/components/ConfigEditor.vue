@@ -32,9 +32,24 @@ import {
 } from "@/composables/useConfigEditor";
 import { parseConf, vpnToConf } from "@/utils/awgFormat";
 import { pluralRu } from "@/utils/plural";
+import { useI18n } from "@/i18n";
 import type { GeneratedParams, AwgVersion } from "@/utils/mergekeys";
 
+const { locale, t } = useI18n();
+
+/**
+ * Russian needs three plural forms; English two. Selected by locale so the
+ * key counter reads naturally in both.
+ */
 const KEY_FORMS: [string, string, string] = ["ключ", "ключа", "ключей"];
+
+function keyWord(n: number): string {
+    return locale.value === "ru"
+        ? pluralRu(n, KEY_FORMS)
+        : n === 1
+          ? "key"
+          : "keys";
+}
 
 /* ── Props & emits ──────────────────────────────────────────────────────── */
 
@@ -121,7 +136,7 @@ async function onFileChange(ev: Event) {
 
 function formatLabel(fmt: string): string {
     if (fmt === "conf") return "AmneziaWG .conf";
-    if (fmt === "vpn") return "vpn:// ключ";
+    if (fmt === "vpn") return `vpn:// ${t("mk.editor.key").toLowerCase()}`;
     if (fmt === "json") return "JSON";
     return "—";
 }
@@ -274,7 +289,7 @@ function onJcSlider(ev: Event) {
             <div class="mk-ed-head-left">
                 <div class="mk-ed-head-row">
                     <FileCode2 :size="14" class="icon-amber" />
-                    <span class="mk-card-title">Редактор &amp; Конвертер</span>
+                    <span class="mk-card-title">{{ t("mk.editor.title") }}</span>
                     <span
                         class="mk-ed-fmt-badge"
                         :class="`mk-ed-fmt-${format}`"
@@ -287,28 +302,28 @@ function onJcSlider(ev: Event) {
                     <span v-if="isMultiKey" class="mk-ed-multi">
                         <Layers :size="12" />
                         <span class="mk-ed-multi-count">
-                            {{ keyCount }} {{ pluralRu(keyCount, KEY_FORMS) }}
+                            {{ keyCount }} {{ keyWord(keyCount) }}
                         </span>
                         <select
                             v-model.number="activeKeyIndex"
                             class="mk-ed-keysel"
-                            aria-label="Активный ключ"
+                            :aria-label='t("mk.editor.activeKey")'
                         >
                             <option
                                 v-for="i in keyCount"
                                 :key="i"
                                 :value="i - 1"
                             >
-                                Ключ {{ i }}
+                                {{ t("mk.editor.key") }} {{ i }}
                             </option>
                         </select>
                         <button
                             class="mk-ed-focus-btn"
-                            title="Открыть для превью и правки"
+                            :title='t("mk.editor.openHint")'
                             @click="focusActiveKey"
                         >
                             <KeyRound :size="11" />
-                            Открыть
+                            {{ t("mk.editor.open") }}
                         </button>
                     </span>
 
@@ -319,7 +334,7 @@ function onJcSlider(ev: Event) {
                         @click="exitFocus"
                     >
                         <ArrowLeft :size="12" />
-                        Ключ {{ focusIndex + 1 }} — назад к списку
+                        {{ t("mk.editor.key") }} {{ focusIndex + 1 }} — {{ t("mk.editor.backToList") }}
                     </button>
                 </div>
             </div>
@@ -333,7 +348,7 @@ function onJcSlider(ev: Event) {
                         @click="viewMode = 'code'"
                     >
                         <FileCode2 :size="12" />
-                        Код
+                        {{ t("mk.editor.tabCode") }}
                     </button>
                     <button
                         class="mk-ed-toggle-btn"
@@ -344,13 +359,13 @@ function onJcSlider(ev: Event) {
                         "
                     >
                         <LayoutList :size="12" />
-                        Поля
+                        {{ t("mk.editor.tabFields") }}
                     </button>
                 </div>
 
-                <label class="mk-btn-sec mk-ed-file-btn" title="Импортировать">
+                <label class="mk-btn-sec mk-ed-file-btn" :title='t("mk.editor.import")'>
                     <Upload :size="12" />
-                    Импортировать
+                    {{ t("mk.editor.import") }}
                     <input
                         id="mk-ed-file"
                         name="mk-ed-file"
@@ -372,7 +387,7 @@ function onJcSlider(ev: Event) {
                     class="mk-ed-convert"
                     v-if="format !== 'unknown' && !isMultiKey"
                 >
-                    <span class="mk-ed-convert-label">Показать как</span>
+                    <span class="mk-ed-convert-label">{{ t("mk.editor.showAs") }}</span>
                     <button
                         class="mk-ed-convert-btn"
                         :class="{ active: format === 'vpn' }"
@@ -394,7 +409,7 @@ function onJcSlider(ev: Event) {
                         :class="{ active: format === 'conf' }"
                         :disabled="!canExportConf"
                         :title="
-                            !canExportConf ? 'Нет AmneziaWG-контейнера' : ''
+                            !canExportConf ? t('mk.editor.noAwgContainer') : ''
                         "
                         @click="convertTo('conf')"
                     >
@@ -404,10 +419,8 @@ function onJcSlider(ev: Event) {
                 </div>
                 <div class="mk-ed-convert" v-else-if="isMultiKey">
                     <span class="mk-ed-convert-label">
-                        {{ keyCount }} {{ pluralRu(keyCount, KEY_FORMS) }} —
-                        каждый с новой строки. «Обновить обфускацию» применится
-                        ко всем; нажми «Открыть», чтобы смотреть превью (JSON /
-                        .conf) и править один ключ.
+                        {{ keyCount }} {{ keyWord(keyCount) }} —
+                        {{ t("mk.editor.multiHint") }}
                     </span>
                 </div>
 
@@ -428,7 +441,7 @@ function onJcSlider(ev: Event) {
                         v-model="rawText"
                         class="mk-ed-textarea"
                         spellcheck="false"
-                        placeholder="Вставь vpn:// ключ, AmneziaWG .conf или JSON… (несколько ключей — с новой строки)"
+                        :placeholder='t("mk.editor.placeholder")'
                         @scroll="onTextareaScroll"
                     ></textarea>
                 </div>
@@ -442,12 +455,12 @@ function onJcSlider(ev: Event) {
                 </div>
                 <template v-else-if="Object.keys(fields).length === 0">
                     <div class="mk-ed-fields-empty">
-                        Загрузи vpn:// ключ или .conf, чтобы редактировать поля.
+                        {{ t("mk.editor.empty") }}
                     </div>
                 </template>
                 <template v-else>
                     <!-- Obfuscation block -->
-                    <div class="mk-ed-section-label">Параметры обфускации</div>
+                    <div class="mk-ed-section-label">{{ t("mk.editor.obfParams") }}</div>
                     <div class="mk-ed-fields-grid">
                         <template v-for="key in obfuscationFields()" :key="key">
                             <div class="mk-ed-field-row">
@@ -550,7 +563,7 @@ function onJcSlider(ev: Event) {
                     >
                         <summary class="mk-ed-danger-summary">
                             <AlertTriangle :size="13" />
-                            Опасная зона (меняй только если знаешь, что делаешь)
+                            {{ t("mk.editor.dangerZone") }}
                             <ChevronDown
                                 :size="12"
                                 class="mk-ed-danger-arrow"
@@ -610,7 +623,7 @@ function onJcSlider(ev: Event) {
                         @click="showHealth = !showHealth"
                     >
                         <ShieldCheck :size="13" />
-                        {{ showHealth ? "Скрыть" : "Проверить" }} конфиг
+                        {{ showHealth ? t("mk.editor.checkHide") : t("mk.editor.checkShow") }} {{ t("mk.editor.checkConfig") }}
                     </button>
                     <select
                         v-if="showHealth"
@@ -641,7 +654,7 @@ function onJcSlider(ev: Event) {
                     class="mk-ed-health-ok"
                 >
                     <CheckCircle2 :size="14" />
-                    Проблем не найдено.
+                    {{ t("mk.editor.noIssues") }}
                 </div>
             </div>
 
@@ -674,10 +687,10 @@ function onJcSlider(ev: Event) {
                         @click="doApplyObfuscation"
                     >
                         <Zap :size="14" />
-                        Обновить обфускацию
+                        {{ t("mk.editor.applyObf") }}
                     </button>
                     <span v-if="!props.pendingCfg" class="mk-ed-hint">
-                        Сначала сгенерируй конфиг на главной
+                        {{ t("mk.editor.generateFirst") }}
                     </span>
                 </div>
 
@@ -688,7 +701,7 @@ function onJcSlider(ev: Event) {
                         v-if="awgContainerNames.length > 1"
                         id="mk-ed-container"
                         name="mk-ed-container"
-                        aria-label="Выбор AWG-контейнера"
+                        :aria-label='t("mk.editor.pickContainer")'
                         v-model="selectedContainer"
                         class="mk-ed-select"
                     >
@@ -706,17 +719,17 @@ function onJcSlider(ev: Event) {
                         class="mk-btn-sec"
                         :disabled="isMultiKey"
                         :title="
-                            isMultiKey ? 'Откройте один ключ для экспорта' : ''
+                            isMultiKey ? t('mk.editor.openOneToExport') : ''
                         "
                         @click="doExportVpn"
                     >
                         <template v-if="props.isCopied('export-vpn')">
                             <Check :size="13" />
-                            Скопировано!
+                            {{ t("mk.action.copied") }}
                         </template>
                         <template v-else>
                             <Copy :size="13" />
-                            Экспорт vpn://
+                            {{ t("mk.editor.exportVpn") }}
                         </template>
                     </button>
 
@@ -725,17 +738,17 @@ function onJcSlider(ev: Event) {
                         class="mk-btn-sec"
                         :disabled="!canExportConf || isMultiKey"
                         :title="
-                            isMultiKey ? 'Откройте один ключ для экспорта' : ''
+                            isMultiKey ? t('mk.editor.openOneToExport') : ''
                         "
                         @click="doExportConf"
                     >
                         <template v-if="props.isCopied('export-conf')">
                             <Check :size="13" />
-                            Скопировано!
+                            {{ t("mk.action.copied") }}
                         </template>
                         <template v-else>
                             <Copy :size="13" />
-                            Экспорт .conf
+                            {{ t("mk.editor.exportConf") }}
                         </template>
                     </button>
 
@@ -745,13 +758,13 @@ function onJcSlider(ev: Event) {
                         :disabled="isMultiKey"
                         :title="
                             isMultiKey
-                                ? 'Откройте один ключ для скачивания'
+                                ? t('mk.editor.openOneToDownload')
                                 : ''
                         "
                         @click="doDownload"
                     >
                         <Download :size="13" />
-                        Скачать
+                        {{ t("mk.editor.download") }}
                     </button>
                 </div>
             </div>

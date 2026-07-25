@@ -38,7 +38,7 @@ import {
     TriangleAlert,
 } from "lucide-vue-next";
 import SupportSection from "@/components/SupportSection.vue";
-import { useI18n } from "@/i18n";
+import { localizePath, useI18n } from "@/i18n";
 import { TIMELINE } from "@/data/changelog";
 
 const { locale, t } = useI18n();
@@ -242,7 +242,10 @@ const statCards = computed(() => [
                 </div>
             </div>
             <div class="cta-row">
-                <router-link to="/mergekeys" class="cta-btn cta-primary">
+                <router-link
+                    :to="localizePath('/mergekeys', locale)"
+                    class="cta-btn cta-primary"
+                >
                     <ArrowRight :size="14" />
                     {{ t("about.mergekeys.goto") }}
                 </router-link>

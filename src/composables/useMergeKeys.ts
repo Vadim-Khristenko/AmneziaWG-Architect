@@ -10,6 +10,7 @@
  */
 
 import { ref, computed } from "vue";
+import { translate } from "@/i18n";
 import type { Ref } from "vue";
 import {
   vpnDecode,
@@ -76,11 +77,16 @@ export function useMergeKeys() {
   const pendingBannerText = computed<string>(() => {
     const cfg = pendingCfg.value;
     if (!cfg) return "";
-    const base = `Загружен конфиг AWG ${pendingVer.value} (Jc=${cfg.jc}, Jmin=${cfg.jmin}, Jmax=${cfg.jmax}).`;
+    const base = translate("mk.msg.loadedConf", {
+      version: pendingVer.value,
+      jc: cfg.jc,
+      jmin: cfg.jmin,
+      jmax: cfg.jmax,
+    });
     const cps =
       pendingVer.value !== "1.0"
-        ? " CPS I1–I5 готовы к вставке."
-        : " AWG 1.0: только Jc/Jmin/Jmax.";
+        ? ` ${translate("mk.msg.cpsReady")}`
+        : ` ${translate("mk.msg.onlyJunk")}`;
     return base + cps;
   });
 
@@ -89,13 +95,13 @@ export function useMergeKeys() {
     Array<{ label: string; color: "green" | "amber" | "red" }>
   >(() => {
     if (!pendingCfg.value) {
-      return [{ label: "Нет конфига", color: "red" }];
+      return [{ label: translate("mk.msg.noConfig"), color: "red" }];
     }
     if (pendingVer.value === "1.0") {
       return [
         { label: `AWG ${pendingVer.value}`, color: "amber" },
         { label: "Jc/Jmin/Jmax", color: "amber" },
-        { label: "I1–I5 не поддерж.", color: "red" },
+        { label: translate("mk.msg.noCps"), color: "red" },
       ];
     }
     return [
@@ -125,7 +131,7 @@ export function useMergeKeys() {
   const mergeErrorMsg = ref("");
   const mergeWarnings: Ref<string[]> = ref([]);
   const mergePreviewJson = ref("");
-  const mergePreviewLabel = ref("Содержимое ключа");
+  const mergePreviewLabel = ref(translate("mk.msg.keyContents"));
 
   type MergeState = "idle" | "ok" | "error" | "preview";
   const mergeState: Ref<MergeState> = ref("idle");
@@ -139,7 +145,7 @@ export function useMergeKeys() {
     mergeErrorMsg.value = "";
     mergeWarnings.value = [];
     mergePreviewJson.value = "";
-    mergePreviewLabel.value = "Содержимое ключа";
+    mergePreviewLabel.value = translate("mk.msg.keyContents");
   }
 
   function addSlot() {
@@ -173,7 +179,7 @@ export function useMergeKeys() {
 
     const slot = mergeSlots.value[index];
     if (!slot || !slot.value.trim()) {
-      mergeErrorMsg.value = `Слот #${index + 1} пуст.`;
+      mergeErrorMsg.value = translate("mk.msg.slotEmpty", { n: index + 1 });
       mergeState.value = "error";
       return;
     }
@@ -181,10 +187,13 @@ export function useMergeKeys() {
     try {
       const decoded = vpnDecode(slot.value.trim());
       mergePreviewJson.value = JSON.stringify(decoded, null, 2);
-      mergePreviewLabel.value = `Содержимое ключа #${index + 1}`;
+      mergePreviewLabel.value = translate("mk.msg.keyContentsN", { n: index + 1 });
       mergeState.value = "preview";
     } catch (err: unknown) {
-      mergeErrorMsg.value = `Ошибка в ключе #${index + 1}: ${err instanceof Error ? err.message : String(err)}`;
+      mergeErrorMsg.value = translate("mk.msg.slotError", {
+        n: index + 1,
+        error: err instanceof Error ? err.message : String(err),
+      });
       mergeState.value = "error";
     }
   }
@@ -199,7 +208,7 @@ export function useMergeKeys() {
       .filter((s) => s.val.length > 0);
 
     if (filled.length < 2) {
-      mergeErrorMsg.value = "Заполните минимум 2 поля с ключами vpn://.";
+      mergeErrorMsg.value = translate("mk.msg.needTwo");
       mergeState.value = "error";
       return;
     }
@@ -211,7 +220,10 @@ export function useMergeKeys() {
           return vpnDecode(s.val);
         } catch (e) {
           throw new Error(
-            `Ошибка в ключе #${s.idx + 1}: ${e instanceof Error ? e.message : String(e)}`
+            translate("mk.msg.slotError", {
+              n: s.idx + 1,
+              error: e instanceof Error ? e.message : String(e),
+            })
           );
         }
       });
@@ -242,13 +254,16 @@ export function useMergeKeys() {
       // Build summary
       const lines: string[] = [];
       lines.push(
-        `Объединено ${mergeResult.stats.unique} контейнеров из ${filled.length} ключей.`
+        translate("mk.msg.merged", {
+          unique: mergeResult.stats.unique,
+          keys: filled.length,
+        })
       );
       if (mergeResult.stats.dupes > 0) {
-        lines.push(`Пропущено дублей: ${mergeResult.stats.dupes}.`);
+        lines.push(translate("mk.msg.dupes", { n: mergeResult.stats.dupes }));
       }
       if (obfChanged.length > 0) {
-        lines.push(`Обфускация AWG обновлена: ${obfChanged.join(", ")}.`);
+        lines.push(translate("mk.msg.obfUpdated", { fields: obfChanged.join(", ") }));
       }
       mergeSummary.value = lines.join(" ");
 
@@ -403,10 +418,15 @@ export function useMergeKeys() {
      Slot labels
      ══════════════════════════════════════════════════════════════════════ */
 
-  const slotLabels = ["Первый ключ", "Второй ключ", "Третий ключ", "Четвёртый ключ"];
+  const slotLabels = [
+    translate("mk.slot.1"),
+    translate("mk.slot.2"),
+    translate("mk.slot.3"),
+    translate("mk.slot.4"),
+  ];
 
   function getSlotLabel(index: number): string {
-    return slotLabels[index] || `Ключ #${index + 1}`;
+    return slotLabels[index] || translate("mk.slot.n", { n: index + 1 });
   }
 
   /* ══════════════════════════════════════════════════════════════════════

@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick, type Component } from "vue";
+import {
+    ref,
+    onMounted,
+    computed,
+    nextTick,
+    watch,
+    type Component,
+} from "vue";
 import { useRouter } from "vue-router";
 import {
     KeyRound,
@@ -148,6 +155,15 @@ function generateAndSave() {
         setTimeout(() => saveToHistory(), 20);
     });
 }
+
+/*
+ * Keep the stored config in step with whatever is on screen.
+ *
+ * It used to be written only by generateAndSave() and openMergeKeys(), so
+ * switching the version — which goes through generate(), not generateAndSave()
+ * — left a stale config behind and the simulator opened the previous version.
+ */
+watch(currentAwg, persistCurrentConfig);
 
 onMounted(() => {
     loadHistory();
@@ -1542,7 +1558,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                             <span>{{ t("gen.export.downloadJson") }}</span>
                                         </button>
                                         <router-link
-                                            to="/simulator"
+                                            :to="localizePath('/simulator', locale)"
                                             class="btn btn-ghost export-btn export-sim"
                                         >
                                             <Activity :size="15" />

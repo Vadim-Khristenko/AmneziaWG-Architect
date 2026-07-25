@@ -14,6 +14,8 @@ import {
     Clock,
     Database,
     Gauge,
+    ShieldCheck,
+    Lock,
 } from "lucide-vue-next";
 import {
     simulateHandshake,
@@ -22,7 +24,10 @@ import {
     kindDescription,
 } from "@/utils/packetSim";
 import type { SimPacket, SimResult } from "@/utils/packetSim";
-import type { AWGConfig } from "@/utils/generator/types";
+import type { AWGConfig, AWGVersion } from "@/utils/generator/types";
+import { localizePath, useI18n } from "@/i18n";
+
+const { locale, t } = useI18n();
 
 const router = useRouter();
 
@@ -42,29 +47,38 @@ function loadConfig() {
         const parsed = JSON.parse(raw);
         if (!parsed.cfg) return;
         const c = parsed.cfg;
+        const version: AWGVersion = parsed.ver || "2.0";
+
+        // 1.0 has no CPS chains at all; 1.5 sends them client-side only. Both
+        // predate S3/S4. Zeroing them here keeps the simulation honest about
+        // what each version actually puts on the wire.
+        const hasCps = version !== "1.0";
+        const hasS34 = version === "2.0" || version === "3.0";
+
         cfg.value = {
-            version: parsed.ver || "2.0",
+            version,
             profile: parsed.profile || "quic_initial",
             h1: c.h1 || "100000000-100000100",
             h2: c.h2 || "1200000000-1200000100",
             h3: c.h3 || "2400000000-2400000100",
             h4: c.h4 || "3600000000-3600000100",
-            h1s: 100_000_000,
-            h2s: 1_200_000_000,
-            h3s: 2_400_000_000,
-            h4s: 3_600_000_000,
+            h1s: c.h1s ?? 100_000_000,
+            h2s: c.h2s ?? 1_200_000_000,
+            h3s: c.h3s ?? 2_400_000_000,
+            h4s: c.h4s ?? 3_600_000_000,
             s1: c.s1 ?? 10,
             s2: c.s2 ?? 10,
-            s3: c.s3 ?? 10,
-            s4: c.s4 ?? 10,
+            s3: hasS34 ? (c.s3 ?? 10) : 0,
+            s4: hasS34 ? (c.s4 ?? 10) : 0,
             jc: c.jc ?? 5,
             jmin: c.jmin ?? 100,
             jmax: c.jmax ?? 200,
-            i1: c.i1 || "",
-            i2: c.i2 || "",
-            i3: c.i3 || "",
-            i4: c.i4 || "",
-            i5: c.i5 || "",
+            i1: hasCps ? c.i1 || "" : "",
+            i2: hasCps ? c.i2 || "" : "",
+            i3: hasCps ? c.i3 || "" : "",
+            i4: hasCps ? c.i4 || "" : "",
+            i5: hasCps ? c.i5 || "" : "",
+            ...(version === "3.0" && c.awg3 ? { awg3: c.awg3 } : {}),
         };
     } catch {
         cfg.value = null;
@@ -78,7 +92,7 @@ function runSim() {
 }
 
 function goBack() {
-    router.push("/");
+    router.push(localizePath("/", locale.value));
 }
 
 function selectPacket(p: SimPacket) {
@@ -86,6 +100,19 @@ function selectPacket(p: SimPacket) {
 }
 
 const profileName = computed(() => cfg.value?.profile ?? "unknown");
+
+/** True when this config carries a header-protection key (3.0 only). */
+const headerProtected = computed(
+    () => cfg.value?.version === "3.0" && !!cfg.value.awg3?.headerProtectionKey,
+);
+
+/** Explains what the selected version omits, for 1.0 and 1.5. */
+const versionNote = computed(() => {
+    const v = cfg.value?.version;
+    if (v === "1.0") return t("sim.version.note.10");
+    if (v === "1.5") return t("sim.version.note.15");
+    return "";
+});
 
 const stats = computed(() => {
     if (!sim.value) return null;
@@ -119,38 +146,49 @@ const stats = computed(() => {
             </header>
 
             <div v-if="!cfg" class="alert alert-info">
-                Нет данных для симуляции. Сначала
-                <router-link to="/" class="link">сгенерируйте конфиг</router-link>.
+                {{ t("sim.noData") }}
+                <router-link :to="localizePath('/', locale)" class="link">{{ t("sim.noData.link") }}</router-link>.
             </div>
 
             <template v-else>
+                <!-- What this version actually puts on the wire -->
+                <div v-if="versionNote" class="alert alert-info">
+                    <Info :size="16" class="alert-icon" />
+                    <div class="alert-content">{{ versionNote }}</div>
+                </div>
+
+                <div v-if="headerProtected" class="alert alert-success">
+                    <ShieldCheck :size="16" class="alert-icon" />
+                    <div class="alert-content">{{ t("sim.hp.note") }}</div>
+                </div>
+
                 <div class="sim-toolbar">
                     <button class="btn btn-primary" @click="runSim">
-                        <RefreshCw :size="15" /> Перезапустить
+                        <RefreshCw :size="15" /> {{ t("sim.restart") }}
                     </button>
                 </div>
 
                 <div v-if="stats" class="sim-stats">
                     <div class="stat-card">
                         <span class="stat-value">{{ stats.count }}</span>
-                        <span class="stat-label">пакетов</span>
+                        <span class="stat-label">{{ t("sim.stat.packets") }}</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value">{{ stats.total }}</span>
-                        <span class="stat-label">байт всего</span>
+                        <span class="stat-label">{{ t("sim.stat.bytes") }}</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value">{{ stats.handshake }}</span>
-                        <span class="stat-label">рукопожатие</span>
+                        <span class="stat-label">{{ t("sim.stat.handshake") }}</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value">{{ stats.overhead }}</span>
-                        <span class="stat-label">оверхед</span>
+                        <span class="stat-label">{{ t("sim.stat.overhead") }}</span>
                     </div>
                     <div class="stat-card">
                         <Clock :size="16" class="stat-icon" />
                         <span class="stat-value">~{{ stats.seconds }}s</span>
-                        <span class="stat-label">на 10 Мбит/с</span>
+                        <span class="stat-label">{{ t("sim.stat.at10mbit") }}</span>
                     </div>
                 </div>
 
@@ -158,13 +196,13 @@ const stats = computed(() => {
                 <div class="sim-diagram panel">
                     <div class="panel-head">
                         <Play :size="14" class="text-accent" />
-                        <span class="panel-title">Диаграмма обмена пакетами</span>
+                        <span class="panel-title">{{ t("sim.diagram.title") }}</span>
                     </div>
 
                     <div class="diagram-canvas">
                         <div class="lane">
                             <div class="lane-title">
-                                <Monitor :size="14" /> Клиент
+                                <Monitor :size="14" /> {{ t("sim.client") }}
                             </div>
                             <div class="lane-line"></div>
                         </div>
@@ -197,7 +235,7 @@ const stats = computed(() => {
                         </div>
                         <div class="lane">
                             <div class="lane-title">
-                                <Server :size="14" /> Сервер
+                                <Server :size="14" /> {{ t("sim.server") }}
                             </div>
                             <div class="lane-line"></div>
                         </div>
@@ -208,7 +246,7 @@ const stats = computed(() => {
                 <div class="sim-legend panel">
                     <div class="panel-head">
                         <Info :size="14" class="text-accent" />
-                        <span class="panel-title">Легенда</span>
+                        <span class="panel-title">{{ t("sim.legend.title") }}</span>
                     </div>
                     <div class="legend-grid">
                         <div
@@ -242,57 +280,68 @@ const stats = computed(() => {
                     <div class="panel-head">
                         <Database :size="14" class="text-accent" />
                         <span class="panel-title">
-                            Пакет {{ selectedPacket.step }} —
+                            {{ t("sim.packet") }} {{ selectedPacket.step }} —
                             {{ kindLabel(selectedPacket.kind) }}
                         </span>
                     </div>
                     <div class="detail-grid">
                         <div class="detail-item">
-                            <span class="detail-label">Направление</span>
+                            <span class="detail-label">{{ t("sim.detail.direction") }}</span>
                             <span class="detail-value">
-                                {{ selectedPacket.from === 'client' ? 'Клиент' : 'Сервер' }}
+                                {{ selectedPacket.from === 'client' ? t('sim.client') : t('sim.server') }}
                                 →
-                                {{ selectedPacket.to === 'client' ? 'Клиент' : 'Сервер' }}
+                                {{ selectedPacket.to === 'client' ? t('sim.client') : t('sim.server') }}
                             </span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Размер</span>
+                            <span class="detail-label">{{ t("sim.detail.size") }}</span>
                             <span class="detail-value"
-                                >{{ selectedPacket.size }} байт</span
+                                >{{ selectedPacket.size }} {{ t("sim.bytes") }}</span
                             >
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Заголовок (H)</span>
+                            <span class="detail-label">{{ t("sim.detail.header") }}</span>
                             <span class="detail-value"
                                 >{{ selectedPacket.header || '—' }}</span
                             >
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Полезная нагрузка</span>
+                            <span class="detail-label">{{ t("sim.detail.payload") }}</span>
                             <span class="detail-value"
-                                >{{ selectedPacket.payload }} байт</span
+                                >{{ selectedPacket.payload }} {{ t("sim.bytes") }}</span
                             >
                         </div>
                     </div>
                     <p class="detail-desc">{{ selectedPacket.description }}</p>
+                    <p
+                        v-if="selectedPacket.headerProtected"
+                        class="detail-crypto"
+                    >
+                        <Lock :size="13" />
+                        {{
+                            selectedPacket.encryptedWhole
+                                ? t("sim.hp.whole")
+                                : t("sim.hp.badge")
+                        }}
+                    </p>
                 </div>
 
                 <!-- Packet list -->
                 <div class="sim-table panel">
                     <div class="panel-head">
                         <Gauge :size="14" class="text-accent" />
-                        <span class="panel-title">Таблица пакетов</span>
+                        <span class="panel-title">{{ t("sim.table.title") }}</span>
                     </div>
                     <div class="table-wrap">
                         <table class="sim-table-inner">
                             <thead>
                                 <tr>
                                     <th>#)</th>
-                                    <th>Тип</th>
-                                    <th>Направление</th>
-                                    <th>Размер</th>
-                                    <th>Заголовок</th>
-                                    <th class="desc">Описание</th>
+                                    <th>{{ t("sim.table.type") }}</th>
+                                    <th>{{ t("sim.table.direction") }}</th>
+                                    <th>{{ t("sim.table.size") }}</th>
+                                    <th>{{ t("sim.table.header") }}</th>
+                                    <th class="desc">{{ t("sim.table.desc") }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -533,6 +582,20 @@ const stats = computed(() => {
     font-size: 0.82rem;
     color: var(--muted);
     line-height: 1.5;
+}
+
+.detail-crypto {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: -8px 16px 16px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--green-bg);
+    color: var(--green);
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.74rem;
 }
 
 /* Table */

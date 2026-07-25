@@ -12,6 +12,7 @@
 import { onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useMergeKeys } from "@/composables/useMergeKeys";
+import { useI18n } from "@/i18n";
 import ConfigEditor from "@/components/ConfigEditor.vue";
 import {
   GitMerge,
@@ -33,6 +34,7 @@ import {
 } from "lucide-vue-next";
 
 const route = useRoute();
+const { t } = useI18n();
 
 const {
   // Tab
@@ -101,7 +103,7 @@ watch(
         MERGE KEYS
       </div>
       <h1>MERGE<span>KEYS</span></h1>
-      <p>Редактор ключей и объединение контейнеров Amnezia VPN</p>
+      <p>{{ t("mk.subtitle") }}</p>
     </div>
 
     <!-- Pending cfg banner (from generator) -->
@@ -110,9 +112,9 @@ watch(
         <CheckCircle2 :size="18" />
       </div>
       <div class="mk-banner-text">
-        <b>Конфиг из генератора загружен.</b>
+        <b>{{ t("mk.loaded.title") }}</b>
         {{ pendingBannerText }}
-        Перейдите во вкладку «Редактор» и нажмите «Применить обфускацию».
+        {{ t("mk.loaded.hint") }}
       </div>
     </div>
 
@@ -122,13 +124,12 @@ watch(
         <Info :size="18" />
       </div>
       <div class="mk-notice-text">
-        <b>Конфиг обфускации не передан.</b>
-        Для обновления параметров Jc/Jmin/Jmax/I1–I5 вернитесь на
-        <router-link to="/">главную страницу</router-link>, нажмите
-        <b>«СГЕНЕРИРОВАТЬ»</b>, затем <b>«Открыть MergeKeys»</b>.<br />
-        Вы также можете отредактировать ключ вручную во вкладке
-        <b @click="switchTab('editor')" class="mk-notice-link">«Редактор»</b>.<br />
-        Вкладка <b>«Объединить ключи»</b> работает без генератора.
+        <b>{{ t("mk.notice.title") }}</b>
+        {{ t("mk.notice.body") }}<br />
+        <b @click="switchTab('editor')" class="mk-notice-link">{{
+          t("mk.notice.manual")
+        }}</b><br />
+        {{ t("mk.notice.mergeWorks") }}
       </div>
     </div>
 
@@ -140,7 +141,7 @@ watch(
         @click="switchTab('editor')"
       >
         <FileCode2 :size="14" />
-        Редактор &amp; Конвертер
+        {{ t("mk.tab.editor") }}
       </button>
       <button
         class="mk-tab-btn"
@@ -148,7 +149,7 @@ watch(
         @click="switchTab('merge')"
       >
         <GitMerge :size="14" />
-        Объединить ключи
+        {{ t("mk.tab.merge") }}
       </button>
     </div>
 
@@ -174,7 +175,7 @@ watch(
       <div class="mk-how" :class="{ open: howMergeOpen }">
         <div class="mk-how-head" @click="toggleHowMerge">
           <HelpCircle :size="14" class="icon-amber" />
-          <span class="mk-how-title">Зачем объединять ключи?</span>
+          <span class="mk-how-title">{{ t("mk.how.title") }}</span>
           <span class="mk-how-arrow">
             <ChevronDown :size="14" />
           </span>
@@ -183,38 +184,31 @@ watch(
           <div class="mk-how-item">
             <div class="mk-how-num">?</div>
             <div>
-              Amnezia VPN поддерживает несколько контейнеров (протоколов) в
-              одном ключе: <b>AWG + XRay, AWG + OpenVPN</b> и т.д. Это
-              позволяет переключаться между протоколами без смены ключа.
+              {{ t("mk.how.1") }}
             </div>
           </div>
           <div class="mk-how-item">
             <div class="mk-how-num">1</div>
             <div>
-              Вставьте два или более vpn://-ключа в слоты ниже. Например,
-              первый — ключ AWG, второй — ключ XRay от того же сервера.
+              {{ t("mk.how.2") }}
             </div>
           </div>
           <div class="mk-how-item">
             <div class="mk-how-num">2</div>
             <div>
-              Нажмите <b>«Объединить»</b>. Контейнеры из всех ключей будут
-              собраны в один мастер-ключ. Дубликаты (одинаковое имя контейнера)
-              пропускаются с предупреждением.
+              {{ t("mk.how.3") }}
             </div>
           </div>
           <div class="mk-how-item">
             <div class="mk-how-num">3</div>
             <div>
-              Если открыт из генератора — новые параметры обфускации AWG будут
-              применены автоматически к AWG-контейнерам в итоговом ключе.
+              {{ t("mk.how.4") }}
             </div>
           </div>
           <div class="mk-compat mk-compat-info">
             <Info :size="15" class="flex-shrink" />
             <span>
-              Метаданные (dns1, dns2, hostName, defaultContainer) берутся из
-              <b>первого ключа</b>. Описание объединяется через « + ».
+              {{ t("mk.how.5") }}
             </span>
           </div>
         </div>
@@ -224,9 +218,9 @@ watch(
       <div class="mk-card">
         <div class="mk-card-head">
           <Layers :size="14" class="icon-amber" />
-          <span class="mk-card-title">Ключи для объединения</span>
+          <span class="mk-card-title">{{ t("mk.slots.title") }}</span>
           <span class="mk-summary" style="color: var(--text3)">
-            минимум 2, максимум 4
+            {{ t("mk.slots.limits") }}
           </span>
         </div>
         <div class="mk-card-body">
@@ -247,7 +241,7 @@ watch(
                 <button
                   v-if="mergeSlots.length > 2 && idx === mergeSlots.length - 1"
                   class="mk-btn-icon mk-btn-icon-sm"
-                  title="Удалить слот"
+                  :title='t("mk.slot.remove")'
                   @click="removeSlot(idx)"
                 >
                   <X :size="11" />
@@ -264,14 +258,14 @@ watch(
                 <div class="mk-slot-btns">
                   <button
                     class="mk-btn-icon"
-                    title="Просмотр JSON"
+                    :title='t("mk.slot.viewJson")'
                     @click="mergeDecodeSlot(idx)"
                   >
                     <FileJson :size="13" />
                   </button>
                   <button
                     class="mk-btn-icon mk-btn-icon-danger"
-                    title="Очистить"
+                    :title='t("mk.slot.clear")'
                     @click="clearSlot(idx)"
                   >
                     <X :size="13" />
@@ -288,7 +282,7 @@ watch(
             @click="addSlot"
           >
             <PlusCircle :size="13" />
-            Добавить ещё один ключ
+            {{ t("mk.slot.add") }}
           </button>
 
           <div class="mk-divider"></div>
@@ -296,11 +290,11 @@ watch(
           <div class="mk-actions">
             <button class="mk-btn-primary" @click="mergeContainers">
               <GitMerge :size="14" />
-              Объединить
+              {{ t("mk.action.merge") }}
             </button>
             <button class="mk-btn-ghost" @click="clearAllSlots">
               <Trash2 :size="13" />
-              Очистить всё
+              {{ t("mk.action.clearAll") }}
             </button>
           </div>
 
@@ -345,7 +339,7 @@ watch(
             >
               <div class="mk-ok-pill">
                 <CheckCircle2 :size="14" />
-                <span>Ключи объединены</span>
+                <span>{{ t("mk.result.title") }}</span>
                 <span
                   class="mk-summary"
                   style="margin-left: auto; text-align: right"
@@ -357,7 +351,7 @@ watch(
               <div>
                 <div class="mk-label">
                   <Key :size="11" />
-                  Объединённый ключ
+                  {{ t("mk.result.label") }}
                 </div>
                 <div class="mk-out-row">
                   <textarea
@@ -370,21 +364,21 @@ watch(
                     <button
                       class="mk-btn-sec"
                       :class="{ copied: isCopied('mergeCopy') }"
-                      title="Копировать"
+                      :title='t("mk.action.copy")'
                       @click="copyToClipboard(mergeOutput, 'mergeCopy')"
                     >
                       <template v-if="isCopied('mergeCopy')">
                         <Check :size="13" />
-                        Скопировано!
+                        {{ t("mk.action.copied") }}
                       </template>
                       <template v-else>
                         <Copy :size="13" />
-                        Копировать
+                        {{ t("mk.action.copy") }}
                       </template>
                     </button>
                     <button
                       class="mk-btn-ghost"
-                      title="Скачать JSON"
+                      :title='t("mk.action.downloadJson")'
                       @click="downloadResult(mergeOutput)"
                     >
                       <Download :size="13" />

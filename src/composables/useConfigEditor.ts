@@ -12,6 +12,23 @@
  */
 
 import { ref, computed, watch } from "vue";
+import { locale, translate } from "@/i18n";
+import { pluralRu } from "@/utils/plural";
+
+/**
+ * Locale-aware plurals. Russian takes three forms, English two — a shared
+ * helper keeps the message builders below readable.
+ */
+function keyWord(n: number): string {
+  if (locale.value === "ru") return pluralRu(n, ["ключе", "ключах", "ключах"]);
+  return n === 1 ? "key" : "keys";
+}
+
+function containerWord(n: number): string {
+  if (locale.value === "ru")
+    return pluralRu(n, ["контейнер", "контейнера", "контейнеров"]);
+  return n === 1 ? "container" : "containers";
+}
 import {
   detectFormat,
   confToVpn,
@@ -21,7 +38,6 @@ import {
 import { validateAwgParams, type Finding } from "@/utils/awgValidate";
 import { healthCheckConf } from "@/utils/healthCheck";
 import { highlight } from "@/utils/awgHighlight";
-import { pluralRu } from "@/utils/plural";
 import { CLIENTS, CLIENT_IDS, DEFAULT_CLIENT_ID } from "@/utils/generator/clients";
 import {
   vpnDecode,
@@ -146,7 +162,7 @@ export function useConfigEditor() {
     if (fmt === "conf") return vpnDecode(confToVpn(t));
     if (fmt === "vpn") return vpnDecode(t);
     if (fmt === "json") return JSON.parse(t) as VpnConfig;
-    throw new Error("Не удалось распознать формат (vpn:// / .conf / JSON).");
+    throw new Error(translate("mk.msg.unknownFormat"));
   }
 
   /** Refresh the AWG container list / default selection from the active text. */
@@ -261,7 +277,11 @@ export function useConfigEditor() {
           return key;
         });
         rawText.value = lines.join("\n");
-        successMsg.value = `Обфускация обновлена в ${count} ${pluralRu(count, ["ключе", "ключах", "ключах"])}: ${[...changedAll].join(", ")}.`;
+        successMsg.value = translate("mk.msg.obfUpdatedKeys", {
+          n: count,
+          keyWord: keyWord(count),
+          fields: [...changedAll].join(", "),
+        });
         return [...changedAll];
       }
 
@@ -274,8 +294,12 @@ export function useConfigEditor() {
           : vpnEncode(res.updated),
       );
       successMsg.value = res.changed.length
-        ? `Обфускация обновлена: ${res.changed.join(", ")} (${res.containerCount} AWG-${pluralRu(res.containerCount, ["контейнер", "контейнера", "контейнеров"])}).`
-        : "Параметры уже актуальны — изменений не потребовалось.";
+        ? translate("mk.msg.obfUpdatedOne", {
+            fields: res.changed.join(", "),
+            n: res.containerCount,
+            containerWord: containerWord(res.containerCount),
+          })
+        : translate("mk.msg.alreadyCurrent");
       return res.changed;
     } catch (e) {
       errorMsg.value = e instanceof Error ? e.message : String(e);
@@ -290,7 +314,7 @@ export function useConfigEditor() {
   function convertTo(target: AwgFormat) {
     if (isMultiKey.value) {
       errorMsg.value =
-        "Конвертация доступна для одного ключа. Оставьте в редакторе один ключ.";
+        translate("mk.msg.convertOne");
       return;
     }
     try {

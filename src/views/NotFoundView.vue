@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { AlertTriangle, Home, ArrowLeft } from "lucide-vue-next";
 import { useRouter } from "vue-router";
+import { localizePath, useI18n } from "@/i18n";
 
 const router = useRouter();
+const { locale } = useI18n();
 
 function goHome() {
-    router.push("/");
+    router.push(localizePath("/", locale.value));
 }
 
 function goBack() {

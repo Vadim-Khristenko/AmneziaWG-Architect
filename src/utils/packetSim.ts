@@ -7,6 +7,7 @@
  */
 
 import { parseRange } from "./generator/validators";
+import { translate } from "@/i18n";
 import type { AWGConfig } from "./generator/types";
 
 export type PacketKind =
@@ -32,8 +33,16 @@ export interface SimPacket {
   header: number;
   /** Approximate payload size without AWG prefix. */
   payload: number;
-  /** Short description in Russian. */
+  /** Localised one-line description. */
   description: string;
+  /**
+   * AWG 3.0 — this packet's header is encrypted with the ChaCha20
+   * header-protection key. Handshake and cookie messages are encrypted whole;
+   * transport packets only in their 16-byte header.
+   */
+  headerProtected?: boolean;
+  /** AWG 3.0 — the entire message is encrypted, not just the header. */
+  encryptedWhole?: boolean;
 }
 
 export interface SimResult {
@@ -59,6 +68,14 @@ function pickHeader(rangeStr: string): number {
   return Math.floor(min + Math.random() * (max - min + 1));
 }
 
+/** AWG 2.0 and 3.0 draw headers from ranges; 1.0 and 1.5 use fixed values. */
+function headerFor(cfg: AWGConfig, slot: 1 | 2 | 3 | 4): number {
+  if (cfg.version === "2.0" || cfg.version === "3.0") {
+    return pickHeader(cfg[`h${slot}`] as string);
+  }
+  return (cfg[`h${slot}s`] as number) ?? 0;
+}
+
 function randInt(min: number, max: number): number {
   return Math.floor(min + Math.random() * (max - min + 1));
 }
@@ -79,6 +96,17 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
   let id = 0;
   const cpsPackets: SimPacket[] = [];
 
+  // AWG 3.0 features. Header protection only applies when a key is set, and
+  // content padding replaces the pad-to-multiple-of-16 rule when configured.
+  const hp = Boolean(cfg.version === "3.0" && cfg.awg3?.headerProtectionKey);
+  const cpaRange =
+    cfg.version === "3.0" && cfg.awg3?.contentPaddingAddition
+      ? parseRange(cfg.awg3.contentPaddingAddition)
+      : null;
+
+  /** Cookie replies exist only where S3 does — 1.0 and 1.5 have no S3. */
+  const hasCookie = cfg.version === "2.0" || cfg.version === "3.0";
+
   // 1. CPS chain (sent by client before the real WG handshake)
   for (let i = 1; i <= 5; i++) {
     const value = cfg[`i${i}` as keyof AWGConfig] as string | undefined;
@@ -94,7 +122,7 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
       size,
       header: 0,
       payload: Math.max(0, size - 8),
-      description: `CPS-пакет I${i}: ${cfg.profile}`,
+      description: translate("sim.desc.cps", { n: i, profile: cfg.profile }),
     });
   }
   packets.push(...cpsPackets);
@@ -112,12 +140,12 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
       size,
       header: 0,
       payload: Math.max(0, size - 8),
-      description: `Junk-train ${i + 1}/${cfg.jc} — маскировка трафика`,
+      description: translate("sim.desc.junk", { i: i + 1, total: cfg.jc }),
     });
   }
 
   // 3. WireGuard handshake Initiation (client → server)
-  const h1 = pickHeader(cfg.h1);
+  const h1 = headerFor(cfg, 1);
   const initSize = WG_BASE.init + randInt(0, cfg.s1);
   packets.push({
     id: ++id,
@@ -129,11 +157,13 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
     size: initSize,
     header: h1,
     payload: WG_BASE.init,
-    description: `WG Handshake Initiation, H1=${h1}, S1=${cfg.s1}`,
+    description: translate("sim.desc.init", { h1, s1: cfg.s1 }),
+    headerProtected: hp,
+    encryptedWhole: hp,
   });
 
   // 4. WireGuard handshake Response (server → client)
-  const h2 = pickHeader(cfg.h2);
+  const h2 = headerFor(cfg, 2);
   const respSize = WG_BASE.response + randInt(0, cfg.s2);
   packets.push({
     id: ++id,
@@ -145,30 +175,43 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
     size: respSize,
     header: h2,
     payload: WG_BASE.response,
-    description: `WG Handshake Response, H2=${h2}, S2=${cfg.s2}`,
+    description: translate("sim.desc.response", { h2, s2: cfg.s2 }),
+    headerProtected: hp,
+    encryptedWhole: hp,
   });
 
-  // 5. Cookie Reply (client → server) if S3 is configured
-  const h3 = pickHeader(cfg.h3);
-  const cookieSize = WG_BASE.cookie + randInt(0, cfg.s3);
-  packets.push({
-    id: ++id,
-    step: "5",
-    kind: "cookie",
-    label: "Cookie",
-    from: "client",
-    to: "server",
-    size: cookieSize,
-    header: h3,
-    payload: WG_BASE.cookie,
-    description: `Cookie Reply, H3=${h3}, S3=${cfg.s3}`,
-  });
+  // 5. Cookie Reply (server → client). Only 2.0 and 3.0 pad it via S3.
+  if (hasCookie) {
+    const h3 = headerFor(cfg, 3);
+    const cookieSize = WG_BASE.cookie + randInt(0, cfg.s3);
+    packets.push({
+      id: ++id,
+      step: "5",
+      kind: "cookie",
+      label: "Cookie",
+      from: "server",
+      to: "client",
+      size: cookieSize,
+      header: h3,
+      payload: WG_BASE.cookie,
+      description: translate("sim.desc.cookie", { h3, s3: cfg.s3 }),
+      headerProtected: hp,
+      encryptedWhole: hp,
+    });
+  }
 
   // 6. Data packets (both directions)
   for (let i = 0; i < 4; i++) {
-    const h4 = pickHeader(cfg.h4);
+    const h4 = headerFor(cfg, 4);
     const payload = randInt(64, 512);
-    const size = payload + randInt(0, cfg.s4);
+
+    // 3.0 replaces the pad-to-multiple-of-16 rule with a random addition
+    // drawn from ContentPaddingAddition; older versions align to 16.
+    const contentPad = cpaRange
+      ? randInt(cpaRange[0], cpaRange[1])
+      : (16 - (payload % 16)) % 16;
+
+    const size = payload + contentPad + randInt(0, cfg.s4);
     packets.push({
       id: ++id,
       step: `6.${i + 1}`,
@@ -179,7 +222,11 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
       size,
       header: h4,
       payload,
-      description: `Передача данных, H4=${h4}, S4=${cfg.s4}`,
+      description: cpaRange
+        ? translate("sim.desc.data3", { h4, s4: cfg.s4, pad: contentPad })
+        : translate("sim.desc.data", { h4, s4: cfg.s4 }),
+      // Transport packets get only their 16-byte header encrypted.
+      headerProtected: hp,
     });
   }
 
@@ -228,12 +275,12 @@ export function kindLabel(kind: PacketKind): string {
 
 export function kindDescription(kind: PacketKind): string {
   const map: Record<PacketKind, string> = {
-    cps: "Цепочка сигнатур, которая делает трафик похожим на выбранный протокол.",
-    junk: "Фиктивные пакеты, запутывающие DPI перед настоящим handshake.",
-    init: "WireGuard Handshake Initiation — первый реальный WG-пакет.",
-    response: "WireGuard Handshake Response — ответ сервера.",
-    cookie: "Cookie Reply — защита от DDoS/amplification.",
-    data: "Зашифрованные данные VPN-туннеля.",
+    cps: translate("sim.legend.cps"),
+    junk: translate("sim.legend.junk"),
+    init: translate("sim.legend.init"),
+    response: translate("sim.legend.response"),
+    cookie: translate("sim.legend.cookie"),
+    data: translate("sim.legend.data"),
   };
   return map[kind];
 }
