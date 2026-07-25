@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Resvg } from "@resvg/resvg-js";
-import { ensureFonts } from "./fonts.mjs";
+import { ensureFonts, FAMILY } from "./fonts.mjs";
 import {
   THEMES,
   COLORS,
@@ -191,6 +191,59 @@ function squareSvg(page, loc) {
 </svg>`;
 }
 
+/**
+ * GitHub social preview — 1280×640, the size GitHub renders in link unfurls
+ * and in the repository's social card.
+ *
+ * Denser than the site cards: the repo page has no other context, so this one
+ * carries the version matrix and the stack rather than a single tagline.
+ */
+function githubSvg() {
+  const W = 1280;
+  const H = 640;
+  const cx = W / 2;
+  const T = THEMES.amber;
+
+  const versions = ["1.0", "1.5", "2.0", "3.0"];
+  const chipW = 92;
+  const chipGap = 12;
+  const chipsTotal = versions.length * chipW + (versions.length - 1) * chipGap;
+  let vx = cx - chipsTotal / 2;
+
+  const chips = versions
+    .map((v, i) => {
+      const isLatest = i === versions.length - 1;
+      const x = vx;
+      vx += chipW + chipGap;
+      return `
+      <g>
+        <rect x="${x}" y="418" width="${chipW}" height="38" rx="8"
+              fill="${isLatest ? T.accent : "#ffffff"}"
+              fill-opacity="${isLatest ? 0.16 : 0.04}"
+              stroke="${T.accent}" stroke-opacity="${isLatest ? 0.7 : 0.22}" stroke-width="1"/>
+        <text x="${x + chipW / 2}" y="443" text-anchor="middle"
+              font-family="${FAMILY.mono}" font-size="17" letter-spacing="0.5"
+              fill="${isLatest ? T.accentBright : T.textSub}"
+              fill-opacity="${isLatest ? 1 : 0.75}">${v}</text>
+      </g>`;
+    })
+    .join("");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  ${defs(T)}
+  ${background(W, H, T)}
+  ${brackets(W, H, T, 44, 78)}
+  ${badge(cx, 74, "OPEN SOURCE · MIT", T, 270)}
+  ${title(cx, 248, "AWG", "ARCHITECT", T, 100)}
+  ${subtitle(cx, 306, "Генератор обфускации AmneziaWG · Advanced obfuscation generator", T, 25)}
+  ${rule(cx, 348, 560)}
+  ${tagRow(cx, 388, ["QUIC", "TLS 1.3", "DTLS", "SIP", "HTTP/3", "DNS"], T, 18)}
+  ${chips}
+  ${packetTrain(cx, 508, T, { scale: 1.2 })}
+  ${footer(cx, 578, "architect.vai-rice.space", "Vue 3 · TypeScript · всё считается в браузере", T)}
+</svg>`;
+}
+
 /* ── Render ──────────────────────────────────────────────────────────────── */
 
 async function main() {
@@ -227,7 +280,17 @@ async function main() {
     }
   }
 
-  console.log(`\n${count} images written to public/assets/`);
+  // GitHub social preview lives with the other repo assets, not in public/.
+  const ghDir = path.join(import.meta.dirname, "../../.github/assets");
+  fs.mkdirSync(ghDir, { recursive: true });
+  const ghPng = new Resvg(githubSvg(), { font: fontOpts }).render().asPng();
+  fs.writeFileSync(path.join(ghDir, "github-preview.png"), ghPng);
+  console.log(
+    `  ${"github-preview.png".padEnd(34)} ${(ghPng.length / 1024).toFixed(0)} KB  → .github/assets`,
+  );
+  count++;
+
+  console.log(`\n${count} images written`);
 }
 
 main().catch((err) => {

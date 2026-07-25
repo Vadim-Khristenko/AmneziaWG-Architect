@@ -1,381 +1,205 @@
 <div align="center">
 
-<img src=".github/assets/github-preview.png" width="800" alt="AmneziaWG Architect — Advanced DPI-bypass configuration generator" />
+<img src=".github/assets/github-preview.png" alt="AmneziaWG Architect" width="100%">
 
-<br/><br/>
+**Русский** · [English](README.en.md)
 
-# AmneziaWG Architect
+[![Открыть генератор](https://img.shields.io/badge/Открыть_генератор-architect.vai--rice.space-e8a840?style=for-the-badge)](https://architect.vai-rice.space/)
+[![AmneziaWG 3.0](https://img.shields.io/badge/AmneziaWG-3.0-5fbf7f?style=for-the-badge)](#поддерживаемые-версии)
+[![MIT](https://img.shields.io/badge/Лицензия-MIT-c49040?style=for-the-badge)](LICENSE)
 
-### Продвинутый генератор, валидатор и лаборатория обфускации AmneziaWG
-
-<br/>
-
-[![Deploy to Pages](https://img.shields.io/github/actions/workflow/status/Vadim-Khristenko/AmneziaWG-Architect/deploy-pages.yml?branch=main&style=for-the-badge&logo=github&logoColor=white&label=Deploy&color=232a30)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/actions)
-&nbsp;
-[![License: MIT](https://img.shields.io/badge/License-MIT-f5c060?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
-&nbsp;
-[![Vue 3](https://img.shields.io/badge/Vue-3.5-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
-&nbsp;
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-
-<br/>
-
-[![Stars](https://img.shields.io/github/stars/Vadim-Khristenko/AmneziaWG-Architect?style=flat-square&logo=github&color=f5c060&label=Stars)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/stargazers)
-&nbsp;
-[![Issues](https://img.shields.io/github/issues/Vadim-Khristenko/AmneziaWG-Architect?style=flat-square&color=5cb87a&label=Issues)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues)
-&nbsp;
-[![Contributors](https://img.shields.io/github/contributors/Vadim-Khristenko/AmneziaWG-Architect?style=flat-square&color=5b9bd5&label=Contributors)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/graphs/contributors)
-&nbsp;
-[![Last Commit](https://img.shields.io/github/last-commit/Vadim-Khristenko/AmneziaWG-Architect?style=flat-square&color=c4a868&label=Last%20Commit)](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/commits/main)
-
-<br/>
-
-[**▶ Открыть генератор**](https://architect.vai-rice.space/)
-&nbsp;·&nbsp;
-[📋 Issues](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues)
-&nbsp;·&nbsp;
-[🤝 Contributing](CONTRIBUTING.md)
-&nbsp;·&nbsp;
-[💬 Флудильня Amnezia](https://t.me/amnezia_vpn/)
-
-<br/>
-
-> *Основано на идее [Special Junk Packet List](https://voidwaifu.github.io/Special-Junk-Packet-List/) от [@VoidWaifu](https://github.com/VoidWaifu) — спасибо за вклад!*
+Генератор параметров обфускации AmneziaWG. Всё считается в браузере — ни ключи,
+ни конфиги никуда не отправляются.
 
 </div>
 
 ---
 
-<br/>
+## Что это
 
-## ⚠️ Юридическая информация
+Обычный WireGuard слишком легко опознать: фиксированный байт типа сообщения и
+предсказуемые размеры пакетов (148 байт на handshake initiation, 92 на response)
+позволяют DPI определить протокол по первому же пакету и заблокировать его целиком.
 
-> **Этот проект создан исключительно в ознакомительных и исследовательских целях.**
->
-> **Проект никогда не создавался для использования в России или странах СНГ.** Автор не несёт ответственности за любое использование данного программного обеспечения.
->
-> Использование инструментов обфускации трафика может нарушать законодательство вашей страны. Используйте только в легальных целях:
-> - Pentesting и security research
-> - CTF-соревнования
-> - Научные исследования
-> - Тестирование собственных сетей
->
-> **Никакие материалы этого проекта не являются призывом к нарушению законов.**
+AmneziaWG добавляет поверх той же криптографии слой обфускации. **Architect**
+подбирает его параметры так, чтобы они были корректными, совместимыми с вашим
+клиентом и не воссоздавали случайно тот самый отпечаток, от которого вы уходите.
+
+> [!IMPORTANT]
+> Проект создан для исследовательских и образовательных целей и никогда не
+> создавался для использования в России или странах СНГ. Применение инструментов
+> обфускации трафика может нарушать законодательство вашей страны —
+> ответственность за использование лежит на вас.
 
 ---
 
-<br/>
+## Поддерживаемые версии
 
-## 🔭 О проекте
+| | Junk `Jc/Jmin/Jmax` | `S1 S2` | `S3 S4` | CPS `I1–I5` | Заголовки `H1–H4` | Параметры 3.0 |
+|:--|:--:|:--:|:--:|:--:|:--:|:--:|
+| **1.0** | ✅ | ✅ | — | — | фиксированные | — |
+| **1.5** | ✅ | ✅ | — | только клиент | фиксированные | — |
+| **2.0** | ✅ | ✅ | ✅ | ✅ | диапазоны | — |
+| **3.0** | ✅ | ✅ | ✅ | ✅ | диапазоны | ✅ |
 
-**AmneziaWG Architect** — это полностью клиентское веб-приложение для создания, проверки и управления параметрами обфускации протокола [AmneziaWG](https://github.com/amnezia-vpn/amneziawg-linux-kernel-module). Если обычный VPN просто шифрует трафик, Architect помогает сделать его **неотличимым** от обычного интернет-трафика (QUIC, TLS, SIP, HTTP/3 и др.), обходя системы глубокого анализа пакетов (DPI).
+### Что добавила 3.0
 
-Приложение объединяет в одном интерфейсе несколько инструментов:
+Параметры выверены **по исходникам** `amneziawg-go v3.0.1` и ветки `feat/awg3`
+репозитория `amneziawg-tools`, а не по документации — она на момент написания
+описывает 2.0.
 
-| Инструмент | Что делает |
-|:---|:---|
-| **Генератор обфускации** | Создаёт уникальные наборы H1–H4, S1–S4, Jc/Jmin/Jmax и CPS-сигнатуры I1–I5 |
-| **Config Health Checker** | Проверяет `.conf` и `vpn://`-ключи на ошибки и совместимость с конкретным клиентом |
-| **MergeKeys** | Декодирует, обновляет и объединяет `vpn://`-ключи AmneziaVPN |
-| **Packet Simulator** | Визуализирует handshake: junk-пакеты, Initial, Response, CPS |
-| **Batch Generator** | Генерирует до 1000 конфигов за раз, с Web Worker для больших партий |
+| Параметр | Что делает |
+|:--|:--|
+| `HeaderProtectionKey` | Общий 32-байтный ключ ChaCha20. Хендшейк и cookie шифруются целиком, транспортные пакеты — только 16-байтный заголовок. В `.conf` пишется в base64, как `PrivateKey`; в UAPI — в hex. |
+| `ContentPaddingAddition` | Случайный добавочный паддинг каждого транспортного пакета вместо выравнивания по 16 байт. |
+| `RekeyAfterTime`<br>`RekeyTimeout`<br>`RejectAfterTime`<br>`KeepaliveTimeout`<br>`MaxHandshakeAttempts` | Диапазоны вместо фиксированных констант WireGuard — ровный ритм хендшейков перестаёт быть отпечатком. |
 
-> **Ничего не покидает ваш браузер.** Ни один байт данных не отправляется на сервер. Нет аналитики. Нет трекеров. Нет баз данных. Весь исходный код открыт и может быть запущен локально.
+> [!WARNING]
+> **При включённой защите заголовков S1–S4 не могут быть меньше 12.** Nonce
+> шифра нигде не передаётся — он берётся из первых 12 байт S-паддинга. Если
+> паддинг короче, срез уходит за его границу в тело сообщения, и «nonce»
+> перестаёт быть случайным. Ошибки при этом не будет — шифр просто тихо
+> ослабнет. Генератор поднимает S до 12 автоматически, а валидатор отклоняет
+> конфиги, где это нарушено.
 
-<br/>
+Теги `<d>`, `<ds>` и `<dz>` в v3.0.1 разбираются парсером, но не подключены к
+отправке пакетов — это задел под AWG 4.0, поэтому генератор их не выдаёт.
 
-## ✨ Возможности
+---
+
+## Инструменты
 
 <table>
 <tr>
 <td width="50%" valign="top">
-
-### 🎯 Генератор обфускации
-- **11 профилей мимикрии:** QUIC Initial, QUIC 0-RTT, TLS 1.3, DTLS 1.3, HTTP/3, SIP, Noise_IK, DNS-запросы и другие.
-- **3 версии AWG:** полная поддержка AWG 1.0, 1.5 и 2.0.
-- **Матрица совместимости клиентов:** выбор целевого приложения — Windows, macOS, Linux, Android, iOS, роутеры.
-- **Browser Fingerprint:** имитация размеров пакетов Chrome, Firefox, Safari, Edge, Яндекс.
-- **Feedback-система:** кнопки «Работает / Не работает» — автоматическое усиление параметров.
-- **История генераций:** последние 20 конфигов с возможностью копирования.
-- **Экспорт:** `.conf`, формальный JSON `VpnConfig` Amnezia, `vpn://`-ключ, копирование отдельных групп.
-
+<img src="public/assets/og-mergekeys.png" alt="MergeKeys" width="100%">
+<h3>MergeKeys</h3>
+Редактор и объединение ключей <code>vpn://</code>. Обновляйте обфускацию
+существующего ключа или собирайте контейнеры из нескольких ключей в один
+мастер-ключ. Всё локально.
 </td>
 <td width="50%" valign="top">
-
-### 🔑 MergeKeys
-- **Обновление обфускации:** применить новые Jc/Jmin/Jmax и I1–I5 к существующему `vpn://`-ключу
-- **Объединение ключей:** собрать контейнеры из нескольких ключей в один мастер-ключ
-- **Декодирование:** просмотр JSON-содержимого ключа без модификации
-- **Интеграция с генератором:** параметры передаются автоматически через sessionStorage
-
+<img src="public/assets/og-simulator.png" alt="Packet Simulator" width="100%">
+<h3>Packet Simulator</h3>
+Показывает, как выглядит старт сессии: CPS-цепочка, junk-train, хендшейк и
+данные. Учитывает версию — 1.0 и 1.5 рисуются без того, чего у них нет.
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
-
-### 🧪 Лаборатория
-- **Config Health Checker** — валидация `.conf` и `vpn://` на ошибки протокола и совместимость с клиентом
-- **Packet Simulator** — пошаговая визуализация handshake: junk, Initial, Response, CPS
-- **Batch Generator** — до 1000 конфигов за раз с Web Worker при больших объёмах
-
+<img src="public/assets/og-faq.png" alt="FAQ" width="100%">
+<h3>FAQ</h3>
+Разбор параметров, различий версий и типичных проблем. Поиск сразу по двум
+языкам, категории и прямые ссылки на конкретные ответы.
 </td>
 <td width="50%" valign="top">
-
-### 🛡 Приватность
-- **100% Client-Side** — весь код в браузере
-- **Zero-Data** — нет серверов, БД, аналитики, cookies, трекеров
-- **Offline Ready** — работает без интернета после сохранения страницы
-- **Открытый код** — весь TypeScript доступен для аудита и локального запуска
-
-</td>
-<td width="50%" valign="top">
-
-### 🚀 Технологии
-- **Vue 3** с Composition API и `<script setup>`
-- **TypeScript** — строгая типизация на всех уровнях
-- **Vite 7** — мгновенный HMR и быстрые билды
-- **Web Workers** — batch-генерация без блокировки UI
-- **Vitest** — 270+ автотестов для генератора, форматов, валидаторов и симулятора
-- **Lucide Icons** — 50+ иконок, tree-shakeable
-- **pako** — zlib для декодирования `vpn://` ключей
-
+<img src="public/assets/og-vaiexia.png" alt="VAIEXIA" width="100%">
+<h3>VAIEXIA</h3>
+Веб-панель и бот для Telegram, Discord и Matrix: управление сервером или
+кластером откуда угодно. Скоро.
 </td>
 </tr>
 </table>
 
-<br/>
-
-## 🔄 Поддерживаемые версии AmneziaWG
-
-| Параметр | AWG 1.0 | AWG 1.5 | AWG 2.0 |
-|:---|:---:|:---:|:---:|
-| H1–H4 (одно значение) | ✅ | ✅ | — |
-| H1–H4 (диапазон) | — | — | ✅ |
-| S1–S2 | ✅ | ✅ | ✅ |
-| S3–S4 | — | — | ✅ |
-| Jc / Jmin / Jmax | ✅ | ✅ | ✅ |
-| I1–I5 (только клиент) | — | ✅ | — |
-| I1–I5 (сервер + клиент) | — | — | ✅ |
-
-> **AWG 1.0:** Минимальные требования — `Jc ≥ 4`, `Jmax > 81`.
-> **AWG 1.5:** I1–I5 работают только на стороне клиента.
-> **AWG 2.0:** Полная синхронизация всех параметров между клиентом и сервером.
-
-<br/>
-
-## 📐 Ограничения протокола
-
-Генератор автоматически соблюдает все ограничения:
-
-```
-S4 ≤ 32                  — Data prefix не более 32 байт
-S3 ≤ 64                  — Cookie-ответ не более 64 байт
-S1 + 56 ≠ S2             — Init и Response не совпадают по длине
-S2 + 92 ≠ S3             — Response и Cookie не совпадают по длине
-H1, H2, H3, H4           — Диапазоны не пересекаются (AWG 2.0)
-Jc ≥ 4, Jmax > 81        — Минимальные требования AWG 1.0
-```
-
-<br/>
-
-## ⚡ Быстрый старт
-
-### Онлайн
-
-Просто откройте **[architect.vai-rice.space/](https://architect.vai-rice.space/)**
-
-### Локальная разработка
-
-```bash
-# Клонировать
-git clone https://github.com/Vadim-Khristenko/AmneziaWG-Architect.git
-cd AmneziaWG-Architect
-
-# Установить зависимости (bun или npm)
-bun install      # или npm install
-
-# Dev-сервер с HMR
-bun run dev      # или npm run dev
-
-# Продакшн-билд
-bun run build    # или npm run build
-
-# Превью билда
-bun run preview  # или npm run preview
-```
-
-### Просмотр собранного проекта
-
-После сборки (`bun run build`) файлы находятся в папке `dist/`. Для их просмотра **необходим локальный веб-сервер** — прямое открытие `index.html` через `file://` не работает из-за ограничений CORS для ES-модулей в браузерах.
-
-**Варианты запуска:**
-
-```bash
-# 1. Встроенный превью Vite (рекомендуется)
-bun run preview
-
-# 2. Python (если установлен)
-cd dist
-python -m http.server 8000
-# Откройте: http://localhost:8000
-
-# 3. Node.js (npx)
-npx serve dist
-# или
-npx http-server dist
-
-# 4. VS Code
-# Установите расширение "Live Server" и откройте dist/index.html
-```
-
-> **Почему не работает file://?** Современные браузеры блокируют загрузку ES-модулей через `file://` протокол из соображений безопасности (CORS policy). Это стандартное ограничение, не связанное с проектом.
-
-<br/>
-
-## 🗂 Структура проекта
-
-```
-AmneziaWG-Architect/
-├── public/
-│   └── assets/               # OG-изображения, favicon, manifest
-├── src/
-│   ├── views/
-│   │   ├── HomeView.vue      # Генератор обфускации (главная страница)
-│   │   ├── MergeKeysView.vue # Обновление и объединение vpn://-ключей
-│   │   ├── SimulatorView.vue # Визуализация handshake
-│   │   ├── ConfigEditor.vue  # Редактор и Health Checker .conf
-│   │   ├── AboutView.vue     # О проекте, таймлайн, контакты
-│   │   └── IaaView.vue       # Install AmneziaWG Anywhere
-│   ├── components/
-│   │   ├── MainHeader.vue    # Навигация
-│   │   └── MainFooter.vue    # Подвал
-│   ├── composables/
-│   │   ├── useGenerator.ts   # Реактивное состояние генератора
-│   │   ├── useMergeKeys.ts   # Логика MergeKeys
-│   │   └── useGeneratorWorker.ts # Web Worker для batch
-│   ├── utils/
-│   │   ├── generator/        # Модульное ядро генерации
-│   │   ├── awgFormat.ts      # Парсинг .conf и vpn://
-│   │   ├── awgValidate.ts    # Валидация параметров AWG
-│   │   ├── healthCheck.ts    # Config Health Checker
-│   │   ├── packetSim.ts      # Симулятор пакетов
-│   │   └── mergekeys.ts      # Кодеки vpn://, pako, патчинг
-│   ├── workers/
-│   │   └── generator.worker.ts # Web Worker batch-генерации
-│   ├── router/               # Vue Router
-│   ├── App.vue               # Корневой компонент
-│   └── main.ts               # Точка входа
-├── assets/                   # Глобальные CSS (main.css, nav.css, footer.css)
-├── ogImageGen.py             # Генератор OG-изображений (Pillow)
-├── index.html                # SPA shell
-├── vite.config.ts            # Конфигурация Vite
-├── tsconfig.json             # Конфигурация TypeScript
-└── package.json
-```
-
-<br/>
-
-## 🌐 Домены и пулы мимикрии
-
-Каждый профиль использует собственный пул доменов (~540 хостов), проверенных на доступность:
-
-| Пул | Протокол | Хостов |
-|:---|:---|:---:|
-| `quic_initial` | QUIC Initial (0xC0–0xC3) | ~138 |
-| `quic_0rtt` | QUIC 0-RTT / Early Data | ~54 |
-| `tls_client_hello` | TLS 1.3 ClientHello | ~199 |
-| `dtls` | DTLS 1.3 / WebRTC STUN-TURN | ~82 |
-| `sip` | SIP REGISTER (UDP) | ~67 |
-
-<details>
-<summary><b>Исключённые сервисы (Россия, 2026)</b></summary>
-
-| Сервис | Причина |
-|:---|:---|
-| YouTube / Cloudflare | Заблокированы ТСПУ (2024) |
-| Discord | Заблокирован (2024) |
-| Facebook / Instagram / WhatsApp | Meta — ЭО; WhatsApp — 11.02.2026 |
-| Twitter / X | Деградация до полной недоступности |
-| Telegram CDN | Троттлинг с 2025, ожидается полная блокировка |
-| Google STUN (74.125.x.x) | IP пересекаются с блокировками YouTube |
-
-</details>
-
-<br/>
-
-## 🔒 Безопасность и приватность
-
-- **Client-Side Only** — весь код исполняется в браузере, ничего не логируется
-- **Zero Telemetry** — нет аналитики, метрик, fingerprinting, cookies, сторонних скриптов
-- **Нет серверов** — генерация, проверка, декодирование и объединение ключей не требуют серверной части
-- **CPS = транспортный силуэт** — криптографический уровень WireGuard не затрагивается: Curve25519, ChaCha20-Poly1305, BLAKE2s остаются неизменными
-- **Доменная стратегия** — предпочтительны домены CDN-инфраструктуры, обслуживающей банки и госсервисы (блокировка = экономический ущерб)
-- **Аудит** — весь исходный код TypeScript открыт, не обфусцирован, может быть запущен локально без интернета
-
-<br/>
-
-## 📝 Эволюция проекта
-
-| Версия | Что произошло |
-|:---:|:---|
-| **0.1** | Первый прототип — чистый HTML/CSS/JS, один файл, базовая генерация |
-| **0.5** | MergeKeys — декодирование и патчинг vpn://-ключей в браузере (pako/zlib) |
-| **1.0** | Полный переезд на **Vue 3 + TypeScript + Vite**. Тёмная тема, SPA, анимации |
-| **1.1** | AWG 2.0, CPS I1–I5, 7 профилей мимикрии, Browser Fingerprint, история |
-| **2.0** | Router Mode, Инспектор ключей, проверка доменов, композитные профили, 130+ автотестов |
-| **2.1** | Разрешение инцидента с роутингом (SPA-белый экран), умная 404-заглушка с fallback, модульный CI (GitLab) |
-| **3.0** | Архитектурный апгрейд: модульный генератор, криптографический RNG, матрица совместимости клиентов, S4 ≤ 32 |
-| **3.1** | Config Health Checker, Batch Generator, Packet Simulator, формальный JSON-экспорт VpnConfig, 270+ автотестов |
-
-За этим проектом стоит один разработчик, который оперативно устраняет баги и непрерывно улучшает UX. Каждое обновление — только на пользу.
-
-<br/>
-
-## 🤝 Contributing
-
-Мы рады внешним вкладчикам! Подробности — в [CONTRIBUTING.md](CONTRIBUTING.md).
-
-**Кратко:**
-1. Форкните репозиторий
-2. Создайте ветку `feature/your-change` или `fix/issue-123`
-3. Откройте Pull Request с описанием изменений
-
-<br/>
-
-## 💬 Обратная связь
-
-Нашли баг? Есть идея? Пишите во **Флудильне Amnezia VPN** в Telegram по юзернейму:
-
-> **@VAI_Programmer**
-
-⚠️ Пожалуйста, не спамьте в ЛС — заблочу 😅 Только через Флудильню или [GitHub Issues](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues).
-
-<br/>
-
-## ☕ Поддержать проект
-
-Этот проект живёт благодаря свободному времени и энтузиазму одного человека. Здесь нет рекламы, спонсоров или монетизации. Если Architect вам помог — буду рад монетке на кофе:
-
-<div align="center">
-
-[![Поддержать автора](https://img.shields.io/badge/Поддержать_автора-❤_YooMoney-ff5e6e?style=for-the-badge&logo=heart&logoColor=white)](https://yoomoney.ru/fundraise/1GA2JV51324.260304)
-
-*Каждый донат — это ещё одна фича, фикс или улучшение. Спасибо!*
-
-## 📄 Лицензия 📄
-
-**Этот проект распространяется под лицензией [MIT](LICENSE) — свободное использование, модификация и распространение.**
+Плюс **11 профилей мимикрии** (QUIC Initial, QUIC 0-RTT, TLS 1.3, DTLS 1.3,
+HTTP/3, SIP, DNS, Noise_IK и композитные), **матрица совместимости на 10
+клиентов**, **batch-генерация до 1000 конфигов** в Web Worker и **проверка
+конфигов** до передачи в клиент.
 
 ---
 
-**AmneziaWG Architect** · 2026
+## Приватность
 
-[🌐 GitHub Pages](https://architect.vai-rice.space/)
-&nbsp;·&nbsp;
-[💬 Amnezia Telegram](https://t.me/amnezia_vpn/)
-&nbsp;·&nbsp;
-[🐙 AmneziaVPN GitHub](https://github.com/amnezia-vpn/)
+Бэкенда нет — принимать данные попросту нечему. Ни аналитики, ни трекеров, ни
+cookies, ни сторонних скриптов; шрифты отдаются со своего домена, а не из Google
+Fonts. Вся случайность берётся из `crypto.getRandomValues()` с отбраковкой,
+исключающей смещение по модулю — `Math.random()` в генераторе нет нигде.
 
-Разработано с ❤️ для сообщества AmneziaVPN
+Страницу можно сохранить через <kbd>Ctrl</kbd>+<kbd>S</kbd> и пользоваться офлайн.
+
+---
+
+## Быстрый старт
+
+**Онлайн:** [architect.vai-rice.space](https://architect.vai-rice.space/)
+
+```bash
+git clone https://github.com/Vadim-Khristenko/AmneziaWG-Architect.git
+cd AmneziaWG-Architect
+bun install
+bun run dev
+```
+
+| Команда | Что делает |
+|:--|:--|
+| `bun run dev` | Dev-сервер с HMR |
+| `bun run build` | Продакшн-сборка: заглушки для ботов, `sitemap.xml`, `robots.txt` |
+| `bun run preview` | Просмотр собранного проекта |
+| `bun run test:run` | Прогон тестов |
+| `bun run typecheck` | Проверка типов |
+| `bun run og` | Пересборка OG-изображений и превью для GitHub |
+
+> [!TIP]
+> Не открывается GitHub, а приложения Amnezia нужны? Попробуйте зеркало:
+> [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn).
+> Это независимое зеркало, а не официальный сайт Amnezia — сверяйте контрольные
+> суммы и подписи релизов перед установкой.
+
+---
+
+## Нашли баг или есть идея?
+
+Пишите — это лучший способ починить то, о чём мы не знаем. Заводите
+[issue](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues),
+присоединяйтесь к обсуждению в чате, а вскоре и на `git.vai-rice.space`.
+
+Если проблема в конкретном конфиге, приложите версию AmneziaWG, клиент и его
+версию, а также сами параметры — **без приватных ключей**. Этого почти всегда
+достаточно, чтобы воспроизвести.
+
+Как устроена разработка — в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## Поддержать
+
+Проект живёт на энтузиазме: ни рекламы, ни спонсоров, ни монетизации.
+
+[![YooMoney](https://img.shields.io/badge/YooMoney-разовый-8b3ffd?style=flat-square)](https://yoomoney.ru/fundraise/1GA2JV51324.260304)
+[![Patreon](https://img.shields.io/badge/Patreon-регулярно-f96854?style=flat-square)](https://patreon.com/VAI_PROG)
+[![DaLink](https://img.shields.io/badge/DaLink-донат-4fb3c9?style=flat-square)](https://dalink.to/vai_prog)
+
+<details>
+<summary><b>Криптовалюта</b> — BTC, ETH, TON, USDT, TRX, SOL</summary>
+
+<br>
+
+> [!CAUTION]
+> Проверяйте сеть перед отправкой: перевод в неверной сети означает
+> безвозвратную потерю средств.
+
+| Монета | Сеть | Адрес |
+|:--|:--|:--|
+| Bitcoin `BTC` | Bitcoin · Native SegWit | `bc1qwvfpdhjuzelw8s9vxcfjj6fatnq3cltf0d48jy` |
+| Ethereum `ETH` | Ethereum · ERC-20 | `0x277195Ff068756F09683FAB523b2cdDf8Ef35B44` |
+| Toncoin `TON` | The Open Network | `UQBVdcwKqy8lx_2plsf2YPbcBJdYbPtnKbddmFWZntqiAEME` |
+| Tether `USDT` | JETTON · TON | `UQCaNScHxNbJsCi5Wc47rJqNpJPiDASUlMJ1nRwxq-hXSGoQ` |
+| Tron `TRX` | Tron · TRC-20 | `TC8dYqkDYQkuCKe7A6PWXUgDRB8Rr2Xd9f` |
+| Solana `SOL` | Solana | `4i2uWx82jhgVorPQyM2y47X2YvRgCVNNWPfNmVrGcCaE` |
+
+</details>
+
+---
+
+<div align="center">
+
+<img src="public/assets/og-about.png" alt="О проекте" width="100%">
+
+Другие мои проекты — на **[vai-rice.space](https://vai-rice.space)**
+
+Основано на идеях [Special Junk Packet List](https://voidwaifu.github.io/Special-Junk-Packet-List/)
+от [@VoidWaifu](https://github.com/VoidWaifu)
+
+**[MIT](LICENSE)** · Сделано для сообщества AmneziaVPN
 
 </div>

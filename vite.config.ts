@@ -413,6 +413,14 @@ export const test = {
   environment: "node",
   include: ["src/**/__tests__/**/*.test.ts"],
   /**
+   * Several suites are property-style: they generate a couple of hundred
+   * configs and assert an invariant holds across all of them. Each generation
+   * draws from crypto.getRandomValues many times over, so on a loaded machine
+   * the 5s default is close enough to the line to produce flakes that look
+   * like real failures.
+   */
+  testTimeout: 20_000,
+  /**
    * Git worktrees are often created *inside* the repo (e.g. `.claude/worktrees`
    * by tooling). Without this, their `src/` trees are globbed too and every
    * suite runs twice against two different checkouts — which silently doubles
