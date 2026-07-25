@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, type Component } from "vue";
 import {
     Info,
     HelpCircle,
@@ -35,8 +35,14 @@ import {
     Star,
     Terminal,
     CircleDot,
+    TriangleAlert,
 } from "lucide-vue-next";
 import SupportSection from "@/components/SupportSection.vue";
+import { useI18n } from "@/i18n";
+import { TIMELINE } from "@/data/changelog";
+
+const { locale, t } = useI18n();
+const isRu = computed(() => locale.value === "ru");
 
 const activeTimeline = ref<number | null>(null);
 const avatarFailed = ref(false);
@@ -46,127 +52,29 @@ function toggleTimeline(idx: number) {
     activeTimeline.value = activeTimeline.value === idx ? null : idx;
 }
 
-const timelineEvents = [
-    {
-        version: "0.1",
-        date: "Начало",
-        title: "Первый прототип",
-        icon: Rocket,
-        color: "amber",
-        desc: "Чистый HTML/CSS/JS, один файл, базовая генерация параметров Jc, Jmin, Jmax и случайных H/S. Работающий PoC без дизайна.",
-    },
-    {
-        version: "0.2",
-        date: "Фикс",
-        title: "Исправление HEX-генерации",
-        icon: Bug,
-        color: "red",
-        desc: "Критическая ошибка: невалидный HEX в script.js вызывал краш клиента. Исправлено, добавлена валидация assertEvenHex.",
-    },
-    {
-        version: "0.3",
-        date: "CPS-теги",
-        title: "Селективные CPS-теги",
-        icon: Code,
-        color: "green",
-        desc: "Поддержка <c>, <t>, <r>, <rc>, <rd> тегов с возможностью включения/выключения каждого. Синхронизация I1-генераторов с тегами пользователя.",
-    },
-    {
-        version: "0.4",
-        date: "AWG 1.0",
-        title: "Оптимизация Junk для AWG 1.0",
-        icon: Wrench,
-        color: "amber",
-        desc: "Требования официального клиента: Jc ≥ 4, Jmax > 81 для AWG 1.0. Корректировка генератора под ограничения протокола.",
-    },
-    {
-        version: "0.5",
-        date: "Эволюция",
-        title: "MergeKeys и vpn://",
-        icon: GitMerge,
-        color: "green",
-        desc: "Модуль MergeKeys — декодирование, патчинг и объединение vpn://-ключей в браузере. Поддержка pako/zlib, base64url кодек с 4-байт заголовком.",
-    },
-    {
-        version: "0.6",
-        date: "Browser FP",
-        title: "Browser Fingerprint и QUIC/HTTP3",
-        icon: Eye,
-        color: "amber",
-        desc: "Профильные таблицы размеров пакетов по браузерам (Chrome, Firefox, Safari, Yandex). Адаптивный padding для QUIC Initial, 0-RTT, HTTP/3.",
-    },
-    {
-        version: "0.7",
-        date: "Дизайн",
-        title: "Глобальный редизайн UI",
-        icon: Paintbrush,
-        color: "green",
-        desc: "Полная переработка интерфейса, MergeKeys в стиле основного генератора. Мобильная адаптивность, исправление overflow CPS при MTU.",
-    },
-    {
-        version: "1.0",
-        date: "Перерождение",
-        title: "Vue 3 + TypeScript + SPA",
-        icon: Sparkles,
-        color: "amber",
-        desc: "Миграция на Vue 3, Vite, TypeScript. Компонентная архитектура (utils/composables/views), SPA-роутинг, GitHub Pages с pre-render stubs. UI полностью с нуля — тёмная тема, amber-акценты, анимации.",
-    },
-    {
-        version: "1.1",
-        date: "Расширение",
-        title: "AWG 2.0, CPS, 7+ профилей",
-        icon: Layers,
-        color: "green",
-        desc: "AWG 2.0 с диапазонами H1–H4, S3/S4, полная CPS-цепочка I1–I5. 7 профилей мимикрии (QUIC, TLS, DTLS, SIP, HTTP/3, Noise_IK). Feedback-система с автоусилением, история генераций.",
-    },
-    {
-        version: "1.2",
-        date: "Инфра",
-        title: "SPA-роутинг, донаты, деплой",
-        icon: Globe,
-        color: "amber",
-        desc: "Относительные пути для file://, runtime-определение base path, pre-render stubs для SEO-ботов. CI/CD: build → deploy → release. Переход на Yoomoney.",
-    },
-    {
-        version: "2.0",
-        date: "Релиз 2.0",
-        title: "Router Mode, Inspector, композитные профили",
-        icon: Star,
-        color: "green",
-        desc: "Режим роутера для NanoPi/Keenetic/OpenWrt. Инспектор и редактор vpn://-ключей. Композитные профили TLS→QUIC и QUIC Burst. Проверка доступности доменов. 133+ автотестов (vitest). Обновлённая IAA-страница. Скрипты запуска для Win/Linux/macOS.",
-    },
-    {
-        version: "2.1",
-        date: "Инфра",
-        title: "Исправление SPA-редиректов и умная 404",
-        icon: Bug,
-        color: "red",
-        desc: "Инцидент с маршрутизацией: из-за конфликта SPA-редиректов пользователи получали белый экран по прямым ссылкам. Починено! Добавлена умная 404-заглушка с ручным fallback'ом, продвинутый мульти-хостинг (GitLab/GitHub/Cloudflare) и новые автотесты резолва URL.",
-    },
-    {
-        version: "3.0",
-        date: "Релиз 3.0",
-        title: "Архитектурный апгрейд",
-        icon: Cpu,
-        color: "green",
-        desc: "Рефакторинг монолитного generator.ts в модульную архитектуру (types, constants, validators, profiles, clients). Замена Math.random() на crypto.getRandomValues(). Жёсткий лимит S4 ≤ 32. Матрица совместимости клиентов.",
-    },
-    {
-        version: "3.1",
-        date: "Текущий",
-        title: "Health Checker, Batch, Simulator, Worker",
-        icon: ShieldCheck,
-        color: "amber",
-        desc: "Config Health Checker с клиентской валидацией. Batch Generator до 1000 конфигов с Web Worker. Packet Simulator с визуализацией handshake. Формальный JSON-экспорт Amnezia VpnConfig. Обновлённые зависимости и полный TypeScript coverage.",
-    },
-];
+/** Icon name → component, so the changelog data stays serialisable. */
+const TIMELINE_ICONS: Record<string, Component> = {
+    Rocket, Bug, Code, Wrench, GitMerge, Eye, Paintbrush,
+    Sparkles, Layers, Globe, Star, Cpu, ShieldCheck,
+};
 
-const statCards = [
-    { label: "Профили мимикрии", value: "11", icon: Eye },
-    { label: "Параметров генерации", value: "20+", icon: FileCode },
-    { label: "Автотестов", value: "270+", icon: Terminal },
-    { label: "Поддерживаемых клиентов", value: "10", icon: ShieldCheck },
-];
+const timelineEvents = computed(() =>
+    TIMELINE.map((e) => ({
+        version: e.version,
+        date: e.date[locale.value],
+        title: e.title[locale.value],
+        desc: e.desc[locale.value],
+        icon: TIMELINE_ICONS[e.icon] ?? Sparkles,
+        color: e.color,
+    })),
+);
+
+const statCards = computed(() => [
+    { label: t("about.stat.profiles"), value: "11", icon: Eye },
+    { label: t("about.stat.params"), value: "20+", icon: FileCode },
+    { label: t("about.stat.tests"), value: "300+", icon: Terminal },
+    { label: t("about.stat.clients"), value: "10", icon: ShieldCheck },
+]);
 </script>
 
 <template>
@@ -174,16 +82,16 @@ const statCards = [
         <!-- ── Hero ────────────────────────────────────────────────────── -->
         <header class="about-hero a-stagger-1">
             <div class="hero-badge badge badge-amber">
-                <Info :size="12" /> О ПРОЕКТЕ
+                <Info :size="12" /> {{ t("about.badge") }}
             </div>
             <h1 class="hero-title">
                 <span class="hero-line-1">AmneziaWG</span>
                 <span class="hero-line-2">Architect</span>
             </h1>
             <p class="hero-subtitle">
-                Генератор обфускации нового поколения.<br />
-                <b>Твой протокол — твои правила.</b><br />
-                <i>Невидимость по стандарту.</i>
+                {{ t("about.subtitle.1") }}<br />
+                <b>{{ t("about.subtitle.2") }}</b><br />
+                <i>{{ t("about.subtitle.3") }}</i>
             </p>
         </header>
 
@@ -193,27 +101,25 @@ const statCards = [
                 <div class="legal-icon">
                     <Shield :size="28" />
                 </div>
-                <h2>⚠️ Юридическая информация</h2>
+                <h2><TriangleAlert :size="18" /> {{ t("about.legal.title") }}</h2>
                 <div class="legal-content">
                     <p class="legal-warning">
-                        <strong>Этот проект создан исключительно в ознакомительных и исследовательских целях.</strong>
+                        <strong>{{ t("about.legal.warning") }}</strong>
                     </p>
                     <p>
-                        <strong>Проект никогда не создавался для использования в России или странах СНГ.</strong>
-                        Автор не несёт ответственности за любое использование данного программного обеспечения.
+                        {{ t("about.legal.scope") }}
                     </p>
                     <div class="legal-allowed">
-                        <p><strong>Разрешённое использование:</strong></p>
+                        <p><strong>{{ t("about.legal.allowedTitle") }}</strong></p>
                         <ul>
-                            <li>Pentesting и security research</li>
-                            <li>CTF-соревнования</li>
-                            <li>Научные исследования</li>
-                            <li>Тестирование собственных сетей</li>
+                            <li>{{ t("about.legal.allowed.1") }}</li>
+                            <li>{{ t("about.legal.allowed.2") }}</li>
+                            <li>{{ t("about.legal.allowed.3") }}</li>
+                            <li>{{ t("about.legal.allowed.4") }}</li>
                         </ul>
                     </div>
                     <p class="legal-disclaimer">
-                        Использование инструментов обфускации трафика может нарушать законодательство вашей страны.
-                        <strong>Никакие материалы этого проекта не являются призывом к нарушению законов.</strong>
+                        {{ t("about.legal.disclaimer") }}
                     </p>
                 </div>
             </div>
@@ -233,65 +139,36 @@ const statCards = [
             <div class="section-icon-wrap">
                 <Sparkles :size="22" />
             </div>
-            <h2>Что такое AmneziaWG Architect?</h2>
-            <p>
-                <span class="hl">AmneziaWG Architect</span> — это продвинутый
-                веб-инструмент для создания уникальных профилей обфускации
-                протокола <b>AmneziaWG</b>, а также для работы с ключами Amnezia
-                VPN.
-            </p>
-            <p>
-                Если обычный VPN просто шифрует данные, то Architect помогает
-                «замаскировать» сам факт использования VPN. Системы DPI
-                анализируют структуру пакетов и умеют определять WireGuard по
-                фиксированным заголовкам и размерам. Architect генерирует
-                параметры, которые делают ваш трафик похожим на QUIC, TLS, SIP
-                или другие протоколы — неотличимым от обычного интернет-трафика.
-            </p>
+            <h2>{{ t("about.what.title") }}</h2>
+            <p>{{ t("about.what.p1") }}</p>
+            <p>{{ t("about.what.p2") }}</p>
             <div class="feature-grid">
                 <div class="feature-card">
                     <CheckCircle :size="18" class="fc-icon" />
                     <div>
-                        <b>11 профилей мимикрии</b>
-                        <span
-                            >QUIC, TLS, DTLS, SIP, HTTP/3, Noise_IK и другие
-                            протоколы. Параметры H1–H4, S1–S4, I1–I5 точно
-                            соответствуют полям AmneziaVPN.</span
-                        >
+                        <b>{{ t("about.feature.profiles.title") }}</b>
+                        <span>{{ t("about.feature.profiles.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
                     <Zap :size="18" class="fc-icon" />
                     <div>
-                        <b>Умная генерация</b>
-                        <span
-                            >Не случайные числа, а структуры реальных сетевых
-                            пакетов. Выбор целевого клиента и матрица
-                            совместимости исключают несовместимые
-                            параметры.</span
-                        >
+                        <b>{{ t("about.feature.smart.title") }}</b>
+                        <span>{{ t("about.feature.smart.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
                     <ShieldCheck :size="18" class="fc-icon" />
                     <div>
-                        <b>Проверка конфигов</b>
-                        <span
-                            >Config Health Checker находит ошибки в .conf до
-                            передачи в клиент. Batch-генератор создаёт до 1000
-                            конфигов с Web Worker.</span
-                        >
+                        <b>{{ t("about.feature.check.title") }}</b>
+                        <span>{{ t("about.feature.check.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
                     <Code :size="18" class="fc-icon" />
                     <div>
-                        <b>Для продвинутых</b>
-                        <span
-                            >Packet Simulator визуализирует handshake, ручное
-                            управление CPS-тегами, MTU, профилями мимикрии и
-                            Browser Fingerprint.</span
-                        >
+                        <b>{{ t("about.feature.advanced.title") }}</b>
+                        <span>{{ t("about.feature.advanced.desc") }}</span>
                     </div>
                 </div>
             </div>
@@ -302,12 +179,9 @@ const statCards = [
             <div class="section-icon-wrap">
                 <History :size="22" />
             </div>
-            <h2>Эволюция проекта</h2>
+            <h2>{{ t("about.timeline.title") }}</h2>
             <p>
-                За свою короткую жизнь Architect пережил несколько кардинальных
-                трансформаций — от одного HTML-файла до полноценного SPA на Vue
-                3. Каждое обновление делало его удобнее, функциональнее и
-                красивее.
+                {{ t("about.timeline.lede") }}
             </p>
 
             <div class="timeline">
@@ -347,47 +221,37 @@ const statCards = [
             <div class="section-icon-wrap section-icon-green">
                 <Combine :size="22" />
             </div>
-            <h2>MergeKeys — управление ключами</h2>
+            <h2>{{ t("about.mergekeys.title") }}</h2>
             <p>
-                Помимо генератора обфускации, Architect включает модуль
-                <span class="hl">MergeKeys</span> — мощный инструмент для работы
-                с ключами Amnezia VPN формата <code>vpn://</code>.
+                {{ t("about.mergekeys.lede") }}
             </p>
             <div class="feature-grid">
                 <div class="feature-card">
                     <Zap :size="18" class="fc-icon" />
                     <div>
-                        <b>Обновление обфускации</b>
-                        <span
-                            >Применить новые Jc, Jmin, Jmax, I1–I5 к
-                            существующему ключу без пересоздания. Серверные
-                            параметры не тронуты.</span
-                        >
+                        <b>{{ t("about.mergekeys.update.title") }}</b>
+                        <span>{{ t("about.mergekeys.update.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
                     <GitMerge :size="18" class="fc-icon" />
                     <div>
-                        <b>Объединение ключей</b>
-                        <span
-                            >Собрать контейнеры из нескольких vpn:// ключей в
-                            один мастер-ключ. Дубликаты обнаруживаются
-                            автоматически.</span
-                        >
+                        <b>{{ t("about.mergekeys.merge.title") }}</b>
+                        <span>{{ t("about.mergekeys.merge.desc") }}</span>
                     </div>
                 </div>
             </div>
             <div class="cta-row">
                 <router-link to="/mergekeys" class="cta-btn cta-primary">
                     <ArrowRight :size="14" />
-                    Перейти к MergeKeys
+                    {{ t("about.mergekeys.goto") }}
                 </router-link>
                 <router-link
                     :to="{ path: '/mergekeys', query: { tab: 'merge' } }"
                     class="cta-btn cta-secondary"
                 >
                     <GitMerge :size="14" />
-                    Объединить ключи
+                    {{ t("about.mergekeys.combine") }}
                 </router-link>
             </div>
         </section>
@@ -397,15 +261,10 @@ const statCards = [
             <div class="section-icon-wrap section-icon-green">
                 <Lock :size="22" />
             </div>
-            <h2>Манифест приватности</h2>
+            <h2>{{ t("about.privacy.title") }}</h2>
             <p class="privacy-manifesto">
-                <b>Мы не собираем от вас никаких данных.</b> У нас нет своих
-                серверов, нет аналитики, нет трекеров, нет баз данных и нет
-                скрытых запросов куда-либо. Всё, что вы видите на этой странице,
-                работает исключительно внутри вашего браузера. Исходный код
-                полностью открыт — любой может проверить, что здесь нет ничего
-                лишнего, форкнуть репозиторий и запустить Architect на своём
-                компьютере без интернета и без нас.
+                <b>{{ t("about.privacy.lede.bold") }}</b>
+                {{ t("about.privacy.lede") }}
             </p>
 
             <div class="privacy-grid">
@@ -413,49 +272,36 @@ const statCards = [
                     <div class="priv-icon-wrap">
                         <Cpu :size="24" />
                     </div>
-                    <h3>Только ваш браузер</h3>
+                    <h3>{{ t("about.privacy.local.title") }}</h3>
                     <p>
-                        Генерация обфускации, декодирование vpn://-ключей,
-                        патчинг параметров и симуляция пакетов выполняются
-                        <b>локально</b> на вашем устройстве. Мы физически не
-                        можем видеть ваши конфиги, ключи или выбор параметров.
+                        {{ t("about.privacy.local.desc") }}
                     </p>
                 </div>
                 <div class="privacy-card">
                     <div class="priv-icon-wrap">
                         <EyeOff :size="24" />
                     </div>
-                    <h3>Ноль метрик и трекеров</h3>
+                    <h3>{{ t("about.privacy.notrack.title") }}</h3>
                     <p>
-                        Нет Google Analytics, Yandex.Metrika, Amplitude или
-                        самописной аналитики. Нет cookies, fingerprinting и
-                        сторонних скриптов. Мы ничего не собираем, не логируем и
-                        не передаём — ни для себя, ни для третьих лиц.
+                        {{ t("about.privacy.notrack.desc") }}
                     </p>
                 </div>
                 <div class="privacy-card">
                     <div class="priv-icon-wrap">
                         <Globe :size="24" />
                     </div>
-                    <h3>Работает без интернета</h3>
+                    <h3>{{ t("about.privacy.offline.title") }}</h3>
                     <p>
-                        Сохраните страницу через <kbd>Ctrl+S</kbd> / <kbd>Cmd+S</kbd> — и
-                        пользуйтесь ей оффлайн. Вся логика генерации, проверки
-                        конфигов и работы с ключами не требует сети или наших
-                        серверов.
+                        {{ t("about.privacy.offline.desc") }}
                     </p>
                 </div>
                 <div class="privacy-card">
                     <div class="priv-icon-wrap">
                         <FileCode :size="24" />
                     </div>
-                    <h3>Открытый код и локальный запуск</h3>
+                    <h3>{{ t("about.privacy.oss.title") }}</h3>
                     <p>
-                        Весь исходный код доступен на GitHub. Вы можете
-                        просмотреть его, провести аудит, собрать проект локально
-                        через <code>npm install && npm run build</code> и
-                        запустить на своём компьютере — без какой-либо зависимости
-                        от нас.
+                        {{ t("about.privacy.oss.desc") }}
                     </p>
                 </div>
             </div>
@@ -466,11 +312,9 @@ const statCards = [
             <div class="section-icon-wrap">
                 <FileCode :size="22" />
             </div>
-            <h2>Открытый исходный код</h2>
+            <h2>{{ t("about.opensource.title") }}</h2>
             <p>
-                Все исходники проекта полностью открыты. Кто угодно может
-                прочитать код, убедиться в безопасности, предложить улучшения,
-                форкнуть и задеплоить свою версию.
+                {{ t("about.oss.lede") }}
             </p>
             <div class="feature-grid">
                 <div class="feature-card">
@@ -478,20 +322,15 @@ const statCards = [
                     <div>
                         <b>GitHub</b>
                         <span
-                            >Исходный код доступен на GitHub. Vue 3, TypeScript,
-                            Vite — современный стек без магии.</span
+                            >{{ t("about.oss.stack.desc") }}</span
                         >
                     </div>
                 </div>
                 <div class="feature-card">
                     <Shield :size="18" class="fc-icon" />
                     <div>
-                        <b>Аудит приветствуется</b>
-                        <span
-                            >Весь код генерации и работы с ключами открыт для
-                            аудита. Никаких обфусцированных бандлов — только
-                            чистый TypeScript.</span
-                        >
+                        <b>{{ t("about.oss.audit.title") }}</b>
+                        <span>{{ t("about.oss.audit.desc") }}</span>
                     </div>
                 </div>
             </div>
@@ -503,7 +342,7 @@ const statCards = [
                     class="cta-btn cta-secondary"
                 >
                     <Github :size="14" />
-                    Исходники на GitHub
+                    {{ t("about.oss.github") }}
                     <ExternalLink :size="12" />
                 </a>
             </div>
@@ -514,7 +353,7 @@ const statCards = [
             <div class="section-icon-wrap section-icon-blue">
                 <Users :size="22" />
             </div>
-            <h2>Разработчик и обратная связь</h2>
+            <h2>{{ t("about.dev.title") }}</h2>
 
             <div class="dev-card">
                 <div class="dev-avatar">
@@ -528,11 +367,9 @@ const statCards = [
                     <span v-else class="dev-avatar-letter">V</span>
                 </div>
                 <div class="dev-info">
-                    <h3>Единственный разработчик</h3>
+                    <h3>{{ t("about.dev.solo.title") }}</h3>
                     <p>
-                        Architect создаётся и поддерживается одним человеком.
-                        Баги устраняются оперативно — часто в тот же день.
-                        Проект живёт благодаря энтузиазму и свободному времени.
+                        {{ t("about.dev.solo.desc") }}
                     </p>
                     <div class="dev-badges">
                         <span class="dev-badge">Vue 3</span>
@@ -546,17 +383,11 @@ const statCards = [
             <div class="contact-card">
                 <Bug :size="18" class="fc-icon" />
                 <div>
-                    <b>Нашли баг? Есть идея?</b>
-                    <p>
-                        Приглашаю всех желающих ловить баги, если таковые
-                        находятся! Пишите во <b>Флудильне в Amnezia VPN</b> по
-                        юзернейму <code>@VAI_Programmer</code><br />
-                        Или на Github в разделе ISSUE!
-                    </p>
+                    <b>{{ t("about.dev.feedback.title") }}</b>
+                    <p>{{ t("about.dev.feedback.desc") }}</p>
                     <p class="contact-note">
                         <MessageCircle :size="13" />
-                        Пожалуйста, не спамьте мне в ЛС — заблочу 😅 Только
-                        через Флудильню!
+                        {{ t("about.dev.noDm") }}
                     </p>
                 </div>
             </div>

@@ -177,6 +177,103 @@ export const en: Catalog = {
   "action.download": "Download",
   "action.retry": "Try again",
 
+  /* ── About page ───────────────────────────────────────────────────────── */
+  "about.badge": "ABOUT",
+  "about.subtitle.1": "A next-generation obfuscation generator.",
+  "about.subtitle.2": "Your protocol, your rules.",
+  "about.subtitle.3": "Invisibility by design.",
+
+  "about.legal.title": "Legal notice",
+  "about.legal.warning":
+    "This project exists for educational and research purposes only.",
+  "about.legal.scope":
+    "It was never built for use in Russia or the CIS. The author accepts no responsibility for how this software is used.",
+  "about.legal.allowedTitle": "Permitted use:",
+  "about.legal.allowed.1": "Penetration testing and security research",
+  "about.legal.allowed.2": "CTF competitions",
+  "about.legal.allowed.3": "Academic research",
+  "about.legal.allowed.4": "Testing networks you own",
+  "about.legal.disclaimer":
+    "Using traffic obfuscation tools may violate the law where you live. Nothing in this project encourages breaking it.",
+
+  "about.stat.profiles": "Mimicry profiles",
+  "about.stat.params": "Generation parameters",
+  "about.stat.tests": "Automated tests",
+  "about.stat.clients": "Supported clients",
+
+  "about.what.title": "What is AmneziaWG Architect?",
+  "about.what.p1":
+    "AmneziaWG Architect is an advanced web tool for building unique AmneziaWG obfuscation profiles, and for working with Amnezia VPN keys.",
+  "about.what.p2":
+    "An ordinary VPN encrypts your data; Architect helps disguise the fact that you are using one at all. DPI systems analyse packet structure and identify WireGuard by its fixed headers and sizes. Architect generates parameters that make your traffic resemble QUIC, TLS, SIP or other protocols.",
+
+  "about.feature.profiles.title": "11 mimicry profiles",
+  "about.feature.profiles.desc":
+    "QUIC, TLS, DTLS, SIP, HTTP/3, Noise_IK and more. The H1–H4, S1–S4 and I1–I5 parameters map exactly onto AmneziaVPN's own fields.",
+  "about.feature.smart.title": "Informed generation",
+  "about.feature.smart.desc":
+    "Not random numbers but the structure of real network packets. Choosing a target client and consulting the compatibility matrix rules out parameters that would not work.",
+  "about.feature.check.title": "Config checking",
+  "about.feature.check.desc":
+    "The health checker catches errors in a .conf before it reaches a client. The batch generator produces up to 1000 configs in a Web Worker.",
+  "about.feature.advanced.title": "For advanced users",
+  "about.feature.advanced.desc":
+    "The packet simulator visualises the handshake, and CPS tags, MTU and mimicry profiles are all under manual control.",
+
+  "about.timeline.title": "Project timeline",
+  "about.timeline.lede":
+    "In its short life Architect has been rebuilt several times over — from a single HTML file to a full Vue 3 SPA. Each round made it easier to use, more capable and better looking.",
+
+  "about.mergekeys.lede":
+    "Besides the obfuscation generator, Architect ships MergeKeys — a tool for working with Amnezia VPN keys in the vpn:// format.",
+  "about.mergekeys.update.title": "Refresh obfuscation",
+  "about.mergekeys.update.desc":
+    "Apply new Jc, Jmin, Jmax and I1–I5 values to an existing key without recreating it. Server-side parameters are left untouched.",
+  "about.mergekeys.merge.title": "Merge keys",
+  "about.mergekeys.merge.desc":
+    "Collect containers from several vpn:// keys into a single master key. Duplicates are detected automatically.",
+  "about.mergekeys.goto": "Open MergeKeys",
+  "about.mergekeys.combine": "Merge keys",
+
+  "about.privacy.lede.bold": "We collect nothing from you.",
+  "about.privacy.lede":
+    "There are no servers of ours, no analytics, no trackers, no databases and no hidden requests anywhere. Everything on this page runs inside your browser. The source is fully open — anyone can check there is nothing extra here, fork the repository and run Architect themselves.",
+  "about.privacy.local.title": "Your browser only",
+  "about.privacy.local.desc":
+    "Obfuscation generation, vpn:// key decoding, parameter patching and packet simulation all run locally on your device. We physically cannot see your configs, your keys or the parameters you pick.",
+  "about.privacy.notrack.title": "No metrics, no trackers",
+  "about.privacy.notrack.desc":
+    "No Google Analytics, Yandex.Metrika, Amplitude or homegrown analytics. No cookies, no fingerprinting, no third-party scripts. Nothing is collected, logged or forwarded.",
+  "about.privacy.offline.title": "Works without the internet",
+  "about.privacy.offline.desc":
+    "Save the page with Ctrl+S or Cmd+S and use it offline. Generation, config checking and key handling need neither a network nor our servers.",
+  "about.privacy.oss.title": "Open source, runs locally",
+  "about.privacy.oss.desc":
+    "All the source is on GitHub. You can read it, audit it, build it locally and run it on your own machine — with no dependency on us at all.",
+
+  "about.oss.lede":
+    "The project's sources are entirely open. Anyone can read the code, satisfy themselves it is safe, propose improvements, fork it and deploy their own version.",
+  "about.oss.stack.title": "A modern stack",
+  "about.oss.stack.desc":
+    "The source lives on GitHub. Vue 3, TypeScript and Vite — a current stack with no magic in it.",
+  "about.oss.audit.title": "Audits welcome",
+  "about.oss.audit.desc":
+    "Every line of the generation and key-handling code is open to audit. No obfuscated bundles, just plain TypeScript.",
+  "about.oss.github": "Sources on GitHub",
+
+  "about.dev.solo.title": "A single developer",
+  "about.dev.solo.desc":
+    "Architect is built and maintained by one person. Bugs get fixed quickly, often the same day. The project runs on enthusiasm and spare time.",
+  "about.dev.feedback.title": "Found a bug? Have an idea?",
+  "about.dev.feedback.desc":
+    "Bug reports and ideas are genuinely welcome. Join the discussion in the chat or open an issue on GitHub — and soon on git.vai-rice.space too.",
+  "about.dev.noDm":
+    "Please do not send direct messages — the shared chat or an issue, either is fine.",
+  "about.mergekeys.title": "MergeKeys — key management",
+  "about.privacy.title": "Privacy manifesto",
+  "about.opensource.title": "Open source",
+  "about.dev.title": "Developer and feedback",
+
   /* ── Donations ────────────────────────────────────────────────────────── */
   "donate.title": "Support the project",
   "donate.desc":
