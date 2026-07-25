@@ -139,6 +139,17 @@ bun run dev
 | `bun run typecheck` | Type-check |
 | `bun run og` | Rebuild the OG images and the GitHub preview |
 
+### Standalone generator
+
+If a browser is not available, the same rules exist as a plain shell script —
+no dependencies, no network:
+
+```bash
+./scripts/awg-gen.sh -v 3.0 -p quic          # one config to stdout
+./scripts/awg-gen.sh -v 3.0 -n 5 -d out/     # five configs into a directory
+./scripts/awg-gen.sh --help                  # every option
+```
+
 > [!TIP]
 > GitHub blocked but you need the Amnezia apps? Try the mirror:
 > [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn).

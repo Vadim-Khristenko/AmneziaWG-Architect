@@ -139,6 +139,17 @@ bun run dev
 | `bun run typecheck` | Проверка типов |
 | `bun run og` | Пересборка OG-изображений и превью для GitHub |
 
+### Автономный генератор
+
+Если браузер недоступен — те же правила в виде обычного shell-скрипта, без
+зависимостей и без сети:
+
+```bash
+./scripts/awg-gen.sh -v 3.0 -p quic          # один конфиг в stdout
+./scripts/awg-gen.sh -v 3.0 -n 5 -d out/     # пять конфигов в каталог
+./scripts/awg-gen.sh --help                  # все параметры
+```
+
 > [!TIP]
 > Не открывается GitHub, а приложения Amnezia нужны? Попробуйте зеркало:
 > [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn).

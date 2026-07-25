@@ -155,3 +155,6 @@ temp_*
 
 # OG generator font cache (fetched on demand)
 scripts/og/.fonts/
+
+# Remotion animation project — work in progress, kept out of the repo for now
+video/
