@@ -30,7 +30,7 @@
 
 <br/>
 
-[**▶ Открыть генератор**](https://vadim-khristenko.github.io/AmneziaWG-Architect/)
+[**▶ Открыть генератор**](https://architect.vai-rice.space/)
 &nbsp;·&nbsp;
 [📋 Issues](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues)
 &nbsp;·&nbsp;
@@ -182,7 +182,7 @@ Jc ≥ 4, Jmax > 81        — Минимальные требования AWG 1
 
 ### Онлайн
 
-Просто откройте **[vadim-khristenko.github.io/AmneziaWG-Architect/](https://vadim-khristenko.github.io/AmneziaWG-Architect/)**
+Просто откройте **[architect.vai-rice.space/](https://architect.vai-rice.space/)**
 
 ### Локальная разработка
 
@@ -370,7 +370,7 @@ AmneziaWG-Architect/
 
 **AmneziaWG Architect** · 2026
 
-[🌐 GitHub Pages](https://vadim-khristenko.github.io/AmneziaWG-Architect/)
+[🌐 GitHub Pages](https://architect.vai-rice.space/)
 &nbsp;·&nbsp;
 [💬 Amnezia Telegram](https://t.me/amnezia_vpn/)
 &nbsp;·&nbsp;

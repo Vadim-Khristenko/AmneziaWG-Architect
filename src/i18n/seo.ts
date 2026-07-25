@@ -42,7 +42,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "AmneziaWG Architect — config generator",
       ogDescription:
         "AmneziaWG 1.0–3.0 obfuscation: junk packets, magic headers, QUIC/TLS/DTLS/SIP mimicry profiles and ChaCha20 header protection.",
-      ogImage: "og-image.png",
+      ogImage: "og-image-en.png",
       keywords:
         "AmneziaWG, AmneziaWG 3.0, DPI bypass, WireGuard, obfuscation, config generator, VPN, censorship circumvention, HeaderProtectionKey",
     },
@@ -67,7 +67,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "MergeKeys — AmneziaWG Architect",
       ogDescription:
         "Merge Amnezia VPN keys and refresh obfuscation — entirely in your browser.",
-      ogImage: "og-mergekeys.png",
+      ogImage: "og-mergekeys-en.png",
       keywords:
         "Amnezia VPN, vpn://, merge keys, AmneziaWG, obfuscation, MergeKeys",
     },
@@ -81,7 +81,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "Packet Simulator — AmneziaWG Architect",
       ogDescription:
         "Симуляция пакетов AmneziaWG: CPS, junk-train, handshake, data.",
-      ogImage: "og-image.png",
+      ogImage: "og-simulator.png",
       keywords: "AmneziaWG, handshake, симулятор пакетов, DPI, обфускация",
     },
     en: {
@@ -91,7 +91,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "Packet Simulator — AmneziaWG Architect",
       ogDescription:
         "Simulate AmneziaWG packets: CPS, junk train, handshake, data.",
-      ogImage: "og-image.png",
+      ogImage: "og-simulator-en.png",
       keywords: "AmneziaWG, handshake, packet simulator, DPI, obfuscation",
     },
   },
@@ -114,7 +114,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "About — AmneziaWG Architect",
       ogDescription:
         "Your protocol, your rules. A walkthrough of the generator's architecture, security and principles.",
-      ogImage: "og-about.png",
+      ogImage: "og-about-en.png",
       keywords: "AmneziaWG Architect, about, privacy, open source",
     },
   },
@@ -127,7 +127,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "FAQ — AmneziaWG Architect",
       ogDescription:
         "Параметры AmneziaWG, различия версий, подбор конфигурации и разбор типичных проблем.",
-      ogImage: "og-image.png",
+      ogImage: "og-faq.png",
       keywords:
         "AmneziaWG FAQ, Jc, Jmin, Jmax, S1, S2, S3, S4, H1, H2, H3, H4, I1, CPS, не подключается",
     },
@@ -138,7 +138,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "FAQ — AmneziaWG Architect",
       ogDescription:
         "AmneziaWG parameters, version differences, tuning guidance and common failure modes.",
-      ogImage: "og-image.png",
+      ogImage: "og-faq-en.png",
       keywords:
         "AmneziaWG FAQ, Jc, Jmin, Jmax, S1, S2, S3, S4, H1, H2, H3, H4, I1, CPS, not connecting",
     },
@@ -152,7 +152,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "VAIEXIA — веб-панель и Telegram/Discord/Matrix бот",
       ogDescription:
         "Управляйте сервером или кластером где угодно и как угодно. Установка пакетов в один клик.",
-      ogImage: "og-iaa.png",
+      ogImage: "og-vaiexia.png",
       keywords:
         "VAIEXIA, веб-панель, управление сервером, Telegram бот, Discord, Matrix, VPN панель",
     },
@@ -163,7 +163,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "VAIEXIA — web panel and Telegram/Discord/Matrix bot",
       ogDescription:
         "Run your server or cluster anywhere, any way you like. One-click package installs.",
-      ogImage: "og-iaa.png",
+      ogImage: "og-vaiexia-en.png",
       keywords:
         "VAIEXIA, web panel, server management, Telegram bot, Discord, Matrix, VPN panel",
     },
@@ -183,7 +183,7 @@ export const ROUTE_SEO: SeoTable = {
       description: "That link looks wrong, or the page has been removed.",
       ogTitle: "Page not found — AmneziaWG Architect",
       ogDescription: "No such page.",
-      ogImage: "og-image.png",
+      ogImage: "og-image-en.png",
     },
   },
 };

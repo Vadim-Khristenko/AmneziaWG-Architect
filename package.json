@@ -12,7 +12,8 @@
     "test": "bun run vitest",
     "test:run": "bun run vitest run",
     "test:coverage": "bun run vitest run --coverage",
-    "typecheck": "bun run vue-tsc --noEmit --skipLibCheck"
+    "typecheck": "bun run vue-tsc --noEmit --skipLibCheck",
+    "og": "bun scripts/og/generate.mjs"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -28,6 +29,7 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^25.9.4",
     "@types/pako": "^2.0.4",
     "@vitejs/plugin-vue": "^6.0.7",

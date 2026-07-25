@@ -2,6 +2,7 @@
 // the Vitest options below actually reach the runner instead of being dropped.
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
+import { ROUTE_SEO } from "./src/i18n/seo";
 import path from "node:path";
 import fs from "node:fs";
 import type { Plugin } from "vite";
@@ -20,38 +21,42 @@ interface RouteStub {
   ogImage: string;
 }
 
-const ROUTE_STUBS: RouteStub[] = [
-  {
-    slug: "mergekeys",
-    title: "MergeKeys — AmneziaWG Architect",
-    description:
-      "Обновите обфускацию AWG-ключа или объедините несколько ключей Amnezia VPN в один.",
-    ogTitle: "MergeKeys — AmneziaWG Architect",
-    ogDescription:
-      "Объединяй ключи Amnezia VPN, обновляй обфускацию — всё локально в браузере.",
-    ogImage: "og-mergekeys.png",
-  },
-  {
-    slug: "about",
-    title: "О проекте — AmneziaWG Architect",
-    description:
-      "Что такое AmneziaWG Architect? Это интерактивный инструмент для генерации сложных конфигураций обфускации трафика AmneziaWG. Создан для тех, кто хочет вернуть себе свободный интернет.",
-    ogTitle: "О проекте — AmneziaWG Architect",
-    ogDescription:
-      "Твой протокол — твои правила. Разбор архитектуры, безопасности и принципов работы генератора.",
-    ogImage: "og-about.png",
-  },
-  {
-    slug: "iaa",
-    title: "IAA — Веб-панель VPN",
-    description:
-      "Быстрая адаптивная панель для управления Amnezia VPN и другими VPN-решениями.",
-    ogTitle: "IAA — Веб-панель VPN",
-    ogDescription:
-      "Быстрая адаптивная панель для управления VPN-серверами. Amnezia, WireGuard, XRay.",
-    ogImage: "og-iaa.png",
-  },
-];
+/**
+ * Pre-rendered stubs, derived from the same SEO table the router uses so the
+ * two can never drift. One per route per locale: Russian at the bare path,
+ * English under /en.
+ *
+ * Crawlers that do not execute JavaScript read these; the SPA takes over for
+ * everyone else.
+ */
+const STUB_ROUTES = [
+  { name: "home", path: "" },
+  { name: "mergekeys", path: "mergekeys" },
+  { name: "simulator", path: "simulator" },
+  { name: "about", path: "about" },
+  { name: "faq", path: "faq" },
+  { name: "vaiexia", path: "vaiexia" },
+] as const;
+
+const STUB_LOCALES = ["ru", "en"] as const;
+
+const ROUTE_STUBS: RouteStub[] = STUB_LOCALES.flatMap((loc) =>
+  STUB_ROUTES.filter(
+    // The site root is index.html itself, not a stub directory.
+    (r) => !(loc === "ru" && r.path === ""),
+  ).map((r) => {
+    const seo = ROUTE_SEO[r.name][loc];
+    const prefix = loc === "ru" ? "" : "en";
+    return {
+      slug: [prefix, r.path].filter(Boolean).join("/"),
+      title: seo.title,
+      description: seo.description,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
+    };
+  }),
+);
 
 export type HostPlatform = "github" | "gitlab" | "cloudflare" | "generic";
 
@@ -288,14 +293,68 @@ function createSpaFallbackPlugin(): Plugin {
       const gitlabPages = path.join(outDir, "200.html");
 
       const rewriteRules = [
+        // The retired IAA page now lives at /vaiexia; keep old links working.
+        "/iaa    /vaiexia/index.html   301",
+        "/en/iaa    /en/vaiexia/index.html   301",
+        ...ROUTE_STUBS.map(
+          (r) => `/${r.slug}    /${r.slug}/index.html   200`,
+        ),
         "/*    /index.html   200",
-        "/mergekeys    /mergekeys/index.html   200",
-        "/about    /about/index.html   200",
-        "/iaa    /iaa/index.html   200",
       ].join("\n");
 
       fs.writeFileSync(cfPages, rewriteRules, "utf-8");
       fs.writeFileSync(gitlabPages, rawIndex, "utf-8");
+
+      /*
+       * sitemap.xml with hreflang alternates.
+       *
+       * Each URL lists every locale it exists in, which is what lets a search
+       * engine serve the right language instead of picking one and treating
+       * the other as duplicate content.
+       */
+      if (siteOrigin) {
+        const origin = siteOrigin.replace(/\/$/, "");
+        const urlFor = (loc: string, p: string) =>
+          `${origin}/${[loc === "ru" ? "" : "en", p].filter(Boolean).join("/")}`;
+
+        const entries = STUB_LOCALES.flatMap((loc) =>
+          STUB_ROUTES.map((r) => {
+            const alts = STUB_LOCALES.map(
+              (alt) =>
+                `    <xhtml:link rel="alternate" hreflang="${alt === "ru" ? "ru" : "en"}" href="${urlFor(alt, r.path)}"/>`,
+            ).join("\n");
+            return [
+              "  <url>",
+              `    <loc>${urlFor(loc, r.path)}</loc>`,
+              alts,
+              `    <xhtml:link rel="alternate" hreflang="x-default" href="${urlFor("ru", r.path)}"/>`,
+              `    <changefreq>${r.path === "" ? "weekly" : "monthly"}</changefreq>`,
+              `    <priority>${r.path === "" ? "1.0" : "0.8"}</priority>`,
+              "  </url>",
+            ].join("\n");
+          }),
+        ).join("\n");
+
+        const sitemap = [
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+          '        xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+          entries,
+          "</urlset>",
+          "",
+        ].join("\n");
+
+        fs.writeFileSync(path.join(outDir, "sitemap.xml"), sitemap, "utf-8");
+
+        const robots = [
+          "User-agent: *",
+          "Allow: /",
+          "",
+          `Sitemap: ${origin}/sitemap.xml`,
+          "",
+        ].join("\n");
+        fs.writeFileSync(path.join(outDir, "robots.txt"), robots, "utf-8");
+      }
 
       // Cloudflare Pages / Netlify _headers — hashed assets are content-addressed
       // and never mutate, so let clients cache them for a year. Recovers the

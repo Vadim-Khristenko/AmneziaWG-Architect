@@ -152,3 +152,6 @@ temp_*
 !.gitea
 
 # <==| End of file |==>
+
+# OG generator font cache (fetched on demand)
+scripts/og/.fonts/
