@@ -10,29 +10,37 @@ import {
     Lock,
 } from "lucide-vue-next";
 
+import { computed, watch } from "vue";
+import { useI18n } from "@/i18n";
+
+const { locale, t } = useI18n();
+
 const lastBuild = ref<string>("");
 
-onMounted(() => {
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+};
+
+const dateLocale = computed(() => (locale.value === "ru" ? "ru-RU" : "en-GB"));
+
+function formatBuild() {
+    let d: Date;
     try {
-        const raw = __BUILD_TIME__;
-        const d = new Date(raw);
-        lastBuild.value = d.toLocaleString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        d = new Date(__BUILD_TIME__);
+        if (Number.isNaN(d.getTime())) d = new Date();
     } catch {
-        lastBuild.value = new Date().toLocaleString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        d = new Date();
     }
-});
+    lastBuild.value = d.toLocaleString(dateLocale.value, DATE_FORMAT);
+}
+
+onMounted(formatBuild);
+// Re-render the timestamp in the new locale's conventions on a language switch.
+watch(locale, formatBuild);
 </script>
 
 <template>
@@ -45,9 +53,11 @@ onMounted(() => {
                         AmneziaWG <span class="brand-sub">Architect</span>
                     </div>
                     <div class="brand-slogan">
-                        Шифруем реальность.
-                        <span class="text-accent">Архитектура свободы</span> — в
-                        каждом пакете.
+                        {{ t("footer.slogan.lead") }}
+                        <span class="text-accent">{{
+                            t("footer.slogan.accent")
+                        }}</span>
+                        {{ t("footer.slogan.tail") }}
                     </div>
                 </div>
 
@@ -61,7 +71,9 @@ onMounted(() => {
                         <Heart :size="20" fill="currentColor" />
                     </div>
                     <div class="dc-content">
-                        <span class="dc-title">Поддержать проект</span>
+                        <span class="dc-title">{{
+                            t("footer.donate.title")
+                        }}</span>
                         <span class="dc-desc">Yoomoney</span>
                     </div>
                     <ChevronRight class="dc-arrow" :size="18" />
@@ -74,58 +86,67 @@ onMounted(() => {
             <div class="footer-grid">
                 <!-- Column 1: Resources -->
                 <div class="f-col">
-                    <h4 class="col-head">Ресурсы</h4>
+                    <h4 class="col-head">{{ t("footer.col.resources") }}</h4>
                     <div class="col-links">
                         <a
                             href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
                             target="_blank"
+                            rel="noopener noreferrer"
                             class="f-link"
                         >
-                            <Github :size="16" /> Исходный код
+                            <Github :size="16" /> {{ t("footer.link.source") }}
                         </a>
                         <a
                             href="https://github.com/amnezia-vpn/"
                             target="_blank"
+                            rel="noopener noreferrer"
                             class="f-link"
                         >
-                            <Shield :size="16" /> Amnezia VPN GitHub
+                            <Shield :size="16" />
+                            {{ t("footer.link.amneziaGithub") }}
                         </a>
                     </div>
                 </div>
 
                 <!-- Column 2: Community -->
                 <div class="f-col">
-                    <h4 class="col-head">Сообщество</h4>
+                    <h4 class="col-head">{{ t("footer.col.community") }}</h4>
                     <div class="col-links">
                         <a
                             href="https://t.me/amnezia_vpn"
                             target="_blank"
+                            rel="noopener noreferrer"
                             class="f-link"
                         >
-                            <Send :size="16" /> Чат в Telegram
+                            <Send :size="16" /> {{ t("footer.link.telegram") }}
                         </a>
                         <a
                             href="https://github.com/Vadim-Khristenko/"
                             target="_blank"
+                            rel="noopener noreferrer"
                             class="f-link"
                         >
-                            <User :size="16" /> Автор проекта
+                            <User :size="16" /> {{ t("footer.link.author") }}
                         </a>
                     </div>
                 </div>
 
                 <!-- Column 3: Credits -->
                 <div class="f-col credits">
-                    <h4 class="col-head">Исследования</h4>
+                    <h4 class="col-head">{{ t("footer.col.research") }}</h4>
                     <div class="credits-text">
-                        Основано на идеях
+                        {{ t("footer.credits.basedOn") }}
                         <a
                             href="https://voidwaifu.github.io/Special-Junk-Packet-List/"
                             target="_blank"
+                            rel="noopener noreferrer"
                             >Special Junk Packet List</a
                         >
-                        от
-                        <a href="https://github.com/VoidWaifu" target="_blank"
+                        {{ t("footer.credits.from") }}
+                        <a
+                            href="https://github.com/VoidWaifu"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             >@VoidWaifu</a
                         >
                     </div>
@@ -140,17 +161,23 @@ onMounted(() => {
                         <span class="copy-hl">AmneziaWG Architect</span>
                     </div>
                     <div class="copy-sub">
-                        Разработано с <span class="heart-anim">❤️</span> для
-                        сообщества AmneziaVPN
+                        {{ t("footer.madeWith") }}
+                        <Heart
+                            :size="13"
+                            fill="currentColor"
+                            class="heart-anim"
+                            aria-hidden="true"
+                        />
+                        {{ t("footer.forCommunity") }}
                     </div>
                     <div v-if="lastBuild" class="build-time">
-                        Последняя сборка: {{ lastBuild }}
+                        {{ t("footer.build") }}: {{ lastBuild }}
                     </div>
                 </div>
 
                 <div class="local-badge">
                     <Lock :size="12" />
-                    <span>100% Local: Данные не покидают браузер</span>
+                    <span>{{ t("footer.local") }}</span>
                 </div>
             </div>
         </div>
@@ -391,8 +418,17 @@ onMounted(() => {
 
 .heart-anim {
     display: inline-block;
+    /* Baseline-align the SVG with the surrounding text now that the heart is
+       an icon rather than an emoji glyph. */
+    vertical-align: -2px;
     color: var(--red);
     animation: heartbeat 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heart-anim {
+        animation: none;
+    }
 }
 
 .build-time {

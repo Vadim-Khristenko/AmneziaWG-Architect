@@ -26,7 +26,9 @@ import {
   PROFILE_LABELS,
   renderConf,
   renderConfLines,
+  type RenderLabels,
 } from "../utils/generator";
+import { translate } from "@/i18n";
 import { confToVpn, buildVpnConfig } from "../utils/awgFormat";
 import type { VpnConfig } from "../utils/awgFormat";
 import type { AwgContainer } from "../utils/mergekeys";
@@ -164,9 +166,9 @@ export function useGenerator() {
     currentAwg.value = genCfg(buildInput());
 
     const label = PROFILE_LABELS[config.profile] ?? config.profile;
-    addLog(`✦ Сгенерирован — ${label}`, "info");
+    addLog(translate("log.generated", { profile: label }), "info");
     if (config.routerMode) {
-      addLog("⚡ Роутер-режим: минимальные шумы", "warn");
+      addLog(translate("log.routerMode"), "warn");
     }
   }
 
@@ -177,7 +179,7 @@ export function useGenerator() {
   async function runBatch() {
     const count = batchCount.value;
     if (count < 1 || count > 1000) {
-      addLog("⚠ Количество должно быть от 1 до 1000", "bad");
+      addLog(translate("log.batchRange"), "bad");
       return;
     }
 
@@ -186,10 +188,12 @@ export function useGenerator() {
         count > 50
           ? await generateInWorker(buildInput(), count)
           : generateBatch(buildInput(), count);
-      addLog(`✦ Сгенерировано ${count} конфигов`, "ok");
+      addLog(translate("log.batchDone", { n: count }), "ok");
     } catch (e) {
       addLog(
-        `⚠ Batch ошибка: ${e instanceof Error ? e.message : String(e)}`,
+        translate("log.batchError", {
+          error: e instanceof Error ? e.message : String(e),
+        }),
         "bad",
       );
     }
@@ -200,13 +204,14 @@ export function useGenerator() {
    */
   function downloadBatch() {
     if (!batchResults.value.length) {
-      addLog("⚠ Сначала сгенерируйте batch", "bad");
+      addLog(translate("log.batchFirst"), "bad");
       return;
     }
 
     const blocks = batchResults.value.map((p, idx) =>
       renderConf(p, {
         caption: `config ${idx + 1}/${batchResults.value.length}`,
+        labels: confLabels.value,
       }),
     );
 
@@ -222,6 +227,20 @@ export function useGenerator() {
   function setVersion(v: AWGVersion) {
     version.value = v;
     generate();
+  }
+
+  /**
+   * restoreConfig — put a previously generated config back on screen.
+   *
+   * Restores the version alongside it, because every downstream view (preview,
+   * export, parameter groups) keys off `version`. Without that a restored 3.0
+   * config would render through the 2.0 code path and quietly drop its
+   * HeaderProtectionKey and timers.
+   */
+  function restoreConfig(cfg: AWGConfig) {
+    version.value = cfg.version;
+    config.profile = cfg.profile;
+    currentAwg.value = cfg;
   }
 
   function setIntensity(level: Intensity) {
@@ -240,15 +259,15 @@ export function useGenerator() {
    */
   function feedback(ok: boolean) {
     if (ok) {
-      addLog("✓ Конфигурация подтверждена!", "ok");
+      addLog(translate("log.confirmed"), "ok");
       iterCount.value = 0;
     } else {
       iterCount.value++;
       generate();
       addLog(
         iterCount.value > 3
-          ? `✗ Попытка ${iterCount.value}: HIGH режим, максимальная обфускация...`
-          : `✗ Попытка ${iterCount.value}: перегенерация, усиленные параметры`,
+          ? translate("log.retryHigh", { n: iterCount.value })
+          : translate("log.retry", { n: iterCount.value }),
         "bad",
       );
     }
@@ -260,10 +279,23 @@ export function useGenerator() {
    * plainText — финальный текст конфигурационного файла .conf
    * Вычисляется по currentAwg и version.
    */
+  /** Localised `.conf` comment text for the renderer, which has no i18n itself. */
+  const confLabels = computed(
+    (): Partial<RenderLabels> => ({
+      privateKey: translate("conf.privateKey"),
+      address: translate("conf.address"),
+      cpsClientOnly: translate("conf.cpsClientOnly"),
+      noCps: translate("conf.noCps"),
+      awg3Hpk: translate("conf.awg3Hpk"),
+      awg3Cpa: translate("conf.awg3Cpa"),
+      awg3Timers: translate("conf.awg3Timers"),
+    }),
+  );
+
   const plainText = computed((): string => {
     const p = currentAwg.value;
     if (!p) return "";
-    return renderConf(p);
+    return renderConf(p, { labels: confLabels.value });
   });
 
   /**
@@ -273,7 +305,7 @@ export function useGenerator() {
   const previewLines = computed(() => {
     const p = currentAwg.value;
     if (!p) return [];
-    return renderConfLines(p, { preview: true });
+    return renderConfLines(p, { preview: true, labels: confLabels.value });
   });
 
   /**
@@ -298,7 +330,7 @@ export function useGenerator() {
    * Возвращает Promise<boolean>: true = успех, false = ошибка.
    */
   async function copyConfig(): Promise<boolean> {
-    return copyToClipboard(plainText.value, "Конфиг скопирован в буфер");
+    return copyToClipboard(plainText.value, translate("log.copiedConf"));
   }
 
   /**
@@ -316,7 +348,7 @@ export function useGenerator() {
    * copyJson — копирует JSON-представление конфигурации.
    */
   async function copyJson(): Promise<boolean> {
-    return copyToClipboard(jsonText.value, "JSON скопирован в буфер");
+    return copyToClipboard(jsonText.value, translate("log.copiedJson"));
   }
 
   /**
@@ -332,7 +364,7 @@ export function useGenerator() {
 
   async function copyToClipboard(text: string, okMsg: string): Promise<boolean> {
     if (!text) {
-      addLog("⚠ Сначала сгенерируйте конфиг", "bad");
+      addLog(translate("log.generateFirst"), "bad");
       return false;
     }
     try {
@@ -347,17 +379,17 @@ export function useGenerator() {
         document.execCommand("copy");
         document.body.removeChild(ta);
       }
-      addLog(`✓ ${okMsg}`, "ok");
+      addLog(okMsg, "ok");
       return true;
     } catch {
-      addLog("⚠ Не удалось скопировать в буфер", "bad");
+      addLog(translate("log.copyFailed"), "bad");
       return false;
     }
   }
 
   function downloadBlob(text: string, filename: string, mime: string) {
     if (!text) {
-      addLog("⚠ Сначала сгенерируйте конфиг", "bad");
+      addLog(translate("log.generateFirst"), "bad");
       return;
     }
     const blob = new Blob([text], { type: mime });
@@ -367,7 +399,7 @@ export function useGenerator() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    addLog("↓ Конфиг сохранён в файл", "info");
+    addLog(translate("log.saved"), "info");
   }
 
   // ── Лог ───────────────────────────────────────────────────────────────────
@@ -390,7 +422,7 @@ export function useGenerator() {
     const { isKnownBlocked, checkDomain } = await import("../utils/domainCheck");
     const host = config.customHost.trim();
     if (!host) {
-      addLog("Укажите хост для проверки", "warn");
+      addLog(translate("log.hostRequired"), "warn");
       return;
     }
     domainStatus.value = "checking";
@@ -398,7 +430,7 @@ export function useGenerator() {
 
     if (isKnownBlocked(host)) {
       domainStatus.value = "blocked";
-      addLog(`⛔ ${host} — в списке заблокированных`, "bad");
+      addLog(translate("log.hostBlockedList", { host }), "bad");
       return;
     }
 
@@ -406,8 +438,11 @@ export function useGenerator() {
     domainStatus.value = result.accessible ? "ok" : "blocked";
     addLog(
       result.accessible
-        ? `✓ ${host} — доступен`
-        : `✗ ${host} — недоступен (${result.error ?? "blocked"})`,
+        ? translate("log.hostOk", { host })
+        : translate("log.hostUnreachable", {
+            host,
+            error: result.error ?? "blocked",
+          }),
       result.accessible ? "ok" : "bad",
     );
   }
@@ -507,6 +542,7 @@ export function useGenerator() {
     isCPSSupported,
     isFullObfuscation,
     isAwg3,
+    restoreConfig,
     isRouterMode,
     intensityLabel,
     iterDots,

@@ -20,6 +20,34 @@ export interface ConfLine {
   type: ConfLineType;
 }
 
+/**
+ * Comment text, injected by the caller.
+ *
+ * This module stays free of i18n so it can run in the worker and in tests; the
+ * UI passes translated strings in, and the English defaults below are what a
+ * `.conf` gets when nobody supplies any.
+ */
+export interface RenderLabels {
+  privateKey: string;
+  address: string;
+  cpsClientOnly: string;
+  noCps: string;
+  awg3Hpk: string;
+  awg3Cpa: string;
+  awg3Timers: string;
+}
+
+export const DEFAULT_LABELS: RenderLabels = {
+  privateKey: "PrivateKey = <your private key>",
+  address: "Address = 10.0.0.2/32",
+  cpsClientOnly: "I1-I5 are client-side only in AWG 1.5:",
+  noCps: "I1-I5 are not supported in AWG 1.0",
+  awg3Hpk:
+    "AWG 3.0 — shared header protection key (identical on both ends)",
+  awg3Cpa: "AWG 3.0 — random transport packet padding",
+  awg3Timers: "AWG 3.0 — protocol timer randomisation",
+};
+
 export interface RenderOptions {
   /**
    * Preview mode collapses the PrivateKey/Address placeholders onto one
@@ -28,6 +56,8 @@ export interface RenderOptions {
   preview?: boolean;
   /** Optional "config N/M" caption for batch exports. */
   caption?: string;
+  /** Localised comment text; falls back to English. */
+  labels?: Partial<RenderLabels>;
 }
 
 const cm = (value: string): ConfLine => ({ key: "", value, type: "comment" });
@@ -52,16 +82,17 @@ export function renderConfLines(
   opts: RenderOptions = {},
 ): ConfLine[] {
   const { preview = false, caption } = opts;
+  const L: RenderLabels = { ...DEFAULT_LABELS, ...opts.labels };
   const v: AWGVersion = cfg.version;
   const lines: ConfLine[] = [];
 
   lines.push(cm(caption ? `# AmneziaWG ${v} — ${caption}` : `# AmneziaWG ${v}`));
   lines.push(cm("[Interface]"));
   if (preview) {
-    lines.push(cm("# PrivateKey = <ключ>  Address = 10.0.0.2/32"));
+    lines.push(cm(`# ${L.privateKey}  ${L.address}`));
   } else {
-    lines.push(cm("# PrivateKey = <ключ>"));
-    lines.push(cm("# Address = 10.0.0.2/32"));
+    lines.push(cm(`# ${L.privateKey}`));
+    lines.push(cm(`# ${L.address}`));
   }
 
   const modern = v === "2.0" || v === "3.0";
@@ -82,9 +113,9 @@ export function renderConfLines(
   lines.push(kv("Jc", cfg.jc), kv("Jmin", cfg.jmin), kv("Jmax", cfg.jmax));
 
   if (v === "1.0") {
-    lines.push(cm("# I1-I5 не поддерживаются в AWG 1.0"));
+    lines.push(cm(`# ${L.noCps}`));
   } else {
-    if (v === "1.5") lines.push(cm("# I1-I5 только клиент (AWG 1.5):"));
+    if (v === "1.5") lines.push(cm(`# ${L.cpsClientOnly}`));
     lines.push(
       kv("I1", cfg.i1),
       kv("I2", cfg.i2),
@@ -98,11 +129,11 @@ export function renderConfLines(
     const p = cfg.awg3;
 
     if (p.headerProtectionKey) {
-      lines.push(cm("# AWG 3.0 — общий ключ защиты заголовков (одинаковый на обеих сторонах)"));
+      lines.push(cm(`# ${L.awg3Hpk}`));
       lines.push(kv("HeaderProtectionKey", p.headerProtectionKey));
     }
     if (p.contentPaddingAddition) {
-      lines.push(cm("# AWG 3.0 — случайный паддинг транспортных пакетов"));
+      lines.push(cm(`# ${L.awg3Cpa}`));
       lines.push(kv("ContentPaddingAddition", p.contentPaddingAddition));
     }
 

@@ -33,6 +33,7 @@ import {
     Trash2,
     Check,
     X,
+    RotateCcw,
     ArrowRight,
     Clock,
     Sparkles,
@@ -45,10 +46,10 @@ import {
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
-import type { AWGVersion, Intensity } from "@/utils/generator";
+import type { AWGConfig, AWGVersion, Intensity } from "@/utils/generator";
 import { localizePath, useI18n } from "@/i18n";
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 
 const router = useRouter();
 
@@ -85,6 +86,8 @@ const {
     domainStatus,
     domainCheckedHost,
     checkSelectedDomain,
+    restoreConfig,
+    addLog,
 } = useGenerator();
 
 const activeFaqIdx = ref<number | null>(null);
@@ -118,6 +121,9 @@ function persistCurrentConfig() {
             i3: awg.i3,
             i4: awg.i4,
             i5: awg.i5,
+            // Listing fields by hand dropped the 3.0 block on the way to
+            // MergeKeys; carry it through explicitly.
+            ...(awg.awg3 ? { awg3: awg.awg3 } : {}),
         },
         profile: awg.profile,
         ver: version.value,
@@ -144,12 +150,13 @@ function generateAndSave() {
 }
 
 onMounted(() => {
+    loadHistory();
     generateAndSave();
 });
 
 const openMergeKeys = (tab: "update" | "merge") => {
     persistCurrentConfig();
-    router.push({ path: "/mergekeys", query: { tab } });
+    router.push({ path: localizePath("/mergekeys", locale.value), query: { tab } });
 };
 
 /* ── Generation History ───────────────────────────────────────────────── */
@@ -162,17 +169,58 @@ interface HistoryEntry {
     profile: string;
     text: string;
     params: Record<string, string | number>;
+    /**
+     * The full config, so an entry can actually be restored rather than only
+     * copied. Optional because entries persisted by older builds lack it.
+     */
+    cfg?: AWGConfig;
 }
+
+const HISTORY_KEY = "awg-architect:history";
+const HISTORY_LIMIT = 20;
 
 const historyEntries = ref<HistoryEntry[]>([]);
 const showHistory = ref(false);
+const restoredId = ref<number | null>(null);
+const copiedHistoryId = ref<number | null>(null);
 let historyIdCounter = 0;
+
+/** History survives a reload — regenerating a config you liked is annoying. */
+function loadHistory() {
+    try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        historyEntries.value = parsed.slice(0, HISTORY_LIMIT);
+        historyIdCounter = historyEntries.value.reduce(
+            (max, e) => Math.max(max, Number(e.id) || 0),
+            0,
+        );
+    } catch {
+        // Corrupt or unreadable storage should never take the page down.
+        historyEntries.value = [];
+    }
+}
+
+function saveHistory() {
+    try {
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(historyEntries.value.slice(0, HISTORY_LIMIT)),
+        );
+    } catch {
+        // Quota exceeded or storage blocked — history stays in memory only.
+    }
+}
 
 /** AWG 2.0 and 3.0 share the same S3/S4 + ranged-header parameter shape. */
 const isModernVersion = (v: AWGVersion) => v === "2.0" || v === "3.0";
 
 /** FAQ link, prefixed for the active locale. */
 const faqPath = computed(() => localizePath("/faq", locale.value));
+
+const isRu = computed(() => locale.value === "ru");
 
 function saveToHistory() {
     if (!currentAwg.value || !plainText.value) return;
@@ -208,6 +256,22 @@ function saveToHistory() {
         params.I5 = awg.i5;
     }
 
+    // AWG 3.0 additions — without these a 3.0 entry looked identical to a 2.0
+    // one in the history panel.
+    if (v === "3.0" && awg.awg3) {
+        const a = awg.awg3;
+        if (a.headerProtectionKey)
+            params.HeaderProtectionKey = a.headerProtectionKey;
+        if (a.contentPaddingAddition)
+            params.ContentPaddingAddition = a.contentPaddingAddition;
+        if (a.rekeyAfterTime) params.RekeyAfterTime = a.rekeyAfterTime;
+        if (a.rekeyTimeout) params.RekeyTimeout = a.rekeyTimeout;
+        if (a.rejectAfterTime) params.RejectAfterTime = a.rejectAfterTime;
+        if (a.keepaliveTimeout) params.KeepaliveTimeout = a.keepaliveTimeout;
+        if (a.maxHandshakeAttempts)
+            params.MaxHandshakeAttempts = a.maxHandshakeAttempts;
+    }
+
     const entry: HistoryEntry = {
         id: ++historyIdCounter,
         timestamp: Date.now(),
@@ -216,29 +280,65 @@ function saveToHistory() {
         profile: config.profile,
         text: plainText.value,
         params,
+        // Structured clone: `currentAwg` keeps mutating as the user generates.
+        cfg: JSON.parse(JSON.stringify(awg)) as AWGConfig,
     };
     historyEntries.value.unshift(entry);
-    if (historyEntries.value.length > 20) {
-        historyEntries.value = historyEntries.value.slice(0, 20);
+    if (historyEntries.value.length > HISTORY_LIMIT) {
+        historyEntries.value = historyEntries.value.slice(0, HISTORY_LIMIT);
     }
+    saveHistory();
 }
 
-function restoreFromHistory(entry: HistoryEntry) {
-    navigator.clipboard?.writeText(entry.text).catch(() => {});
+/**
+ * Put a stored config back on screen. Entries written before configs were
+ * stored can only be copied, so fall back to that rather than doing nothing.
+ */
+async function restoreFromHistory(entry: HistoryEntry) {
+    if (entry.cfg) {
+        restoreConfig(entry.cfg);
+        restoredId.value = entry.id;
+        setTimeout(() => (restoredId.value = null), 1600);
+        addLog(
+            isRu.value
+                ? `Восстановлен конфиг AWG ${entry.cfg.version} от ${formatTime(entry.timestamp)}`
+                : `Restored AWG ${entry.cfg.version} config from ${formatTime(entry.timestamp)}`,
+            "ok",
+        );
+        showHistory.value = false;
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(entry.text);
+    } catch {
+        // Clipboard denied — nothing further we can do for a legacy entry.
+    }
     showHistory.value = false;
+}
+
+async function copyHistoryEntry(entry: HistoryEntry) {
+    try {
+        await navigator.clipboard.writeText(entry.text);
+        copiedHistoryId.value = entry.id;
+        setTimeout(() => (copiedHistoryId.value = null), 1600);
+    } catch {
+        /* clipboard unavailable */
+    }
 }
 
 function removeHistoryEntry(id: number) {
     historyEntries.value = historyEntries.value.filter((e) => e.id !== id);
+    saveHistory();
 }
 
 function clearHistory() {
     historyEntries.value = [];
+    saveHistory();
 }
 
 function formatTime(ts: number): string {
     const d = new Date(ts);
-    return d.toLocaleTimeString("ru-RU", {
+    return d.toLocaleTimeString(locale.value === "ru" ? "ru-RU" : "en-GB", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -311,7 +411,7 @@ const paramGroups = computed((): ParamGroup[] => {
     ];
     groups.push({
         key: "junk",
-        title: "Junk Train",
+        title: t("params.group.junk"),
         icon: TrainFront,
         items: junkItems,
         copyText: junkItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
@@ -328,7 +428,7 @@ const paramGroups = computed((): ParamGroup[] => {
     }
     groups.push({
         key: "sizes",
-        title: "Размеры пакетов",
+        title: t("params.group.sizes"),
         icon: Box,
         items: sizeItems,
         copyText: sizeItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
@@ -353,7 +453,7 @@ const paramGroups = computed((): ParamGroup[] => {
     }
     groups.push({
         key: "headers",
-        title: "Заголовки",
+        title: t("params.group.headers"),
         icon: KeyRound,
         items: headerItems,
         copyText: headerItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
@@ -370,7 +470,10 @@ const paramGroups = computed((): ParamGroup[] => {
         ];
         groups.push({
             key: "cps",
-            title: v === "1.5" ? "CPS (только клиент)" : "CPS Signatures",
+            title:
+                v === "1.5"
+                    ? t("params.group.cpsClient")
+                    : t("params.group.cps"),
             icon: VenetianMask,
             items: cpsItems,
             copyText: cpsItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
@@ -406,7 +509,7 @@ const paramGroups = computed((): ParamGroup[] => {
         if (awg3Items.length) {
             groups.push({
                 key: "awg3",
-                title: "AmneziaWG 3.0",
+                title: t("params.group.awg3"),
                 icon: ShieldCheck,
                 items: awg3Items,
                 copyText: awg3Items
@@ -432,10 +535,7 @@ const paramGroups = computed((): ParamGroup[] => {
                     <span class="hero-brand">AmneziaWG</span>
                     <span class="hero-accent">Architect</span>
                 </h1>
-                <p class="hero-desc">
-                    Генератор продвинутой обфускации для обхода DPI. Всё
-                    работает в браузере — данные не покидают устройство.
-                </p>
+                <p class="hero-desc">{{ t("home.desc") }}</p>
             </header>
 
             <!-- ── Version Tabs ────────────────────────────────────────── -->
@@ -478,9 +578,13 @@ const paramGroups = computed((): ParamGroup[] => {
                     class="history-toggle btn btn-ghost btn-icon"
                     :class="{ active: showHistory }"
                     @click="showHistory = !showHistory"
-                    data-tooltip="История генераций"
+                    :data-tooltip='t("history.title")'
                 >
                     <History :size="18" />
+                    <!-- Label appears only on phones: an unlabelled icon is
+                         fine beside a tooltip on desktop, but there is no
+                         hover on touch, so it needs to say what it does. -->
+                    <span class="history-label">{{ t("history.title") }}</span>
                     <span v-if="historyEntries.length" class="history-count">{{
                         historyEntries.length
                     }}</span>
@@ -492,8 +596,7 @@ const paramGroups = computed((): ParamGroup[] => {
                 <div v-if="version === '1.0'" class="alert alert-warn">
                     <TriangleAlert :size="16" class="alert-icon" />
                     <div class="alert-content">
-                        <b>AWG 1.0:</b> S3, S4 и CPS (I1–I5) не поддерживаются.
-                        Jc рекомендуется ≥ 4, Jmax&nbsp;>&nbsp;81.
+                        <b>AWG 1.0:</b> {{ t("version.notice.10") }}
                     </div>
                 </div>
             </transition>
@@ -502,8 +605,7 @@ const paramGroups = computed((): ParamGroup[] => {
                 <div v-if="version === '1.5'" class="alert alert-info">
                     <Info :size="16" class="alert-icon" />
                     <div class="alert-content">
-                        <b>AWG 1.5:</b> S3, S4 не поддерживаются. I1–I5 работают
-                        только на стороне клиента.
+                        <b>AWG 1.5:</b> {{ t("version.notice.15") }}
                     </div>
                 </div>
             </transition>
@@ -512,13 +614,12 @@ const paramGroups = computed((): ParamGroup[] => {
                 <div v-if="version === '3.0'" class="alert alert-info">
                     <ShieldCheck :size="16" class="alert-icon" />
                     <div class="alert-content">
-                        <b>AWG 3.0:</b> шифрование заголовков ChaCha20,
-                        случайный паддинг транспорта и рандомизация таймеров.
-                        Требуется <code>amneziawg-go&nbsp;≥&nbsp;3.0.1</code> и
-                        <code>amneziawg-tools</code> с поддержкой 3.0 —
-                        <b>на обеих сторонах</b>: ключ
-                        <code>HeaderProtectionKey</code> общий, клиент и сервер
-                        должны совпадать.
+                        <b>AWG 3.0:</b> {{ t("version.notice.30") }}
+                        {{ t("version.notice.30.req") }}
+                        <code>amneziawg-go&nbsp;≥&nbsp;3.0.1</code>
+                        {{ t("common.and") }}
+                        <code>amneziawg-tools</code>
+                        {{ t("version.notice.30.tail") }}
                     </div>
                 </div>
             </transition>
@@ -528,7 +629,7 @@ const paramGroups = computed((): ParamGroup[] => {
                 <div v-if="version === '3.0'" class="awg3-panel">
                     <div class="awg3-head">
                         <ShieldCheck :size="16" />
-                        <span>Параметры AmneziaWG 3.0</span>
+                        <span>{{ t("awg3.panel.title") }}</span>
                     </div>
 
                     <label class="awg3-opt">
@@ -538,13 +639,8 @@ const paramGroups = computed((): ParamGroup[] => {
                             @change="generate()"
                         />
                         <span class="awg3-opt-body">
-                            <b>HeaderProtectionKey</b>
-                            <small>
-                                ChaCha20 поверх заголовков. Хендшейк и cookie
-                                шифруются целиком, транспорт — только заголовок.
-                                Nonce берётся из паддинга, поэтому S1–S4
-                                автоматически поднимаются до&nbsp;12&nbsp;байт.
-                            </small>
+                            <b>{{ t("awg3.hpk.title") }}</b>
+                            <small>{{ t("awg3.hpk.desc") }}</small>
                         </span>
                     </label>
 
@@ -555,12 +651,8 @@ const paramGroups = computed((): ParamGroup[] => {
                             @change="generate()"
                         />
                         <span class="awg3-opt-body">
-                            <b>ContentPaddingAddition</b>
-                            <small>
-                                Случайный добавочный паддинг каждого
-                                транспортного пакета вместо выравнивания по 16
-                                байт — размывает гистограмму размеров.
-                            </small>
+                            <b>{{ t("awg3.cpa.title") }}</b>
+                            <small>{{ t("awg3.cpa.desc") }}</small>
                         </span>
                     </label>
 
@@ -571,23 +663,18 @@ const paramGroups = computed((): ParamGroup[] => {
                             @change="generate()"
                         />
                         <span class="awg3-opt-body">
-                            <b>Рандомизация таймеров</b>
-                            <small>
-                                RekeyAfterTime, RekeyTimeout, RejectAfterTime,
-                                KeepaliveTimeout и MaxHandshakeAttempts задаются
-                                диапазонами — фиксированный ритм хендшейков
-                                перестаёт быть отпечатком.
-                            </small>
+                            <b>{{ t("awg3.timings.title") }}</b>
+                            <small>{{ t("awg3.timings.desc") }}</small>
                         </span>
                     </label>
 
                     <p class="awg3-note">
                         <Info :size="13" />
                         <span>
-                            Теги <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code>
-                            и <code>&lt;dz&gt;</code> в v3.0.1 разбираются, но
-                            ещё не подключены к отправке пакетов — это задел под
-                            AWG 4.0, поэтому генератор их не выдаёт.
+                            {{ t("awg3.groundwork.lead") }}
+                            <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code>
+                            {{ t("common.and") }} <code>&lt;dz&gt;</code>
+                            {{ t("awg3.groundwork.note") }}
                         </span>
                     </p>
                 </div>
@@ -599,7 +686,7 @@ const paramGroups = computed((): ParamGroup[] => {
                     <div class="history-header">
                         <div class="history-header-left">
                             <History :size="16" />
-                            <span class="history-title">История генераций</span>
+                            <span class="history-title">{{ t("history.title") }}</span>
                             <span class="badge badge-amber">{{
                                 historyEntries.length
                             }}</span>
@@ -608,7 +695,7 @@ const paramGroups = computed((): ParamGroup[] => {
                             v-if="historyEntries.length"
                             class="btn btn-ghost btn-icon sm"
                             @click="clearHistory"
-                            data-tooltip="Очистить историю"
+                            :data-tooltip='t("history.clear")'
                         >
                             <Trash2 :size="14" />
                         </button>
@@ -677,15 +764,52 @@ const paramGroups = computed((): ParamGroup[] => {
                                 <div class="he-actions">
                                     <button
                                         class="btn btn-ghost btn-icon sm"
+                                        :class="{
+                                            'copy-ok': restoredId === entry.id,
+                                        }"
+                                        :disabled="!entry.cfg"
                                         @click="restoreFromHistory(entry)"
-                                        data-tooltip="Копировать конфиг"
+                                        :data-tooltip="
+                                            entry.cfg
+                                                ? isRu
+                                                    ? 'Восстановить конфиг'
+                                                    : 'Restore config'
+                                                : isRu
+                                                  ? 'Старая запись — только копирование'
+                                                  : 'Legacy entry — copy only'
+                                        "
                                     >
-                                        <Copy :size="14" />
+                                        <Check
+                                            v-if="restoredId === entry.id"
+                                            :size="14"
+                                        />
+                                        <RotateCcw v-else :size="14" />
+                                    </button>
+                                    <button
+                                        class="btn btn-ghost btn-icon sm"
+                                        :class="{
+                                            'copy-ok':
+                                                copiedHistoryId === entry.id,
+                                        }"
+                                        @click="copyHistoryEntry(entry)"
+                                        :data-tooltip="
+                                            isRu
+                                                ? 'Копировать конфиг'
+                                                : 'Copy config'
+                                        "
+                                    >
+                                        <ClipboardCheck
+                                            v-if="copiedHistoryId === entry.id"
+                                            :size="14"
+                                        />
+                                        <Copy v-else :size="14" />
                                     </button>
                                     <button
                                         class="btn btn-ghost btn-icon sm"
                                         @click="removeHistoryEntry(entry.id)"
-                                        data-tooltip="Удалить"
+                                        :data-tooltip="
+                                            isRu ? 'Удалить' : 'Delete'
+                                        "
                                     >
                                         <X :size="14" />
                                     </button>
@@ -705,7 +829,7 @@ const paramGroups = computed((): ParamGroup[] => {
                 <div class="panel panel-controls">
                     <div class="panel-head">
                         <Settings2 :size="16" class="text-accent" />
-                        <span class="panel-title">Параметры</span>
+                        <span class="panel-title">{{ t("params.title") }}</span>
                     </div>
 
                     <div class="panel-body">
@@ -713,7 +837,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="field-group">
                             <div class="field-label-row">
                                 <Cpu :size="14" class="text-accent" />
-                                <label class="field-label">Целевой клиент</label>
+                                <label class="field-label">{{ t("gen.client.label") }}</label>
                             </div>
                             <select
                                 v-model="config.clientId"
@@ -729,14 +853,13 @@ const paramGroups = computed((): ParamGroup[] => {
                                 </option>
                             </select>
                             <div class="field-hint">
-                                Параметры фильтруются под возможности выбранного
-                                клиента.
+                                {{ t("gen.client.hint") }}
                             </div>
                         </div>
 
                         <!-- Profile Select -->
                         <div class="field-group">
-                            <label class="field-label">Профиль мимикрии</label>
+                            <label class="field-label">{{ t("gen.profile.label") }}</label>
                             <select
                                 v-model="config.profile"
                                 class="select-field"
@@ -771,7 +894,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     DNS Query (UDP 53)
                                 </option>
                                 <option value="random">
-                                    🎲 Случайный выбор
+                                    {{ t("gen.profile.random") }}
                                 </option>
                             </select>
                         </div>
@@ -792,7 +915,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     <button
                                         class="btn btn-ghost btn-icon sm"
                                         @click="checkSelectedDomain"
-                                        title="Проверить доступность домена"
+                                        :title='t("gen.host.check")'
                                     >
                                         <ShieldCheck :size="14" />
                                     </button>
@@ -815,7 +938,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 v-model="config.mimicAll"
                                 @change="generate"
                             />
-                            <span>Применять профиль для I2–I5</span>
+                            <span>{{ t("gen.mimicAll") }}</span>
                         </label>
 
                         <!-- Separator -->
@@ -824,7 +947,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <!-- CPS Tags -->
                         <div v-if="isCPSSupported" class="field-group">
                             <label class="field-label"
-                                >Теги в цепочке CPS</label
+                                >{{ t("gen.tags.label") }}</label
                             >
                             <div class="tags-grid">
                                 <label class="toggle-row compact">
@@ -871,20 +994,27 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="alert alert-info small-alert mt-2">
                                 <Info :size="12" class="alert-icon" />
                                 <div class="alert-content">
-                                    Тег <code>&lt;c&gt;</code> не работает в старых
-                                    версиях AWG-go (ErrorCode 1000). Разработчики
-                                    Amnezia позднее отказались от него, поэтому он
-                                    может перестать работать и в новых версиях
-                                    клиентов.
+                                    {{ t("gen.tags.warnC") }}
                                 </div>
                             </div>
                         </div>
 
-                        <div v-else class="alert alert-error mt-2">
-                            <Ban :size="14" class="alert-icon" />
-                            <div class="alert-content">
-                                CPS (I1–I5) недоступен в AWG 1.0
+                        <!-- Not an error, just a capability the chosen version
+                             lacks — styled as a muted state rather than a red
+                             alert, and it points at the version that has it. -->
+                        <div v-else class="cps-unavailable">
+                            <Ban :size="15" />
+                            <div class="cps-unavailable-body">
+                                <b>{{ t("gen.cps.unavailable") }}</b>
+                                <small>{{ t("gen.cps.unavailableHint") }}</small>
                             </div>
+                            <button
+                                class="cps-unavailable-cta"
+                                @click="setVersion('2.0' as AWGVersion)"
+                            >
+                                {{ t("gen.cps.switchTo20") }}
+                                <ArrowRight :size="13" />
+                            </button>
                         </div>
 
                         <!-- Browser FP -->
@@ -892,7 +1022,7 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="field-label-row">
                                 <Fingerprint :size="14" class="text-accent" />
                                 <label class="field-label"
-                                    >Браузерный отпечаток</label
+                                    >{{ t("gen.fp.label") }}</label
                                 >
                             </div>
                             <label class="toggle-row">
@@ -901,7 +1031,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     v-model="config.useBrowserFp"
                                     @change="generate"
                                 />
-                                <span>Имитировать размер пакетов</span>
+                                <span>{{ t("gen.fp.toggle") }}</span>
                             </label>
 
                             <transition name="expand">
@@ -948,7 +1078,7 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="field-label-row">
                                 <Network :size="14" class="text-accent" />
                                 <label class="field-label"
-                                    >MTU интерфейса</label
+                                    >{{ t("gen.mtu.label") }}</label
                                 >
                             </div>
                             <div class="mtu-row">
@@ -1001,7 +1131,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
                         <!-- Intensity -->
                         <div class="field-group">
-                            <label class="field-label">Энтропия</label>
+                            <label class="field-label">{{ t("gen.entropy.label") }}</label>
                             <div class="intensity-bar">
                                 <button
                                     class="int-btn"
@@ -1029,17 +1159,17 @@ const paramGroups = computed((): ParamGroup[] => {
 
                         <!-- Junk Level -->
                         <div class="field-group">
-                            <label class="field-label">Junk-train (Jc)</label>
+                            <label class="field-label">{{ t("gen.junk.label") }}</label>
                             <select
                                 v-model.number="config.junkLevel"
                                 class="select-field"
                                 @change="generate"
                             >
-                                <option :value="0">0 — Отключено</option>
-                                <option :value="3">3 — Оптимально</option>
-                                <option :value="5">5 — Рекомендуемо ✓</option>
-                                <option :value="7">7 — Усиленный</option>
-                                <option :value="10">10 — Максимальный</option>
+                                <option :value="0">{{ t("gen.junk.off") }}</option>
+                                <option :value="3">{{ t("gen.junk.optimal") }}</option>
+                                <option :value="5">{{ t("gen.junk.recommended") }}</option>
+                                <option :value="7">{{ t("gen.junk.strong") }}</option>
+                                <option :value="10">{{ t("gen.junk.max") }}</option>
                             </select>
                         </div>
 
@@ -1047,7 +1177,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="field-group">
                             <label class="field-label">
                                 <Gauge :size="14" class="icon-inline" />
-                                Экстремальные максимумы
+                                {{ t("gen.extreme.title") }}
                             </label>
                             <label class="toggle-check">
                                 <input
@@ -1056,7 +1186,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     @change="generate"
                                 />
                                 <span class="toggle-label"
-                                    >Использовать предельные значения параметров</span
+                                    >{{ t("gen.extreme.desc") }}</span
                                 >
                             </label>
                             <transition name="fade">
@@ -1077,7 +1207,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="field-group">
                             <label class="field-label">
                                 <Router :size="14" class="icon-inline" />
-                                Режим роутера
+                                {{ t("gen.router.title") }}
                             </label>
                             <label class="toggle-check">
                                 <input
@@ -1086,7 +1216,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     @change="generate"
                                 />
                                 <span class="toggle-label"
-                                    >Ограничить нагрузку для роутеров</span
+                                    >{{ t("gen.router.desc") }}</span
                                 >
                             </label>
                             <transition name="fade">
@@ -1096,7 +1226,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 >
                                     <TriangleAlert :size="14" />
                                     <div>
-                                        <b>Режим роутера:</b> Jc ≤ 3, Jmax ≤
+                                        <b>{{ t("gen.router.title") }}:</b> Jc ≤ 3, Jmax ≤
                                         128, I2–I5 отключены. Для слабых
                                         устройств: NanoPi, Keenetic, OpenWrt.
                                     </div>
@@ -1107,13 +1237,10 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="batch-card">
                             <div class="batch-head">
                                 <Boxes :size="14" class="text-accent" />
-                                <span class="batch-title">Batch генератор</span>
+                                <span class="batch-title">{{ t("gen.batch.title") }}</span>
                             </div>
                             <p class="batch-hint">
-                                Сгенерируйте сразу несколько независимых
-                                конфигов. Для больших пакетов (более 50)
-                                генерация выполняется в фоновом Web Worker,
-                                чтобы интерфейс не зависал.
+                                {{ t("gen.batch.desc") }}
                             </p>
                             <div class="batch-row">
                                 <input
@@ -1138,8 +1265,10 @@ const paramGroups = computed((): ParamGroup[] => {
                                     <Boxes v-else :size="15" />
                                     {{
                                         isWorkerRunning
-                                            ? `Генерация ${batchCount}…`
-                                            : "Сгенерировать"
+                                            ? t("gen.batch.running", {
+                                                  n: batchCount,
+                                              })
+                                            : t("gen.batch.action")
                                     }}
                                 </button>
                             </div>
@@ -1150,7 +1279,11 @@ const paramGroups = computed((): ParamGroup[] => {
                                 @click="downloadBatch"
                             >
                                 <Download :size="15" />
-                                Скачать {{ batchResults.length }} конфигов
+                                {{
+                                    t("gen.batch.download", {
+                                        n: batchResults.length,
+                                    })
+                                }}
                             </button>
                         </div>
 
@@ -1164,7 +1297,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 :size="18"
                                 :class="{ 'spin-anim': isGenerating }"
                             />
-                            Сгенерировать
+                            {{ t("gen.generate") }}
                         </button>
 
                         <!-- Feedback -->
@@ -1185,13 +1318,13 @@ const paramGroups = computed((): ParamGroup[] => {
                                     class="btn btn-secondary fb-ok"
                                     @click="feedback(true)"
                                 >
-                                    <Check :size="14" /> Работает
+                                    <Check :size="14" /> {{ t("gen.works") }}
                                 </button>
                                 <button
                                     class="btn btn-secondary fb-bad"
                                     @click="feedback(false)"
                                 >
-                                    <X :size="14" /> Не работает
+                                    <X :size="14" /> {{ t("gen.worksNot") }}
                                 </button>
                             </div>
                         </div>
@@ -1220,7 +1353,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="output-head">
                             <div class="output-head-left">
                                 <FileCode :size="16" class="text-accent" />
-                                <span class="panel-title">Конфигурация</span>
+                                <span class="panel-title">{{ t("gen.config") }}</span>
                                 <span v-if="currentAwg" class="version-chip"
                                     >AWG {{ version }}</span
                                 >
@@ -1230,7 +1363,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     class="btn btn-ghost btn-icon sm"
                                     :class="{ 'copy-ok': copyFeedback }"
                                     @click="handleCopy"
-                                    data-tooltip="Копировать всё"
+                                    :data-tooltip='t("gen.copyAll")'
                                 >
                                     <ClipboardCheck
                                         v-if="copyFeedback"
@@ -1241,7 +1374,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 <button
                                     class="btn btn-ghost btn-icon sm"
                                     @click="downloadConfig"
-                                    data-tooltip="Скачать .conf"
+                                    :data-tooltip='t("gen.export.downloadConf")'
                                 >
                                     <Download :size="16" />
                                 </button>
@@ -1289,8 +1422,8 @@ const paramGroups = computed((): ParamGroup[] => {
                                             "
                                             :data-tooltip="
                                                 copiedGroupKey === group.key
-                                                    ? 'Скопировано!'
-                                                    : 'Копировать группу'
+                                                    ? t('action.copied')
+                                                    : t('gen.copyGroup')
                                             "
                                         >
                                             <ClipboardCheck
@@ -1328,7 +1461,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                                     item.value,
                                                 )
                                             "
-                                            :title="`Нажмите чтобы скопировать ${item.label}`"
+                                            :title="`${t('gen.clickToCopy')} ${item.label}`"
                                         >
                                             <span class="param-cell-label">{{
                                                 item.label
@@ -1364,7 +1497,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 <div class="export-card">
                                     <div class="export-title">
                                         <Download :size="14" class="text-accent" />
-                                        <span>Экспорт конфигурации</span>
+                                        <span>{{ t("gen.export.title") }}</span>
                                     </div>
                                     <div class="export-grid">
                                         <button
@@ -1380,8 +1513,10 @@ const paramGroups = computed((): ParamGroup[] => {
                                             <span>
                                                 {{
                                                     copyFeedback
-                                                        ? "Скопировано!"
-                                                        : "Копировать .conf"
+                                                        ? t("action.copied")
+                                                        : t(
+                                                              "gen.export.copyConf",
+                                                          )
                                                 }}
                                             </span>
                                         </button>
@@ -1390,28 +1525,28 @@ const paramGroups = computed((): ParamGroup[] => {
                                             @click="downloadConfig"
                                         >
                                             <Download :size="15" />
-                                            <span>Скачать .conf</span>
+                                            <span>{{ t("gen.export.downloadConf") }}</span>
                                         </button>
                                         <button
                                             class="btn btn-ghost export-btn"
                                             @click="copyJson"
                                         >
                                             <Braces :size="15" />
-                                            <span>Копировать JSON</span>
+                                            <span>{{ t("gen.export.copyJson") }}</span>
                                         </button>
                                         <button
                                             class="btn btn-ghost export-btn"
                                             @click="downloadJson"
                                         >
                                             <FileJson :size="15" />
-                                            <span>Скачать JSON</span>
+                                            <span>{{ t("gen.export.downloadJson") }}</span>
                                         </button>
                                         <router-link
                                             to="/simulator"
                                             class="btn btn-ghost export-btn export-sim"
                                         >
                                             <Activity :size="15" />
-                                            <span>Симулятор handshake</span>
+                                            <span>{{ t("gen.export.simulator") }}</span>
                                         </router-link>
                                     </div>
                                 </div>
@@ -1424,7 +1559,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <div class="preview-head">
                             <Eye :size="14" class="text-accent" />
                             <span class="panel-title"
-                                >Превью конфигурационного файла</span
+                                >{{ t("gen.preview") }}</span
                             >
                         </div>
                         <pre
@@ -1442,11 +1577,8 @@ const paramGroups = computed((): ParamGroup[] => {
                         <GitMerge :size="24" />
                     </div>
                     <div class="merge-banner-text">
-                        <h3>Управление ключами</h3>
-                        <p>
-                            Уже есть vpn:// ключ? Обновите параметры обфускации
-                            или объедините несколько ключей в один.
-                        </p>
+                        <h3>{{ t("gen.merge.title") }}</h3>
+                        <p>{{ t("gen.merge.desc") }}</p>
                     </div>
                 </div>
                 <div class="merge-banner-actions">
@@ -1454,13 +1586,13 @@ const paramGroups = computed((): ParamGroup[] => {
                         class="btn btn-secondary"
                         @click="openMergeKeys('update')"
                     >
-                        <Zap :size="16" /> Обновить
+                        <Zap :size="16" /> {{ t("gen.merge.update") }}
                     </button>
                     <button
                         class="btn btn-primary"
                         @click="openMergeKeys('merge')"
                     >
-                        <GitMerge :size="16" /> Объединить
+                        <GitMerge :size="16" /> {{ t("gen.merge.combine") }}
                     </button>
                 </div>
             </div>
@@ -1471,15 +1603,11 @@ const paramGroups = computed((): ParamGroup[] => {
                     <BookOpen :size="22" />
                 </div>
                 <div class="kb-cta-body">
-                    <h2>База знаний переехала в FAQ</h2>
-                    <p>
-                        Разбор параметров, различия версий 1.0–3.0, подбор
-                        конфигурации и типичные проблемы — теперь в одном месте,
-                        с поиском и фильтрами.
-                    </p>
+                    <h2>{{ t("kb.title") }}</h2>
+                    <p>{{ t("kb.desc") }}</p>
                 </div>
                 <router-link :to="faqPath" class="btn btn-secondary kb-cta-btn">
-                    <span>Открыть FAQ</span>
+                    <span>{{ t("kb.action") }}</span>
                     <ArrowRight :size="15" />
                 </router-link>
             </section>
@@ -1831,6 +1959,11 @@ const paramGroups = computed((): ParamGroup[] => {
     z-index: 2;
 }
 
+/* Desktop keeps the compact icon button; the label is phone-only. */
+.history-label {
+    display: none;
+}
+
 .history-toggle.active {
     color: var(--accent);
     background: var(--surface-active);
@@ -2144,6 +2277,70 @@ const paramGroups = computed((): ParamGroup[] => {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+}
+
+/* ── CPS unavailable (AWG 1.0) ────────────────────────────────────────── */
+.cps-unavailable {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px dashed var(--border3);
+    border-radius: var(--radius);
+    background: var(--bg3);
+}
+
+.cps-unavailable > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text3);
+}
+
+.cps-unavailable-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cps-unavailable-body b {
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--text2);
+}
+
+.cps-unavailable-body small {
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--text2);
+    opacity: 0.8;
+    text-wrap: pretty;
+}
+
+.cps-unavailable-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    align-self: center;
+    padding: 6px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--bg2);
+    color: var(--amber);
+    font-family: var(--fw);
+    font-weight: 700;
+    font-size: 0.73rem;
+    cursor: pointer;
+    transition: all var(--trans-fast);
+}
+
+.cps-unavailable-cta:hover {
+    border-color: var(--amber-dim);
+    background: var(--bg4);
 }
 
 /* MTU */
@@ -2992,6 +3189,16 @@ const paramGroups = computed((): ParamGroup[] => {
         text-align: left;
     }
 
+    .cps-unavailable {
+        flex-wrap: wrap;
+    }
+
+    .cps-unavailable-cta {
+        width: 100%;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
     .kb-cta-btn {
         width: 100%;
         justify-content: center;
@@ -3041,6 +3248,29 @@ const paramGroups = computed((): ParamGroup[] => {
         gap: 6px;
         width: 100%;
         border-radius: var(--radius);
+    }
+
+    /* Touch has no hover, so the tooltip never appears — give the button a
+       visible label and let it span the row instead of sitting as a lone
+       unexplained icon. */
+    .history-toggle {
+        width: 100%;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: var(--radius);
+    }
+
+    .history-label {
+        display: inline;
+        font-family: var(--fw);
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .history-toggle .history-count {
+        position: static;
+        margin-left: 2px;
     }
 
     .ver-tab {

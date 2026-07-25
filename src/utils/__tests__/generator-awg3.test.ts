@@ -315,7 +315,16 @@ describe("renderConf parity for legacy versions", () => {
     expect(text).not.toMatch(/^I1 = /m);
     expect(text).not.toMatch(/^S3 = /m);
     expect(text).not.toMatch(/^S4 = /m);
-    expect(text).toContain("I1-I5 не поддерживаются");
+    expect(text).toContain("I1-I5 are not supported in AWG 1.0");
+  });
+
+  it("uses caller-supplied comment labels when given", () => {
+    // The renderer stays i18n-free; the UI injects translated comments.
+    const text = renderConf(genCfg({ ...baseInput, version: "1.0" }), {
+      labels: { noCps: "нет CPS", privateKey: "PrivateKey = <ключ>" },
+    });
+    expect(text).toContain("# нет CPS");
+    expect(text).toContain("# PrivateKey = <ключ>");
   });
 
   it("AWG 1.5 has CPS chains but no S3/S4", () => {
