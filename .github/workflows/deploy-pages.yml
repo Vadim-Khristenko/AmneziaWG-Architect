@@ -89,25 +89,35 @@ jobs:
     steps:
       - name: 🏷️ Parse commit directives
         id: flags
+        # Untrusted values reach the shell through the environment, never
+        # through ${{ }} inside `run`. Expression interpolation splices the raw
+        # text into the script *before* bash parses it, so a commit message
+        # containing backticks or $( ) executes on the runner — which is how
+        # the v3.2.0 release build failed, and with `contents: write` it is a
+        # code-execution hole, not just a broken step.
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          INPUT_SKIP_TEST: ${{ inputs.skip_test || 'false' }}
+          INPUT_SKIP_DEPLOY: ${{ inputs.skip_deploy || 'false' }}
+          IS_TAG: ${{ github.ref_type == 'tag' }}
+          IS_PR: ${{ github.event_name == 'pull_request' }}
         run: |
-          MSG="${{ github.event.head_commit.message }}"
-
           # [skip test] / [test skip]
-          if echo "$MSG" | grep -qiE '\[(skip test|test skip|no test)\]'; then
+          if printf '%s' "$COMMIT_MSG" | grep -qiE '\[(skip test|test skip|no test)\]'; then
             echo "skip_test=true" >> "$GITHUB_OUTPUT"
           else
-            echo "skip_test=${{ inputs.skip_test || 'false' }}" >> "$GITHUB_OUTPUT"
+            echo "skip_test=${INPUT_SKIP_TEST}" >> "$GITHUB_OUTPUT"
           fi
 
           # [skip deploy] / [deploy skip]
-          if echo "$MSG" | grep -qiE '\[(skip deploy|deploy skip|no deploy)\]'; then
+          if printf '%s' "$COMMIT_MSG" | grep -qiE '\[(skip deploy|deploy skip|no deploy)\]'; then
             echo "skip_deploy=true" >> "$GITHUB_OUTPUT"
           else
-            echo "skip_deploy=${{ inputs.skip_deploy || 'false' }}" >> "$GITHUB_OUTPUT"
+            echo "skip_deploy=${INPUT_SKIP_DEPLOY}" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "is_tag=${{ github.ref_type == 'tag' }}" >> "$GITHUB_OUTPUT"
-          echo "is_pr=${{ github.event_name == 'pull_request' }}" >> "$GITHUB_OUTPUT"
+          echo "is_tag=${IS_TAG}" >> "$GITHUB_OUTPUT"
+          echo "is_pr=${IS_PR}" >> "$GITHUB_OUTPUT"
           echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: 📋 Preflight summary
@@ -145,7 +155,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: 🔍 Type-check
-        run: bun vue-tsc --noEmit
+        # Use the project's own script so CI and local runs check the same
+        # thing; the bare `vue-tsc --noEmit` here was missing --skipLibCheck
+        # and could fail on dependency typings alone.
+        run: bun run typecheck
 
       - name: 🧪 Run tests with coverage
         run: bun run test:coverage
@@ -164,14 +177,12 @@ jobs:
           echo "### 🧪 Test Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ -f coverage/coverage-summary.json ]; then
-            LINES=$(python3 -c "
-          import json, sys
-          try:
-              d = json.load(open('coverage/coverage-summary.json'))['total']['lines']
-              print(f\"{d['pct']}%\")
-          except Exception:
-              print('N/A')
-          " 2>/dev/null || echo "N/A")
+            # Read with bun rather than an inline python heredoc: the old one
+            # needed its own indentation inside the YAML block, which made it
+            # easy to break by reformatting the surrounding step.
+            LINES=$(bun --print \
+              "require('./coverage/coverage-summary.json').total.lines.pct + '%'" \
+              2>/dev/null || echo "N/A")
             echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
             echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
             echo "| Line coverage | ${LINES} |" >> "$GITHUB_STEP_SUMMARY"
@@ -210,11 +221,22 @@ jobs:
         run: bun run build
 
       - name: 📋 Copy launcher scripts
+        # Steps run under `bash -e`, so `[ -f x ] && cp x y` fails the whole
+        # step the moment a file is absent — the test returns 1 and takes the
+        # step with it. Explicit `if` blocks keep a missing optional file
+        # optional.
         run: |
-          for f in serve.sh serve.ps1 serve.bat; do
-            [ -f "scripts/$f" ] && cp "scripts/$f" "dist/$f"
+          for f in serve.sh serve.ps1 serve.bat awg-gen.sh; do
+            if [ -f "scripts/$f" ]; then
+              cp "scripts/$f" "dist/$f"
+            fi
           done
-          [ -f dist/serve.sh ] && chmod +x dist/serve.sh
+
+          for f in serve.sh awg-gen.sh; do
+            if [ -f "dist/$f" ]; then
+              chmod +x "dist/$f"
+            fi
+          done
 
       - name: 📊 Collect metadata
         id: meta
@@ -222,7 +244,9 @@ jobs:
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           DIST_SIZE=$(du -sh dist | cut -f1)
           FILE_COUNT=$(find dist -type f | wc -l | tr -d ' ')
-          VERSION=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+          # Read the version with the runtime the project already depends on,
+          # rather than reaching for whatever python happens to be on the image.
+          VERSION=$(bun --print "require('./package.json').version")
 
           {
             echo "build-time=$BUILD_TIME"
@@ -244,7 +268,7 @@ jobs:
           EOF
 
       - name: 📤 Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -333,23 +357,36 @@ jobs:
           path: dist
 
       - name: 🗜️ Create archives
+        # The tag name is whatever the pusher chose, so it reaches the shell as
+        # an environment variable rather than being spliced into the script.
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          TAG="${{ github.ref_name }}"
-
-          zip -r "amneziawg-architect-${TAG}.zip" dist/ scripts/
+          zip -rq "amneziawg-architect-${TAG}.zip" dist/ scripts/
           tar -czf "amneziawg-architect-${TAG}.tar.gz" dist/ scripts/
 
-          # Generate checksums
-          sha256sum amneziawg-architect-${TAG}.* > "checksums-${TAG}.sha256"
+          sha256sum "amneziawg-architect-${TAG}.zip" \
+                    "amneziawg-architect-${TAG}.tar.gz" \
+            > "checksums-${TAG}.sha256"
 
           echo "✅ Archives:"
-          ls -lh amneziawg-architect-${TAG}.* checksums-${TAG}.sha256
+          ls -lh "amneziawg-architect-${TAG}.zip" \
+                 "amneziawg-architect-${TAG}.tar.gz" \
+                 "checksums-${TAG}.sha256"
 
       - name: 📝 Generate release notes
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD_TIME: ${{ needs.build.outputs.build-time }}
+          DIST_SIZE: ${{ needs.build.outputs.dist-size }}
+          FILE_COUNT: ${{ needs.build.outputs.file-count }}
         run: |
-          TAG="${{ github.ref_name }}"
-          VERSION="${{ needs.build.outputs.version }}"
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -n 1)
+          # Only version tags are candidates for "previous release" — the repo
+          # also carries non-version tags, which would otherwise be picked up
+          # and produce a nonsensical changelog range.
+          PREV_TAG=$(git tag -l 'v*' --sort=-version:refname \
+            | grep -v "^${TAG}$" | head -n 1)
 
           {
             echo "## AmneziaWG Architect ${TAG}"
@@ -357,8 +394,8 @@ jobs:
             echo "| | |"
             echo "|---|---|"
             echo "| **Version** | \`${VERSION}\` |"
-            echo "| **Built at** | ${{ needs.build.outputs.build-time }} |"
-            echo "| **Dist size** | ${{ needs.build.outputs.dist-size }} (${{ needs.build.outputs.file-count }} files) |"
+            echo "| **Built at** | ${BUILD_TIME} |"
+            echo "| **Dist size** | ${DIST_SIZE} (${FILE_COUNT} files) |"
             echo "| **Commit** | \`${GITHUB_SHA::7}\` |"
             echo ""
 
@@ -438,13 +475,17 @@ jobs:
             checksums-${{ github.ref_name }}.sha256
 
       - name: 📋 Summary
+        # An unquoted heredoc still expands $( ) and backticks, so the tag name
+        # comes in through the environment here too.
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          ### 🏷️ Release \`${{ github.ref_name }}\` created
+          ### 🏷️ Release \`${TAG}\` created
 
           | File | |
           |------|---|
-          | amneziawg-architect-${{ github.ref_name }}.zip | ✅ |
-          | amneziawg-architect-${{ github.ref_name }}.tar.gz | ✅ |
-          | checksums-${{ github.ref_name }}.sha256 | ✅ |
+          | amneziawg-architect-${TAG}.zip | ✅ |
+          | amneziawg-architect-${TAG}.tar.gz | ✅ |
+          | checksums-${TAG}.sha256 | ✅ |
           EOF
