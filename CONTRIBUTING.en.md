@@ -45,6 +45,18 @@ bun run dev
 | `bun run typecheck` | Type-check without emitting |
 | `bun run og` | Rebuild the OG images and the GitHub preview |
 
+The server in `tools/awg-serve` builds separately, with cargo:
+
+```bash
+cd tools/awg-serve
+cargo test          # path parsing, traversal refusal, MIME types
+cargo build --release
+```
+
+It has no dependencies and should keep none: it ships inside a release archive,
+so it has to build from a bare toolchain. Edition 2024, Rust 1.85 minimum. CI
+builds it natively on each OS runner rather than cross-compiling.
+
 ---
 
 ## Stack
@@ -67,6 +79,7 @@ src/
   i18n/          catalogs, runtime and per-locale SEO metadata
   data/          content: FAQ, changelog, support links
 scripts/og/      OG image generator
+tools/awg-serve/ Rust static server, bundled into the release archive
 assets/          global CSS and custom properties
 ```
 

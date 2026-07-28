@@ -139,6 +139,23 @@ bun run dev
 | `bun run typecheck` | Проверка типов |
 | `bun run og` | Пересборка OG-изображений и превью для GitHub |
 
+### Запуск без зависимостей
+
+В релизных архивах лежит `awg-serve` — статический сервер на Rust без единой
+зависимости, собранный под Linux, macOS и Windows. Ничего ставить не нужно:
+
+```bash
+bin/awg-serve-linux            # Linux
+bin/awg-serve-macos            # macOS
+bin\awg-serve-windows.exe      # Windows
+```
+
+Порт по умолчанию 8080 (`awg-serve 3000` — свой), `--no-open` не открывать
+браузер. Исходник — в [`tools/awg-serve`](tools/awg-serve).
+
+Скрипты `scripts/serve.*` остаются как альтернатива: они найдут bun, npx или
+python, а `--check` покажет, что нашлось, ничего не запуская.
+
 ### Автономный генератор
 
 Если браузер недоступен — те же правила в виде обычного shell-скрипта, без
@@ -150,11 +167,44 @@ bun run dev
 ./scripts/awg-gen.sh --help                  # все параметры
 ```
 
-> [!TIP]
-> Не открывается GitHub, а приложения Amnezia нужны? Попробуйте зеркало:
-> [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn).
-> Это независимое зеркало, а не официальный сайт Amnezia — сверяйте контрольные
-> суммы и подписи релизов перед установкой.
+### Установка на сервер
+
+Конфигурация — половина дела; вторая половина — сервер, который её примет. Для
+этого есть отдельный проект:
+**[awg-containers-and-tools](https://github.com/Vadim-Khristenko/awg-containers-and-tools)**
+— контейнеры AmneziaWG под все четыре версии протокола (1.0, 1.5, 2.0, 3.0) и
+утилита `awg-tool` для развёртывания.
+
+```bash
+awg-tool gen --version 3.0 --profile quic --client amneziavpn
+awg-tool install --host 203.0.113.9 --user root --key ~/.ssh/id_ed25519
+```
+
+Особенно он нужен для 3.0: официальный пайплайн настройки конфигурации этой
+версии не разбирает, поэтому `awg-tool` обходит парсер `.conf` и говорит с
+демоном напрямую через UAPI-сокет. Параметры рандомизируются на каждое
+развёртывание — чтобы разные инстансы не выглядели для DPI одинаково.
+
+Проект неофициальный и поддерживается сообществом, как и Architect.
+
+### Если GitHub недоступен
+
+Ссылка на GitHub в разделе про заблокированный GitHub — так себе помощь, поэтому
+вот зеркала на своём Forgejo. Ими можно делиться:
+
+| Что | Зеркало |
+|:--|:--|
+| Architect (этот репозиторий) | [git.vai-rice.space/vai_prog/AmneziaWG-Architect](https://git.vai-rice.space/vai_prog/AmneziaWG-Architect) |
+| Установщик для сервера | [git.vai-rice.space/vai_prog/awg-containers-and-tools](https://git.vai-rice.space/vai_prog/awg-containers-and-tools) |
+| Приложения Amnezia | [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn) |
+
+```bash
+git clone https://git.vai-rice.space/vai_prog/AmneziaWG-Architect.git
+```
+
+Первые два — зеркала моих репозиториев. Третье, с приложениями Amnezia,
+независимое, а не официальный сайт Amnezia: сверяйте контрольные суммы и
+подписи релизов перед установкой.
 
 ---
 

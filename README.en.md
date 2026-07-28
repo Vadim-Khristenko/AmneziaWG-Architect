@@ -139,6 +139,23 @@ bun run dev
 | `bun run typecheck` | Type-check |
 | `bun run og` | Rebuild the OG images and the GitHub preview |
 
+### Running with nothing installed
+
+Release archives ship `awg-serve` — a dependency-free static server written in
+Rust, built for Linux, macOS and Windows:
+
+```bash
+bin/awg-serve-linux            # Linux
+bin/awg-serve-macos            # macOS
+bin\awg-serve-windows.exe      # Windows
+```
+
+Port defaults to 8080 (`awg-serve 3000` for another), `--no-open` skips
+launching a browser. Source lives in [`tools/awg-serve`](tools/awg-serve).
+
+The `scripts/serve.*` launchers remain as an alternative — they look for bun,
+npx or python, and `--check` reports what they found without starting anything.
+
 ### Standalone generator
 
 If a browser is not available, the same rules exist as a plain shell script —
@@ -150,11 +167,44 @@ no dependencies, no network:
 ./scripts/awg-gen.sh --help                  # every option
 ```
 
-> [!TIP]
-> GitHub blocked but you need the Amnezia apps? Try the mirror:
-> [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn).
-> It is an independent mirror, not Amnezia's official site — verify release
-> checksums and signatures before installing.
+### Installing on a server
+
+A configuration is half the job; the other half is a server that accepts it.
+That is a separate project:
+**[awg-containers-and-tools](https://github.com/Vadim-Khristenko/awg-containers-and-tools)**
+— AmneziaWG containers for all four protocol versions (1.0, 1.5, 2.0, 3.0) and
+an `awg-tool` utility to deploy them.
+
+```bash
+awg-tool gen --version 3.0 --profile quic --client amneziavpn
+awg-tool install --host 203.0.113.9 --user root --key ~/.ssh/id_ed25519
+```
+
+It matters most for 3.0: the official configuration pipeline cannot parse
+configs of that version, so `awg-tool` bypasses the `.conf` parser and talks to
+the daemon directly over its UAPI socket. Parameters are randomized per
+deployment, so separate instances do not look alike to DPI.
+
+The project is unofficial and community-maintained, same as Architect.
+
+### If GitHub is blocked
+
+A GitHub link inside the section about GitHub being blocked is not much help, so
+here are mirrors on a self-hosted Forgejo. Feel free to share them:
+
+| What | Mirror |
+|:--|:--|
+| Architect (this repository) | [git.vai-rice.space/vai_prog/AmneziaWG-Architect](https://git.vai-rice.space/vai_prog/AmneziaWG-Architect) |
+| Server installer | [git.vai-rice.space/vai_prog/awg-containers-and-tools](https://git.vai-rice.space/vai_prog/awg-containers-and-tools) |
+| Amnezia apps | [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn) |
+
+```bash
+git clone https://git.vai-rice.space/vai_prog/AmneziaWG-Architect.git
+```
+
+The first two mirror my own repositories. The third, for the Amnezia apps, is
+independent and not Amnezia's official site — verify release checksums and
+signatures before installing.
 
 ---
 
