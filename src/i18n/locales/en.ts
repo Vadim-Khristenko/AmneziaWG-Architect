@@ -433,7 +433,7 @@ export const en: Catalog = {
     "Architect is built and maintained by one person. Bugs get fixed quickly, often the same day. The project runs on enthusiasm and spare time.",
   "about.dev.feedback.title": "Found a bug? Have an idea?",
   "about.dev.feedback.desc":
-    "Bug reports and ideas are genuinely welcome. Join the discussion in the chat or open an issue on GitHub — and soon on git.vai-rice.space too.",
+    "Bug reports and ideas are genuinely welcome. Join the discussion in the chat or open an issue on GitHub. If GitHub is blocked for you, the source is mirrored on git.vai-rice.space.",
   "about.dev.noDm":
     "Please do not send direct messages — the shared chat or an issue, either is fine.",
   "about.mergekeys.title": "MergeKeys — key management",
@@ -461,6 +461,7 @@ export const en: Catalog = {
   "footer.col.community": "Community",
   "footer.col.research": "Research",
   "footer.link.source": "Source code",
+  "footer.link.sourceMirror": "Source code on VIA GIT",
   "footer.link.amneziaGithub": "Amnezia VPN on GitHub",
   "footer.link.telegram": "Telegram chat",
   "footer.link.author": "Project author",

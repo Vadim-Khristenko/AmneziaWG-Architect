@@ -432,7 +432,7 @@ export const ru = {
     "Architect создаётся и поддерживается одним человеком. Баги устраняются оперативно, часто в тот же день. Проект живёт благодаря энтузиазму и свободному времени.",
   "about.dev.feedback.title": "Нашли баг? Есть идея?",
   "about.dev.feedback.desc":
-    "Приглашаю ловить баги и присылать идеи. Пишите в обсуждение в чате или заводите issue на GitHub — а вскоре и на git.vai-rice.space.",
+    "Приглашаю ловить баги и присылать идеи. Пишите в обсуждение в чате или заводите issue на GitHub. Если он недоступен, исходный код продублирован на git.vai-rice.space.",
   "about.dev.noDm":
     "Пожалуйста, не пишите в личные сообщения — только через общий чат или issue.",
   "about.mergekeys.title": "MergeKeys — управление ключами",
@@ -460,6 +460,7 @@ export const ru = {
   "footer.col.community": "Сообщество",
   "footer.col.research": "Исследования",
   "footer.link.source": "Исходный код",
+  "footer.link.sourceMirror": "Исходный код на VIA GIT",
   "footer.link.amneziaGithub": "Amnezia VPN GitHub",
   "footer.link.telegram": "Чат в Telegram",
   "footer.link.author": "Автор проекта",

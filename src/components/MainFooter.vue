@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import {
     Github,
+    GitBranch,
     User,
     Send,
     Shield,
@@ -100,6 +101,15 @@ watch(locale, formatBuild);
                             class="f-link"
                         >
                             <Github :size="16" /> {{ t("footer.link.source") }}
+                        </a>
+                        <a
+                            href="https://git.vai-rice.space/vai_prog/AmneziaWG-Architect"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="f-link"
+                        >
+                            <GitBranch :size="16" />
+                            {{ t("footer.link.sourceMirror") }}
                         </a>
                         <a
                             href="https://github.com/amnezia-vpn/"

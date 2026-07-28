@@ -267,8 +267,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "I found a bug or something does not work — where do I report it?",
     },
     answer: {
-      ru: "Пожалуйста, напишите — это лучший способ починить то, о чём мы не знаем. Можно присоединиться к обсуждению в чате, завести issue на GitHub в репозитории проекта, а вскоре и на git.vai-rice.space. Если проблема в конкретном конфиге, приложите версию AmneziaWG, клиент и его версию, а также сами параметры без приватных ключей — этого почти всегда достаточно, чтобы воспроизвести. Замечания по формулировкам и переводу тоже приветствуются.",
-      en: "Please do — it is the best way to fix things we do not know about. You can join the discussion in the chat, open an issue on the project's GitHub repository, and soon on git.vai-rice.space as well. If the problem is a specific config, include the AmneziaWG version, the client and its version, and the parameters themselves with private keys removed — that is almost always enough to reproduce it. Notes on wording and translation are welcome too.",
+      ru: "Пожалуйста, напишите — это лучший способ починить то, о чём мы не знаем. Можно присоединиться к обсуждению в чате, завести issue на GitHub в репозитории проекта. Если GitHub недоступен, исходный код продублирован на git.vai-rice.space — там же лежит зеркало установщика для сервера. Если проблема в конкретном конфиге, приложите версию AmneziaWG, клиент и его версию, а также сами параметры без приватных ключей — этого почти всегда достаточно, чтобы воспроизвести. Замечания по формулировкам и переводу тоже приветствуются.",
+      en: "Please do — it is the best way to fix things we do not know about. You can join the discussion in the chat, open an issue on the project's GitHub repository. If GitHub is blocked for you, the source is mirrored on git.vai-rice.space, along with the server installer. If the problem is a specific config, include the AmneziaWG version, the client and its version, and the parameters themselves with private keys removed — that is almost always enough to reproduce it. Notes on wording and translation are welcome too.",
     },
     keywords: [
       "баг",
