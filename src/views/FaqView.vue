@@ -21,6 +21,7 @@ import {
     FAQ_ENTRIES,
     type FaqCategoryId,
 } from "@/data/faq";
+import ClientFieldGuide from "@/components/ClientFieldGuide.vue";
 
 const { locale } = useI18n();
 const route = useRoute();
@@ -242,6 +243,9 @@ onBeforeUnmount(() => {
                     <span class="faq-cat-n">{{ counts[cat.id] }}</span>
                 </button>
             </div>
+
+            <!-- ── Where the parameters go ─────────────────────────────── -->
+            <ClientFieldGuide id="client-fields" />
 
             <!-- ── Results ─────────────────────────────────────────────── -->
             <p class="faq-count" aria-live="polite">

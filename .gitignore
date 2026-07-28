@@ -158,3 +158,6 @@ scripts/og/.fonts/
 
 # Remotion animation project — work in progress, kept out of the repo for now
 video/
+
+# Rust build output for the bundled awg-serve tool
+tools/awg-serve/target/

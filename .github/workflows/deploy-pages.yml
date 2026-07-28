@@ -330,6 +330,72 @@ jobs:
           EOF
 
   # ───────────────────────────────────────────────────────────────────────────
+  # JOB 3.5 — Build the standalone server for each OS (tag push only)
+  #
+  #   awg-serve is a dependency-free static server that ships inside the
+  #   release archive, so someone who downloads it needs nothing installed to
+  #   view the site. Each binary is built on its own runner — that is what
+  #   makes it native rather than cross-compiled.
+  # ───────────────────────────────────────────────────────────────────────────
+  serve-binary:
+    name: 🦀 awg-serve (${{ matrix.label }})
+    needs: [preflight]
+    if: github.ref_type == 'tag'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux
+            binary: awg-serve
+            asset: awg-serve-linux
+          - os: macos-latest
+            label: macos
+            binary: awg-serve
+            asset: awg-serve-macos
+          - os: windows-latest
+            label: windows
+            binary: awg-serve.exe
+            asset: awg-serve-windows.exe
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🦀 Toolchain
+        # Runner images ship a current stable Rust, which covers the 2024
+        # edition this crate uses. Printing it makes a future edition bump
+        # visible in the log instead of failing cryptically.
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: 🧪 Test
+        working-directory: tools/awg-serve
+        run: cargo test --locked
+
+      - name: 🔨 Build
+        working-directory: tools/awg-serve
+        run: cargo build --release --locked
+
+      - name: 📦 Stage binary
+        shell: bash
+        run: |
+          mkdir -p out
+          cp "tools/awg-serve/target/release/${{ matrix.binary }}" \
+             "out/${{ matrix.asset }}"
+
+      - name: 📤 Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: serve-${{ matrix.label }}
+          path: out/${{ matrix.asset }}
+          retention-days: 1
+
+  # ───────────────────────────────────────────────────────────────────────────
   # JOB 4 — Create GitHub Release
   #   Runs after BOTH test + build pass (on tag push only)
   # ───────────────────────────────────────────────────────────────────────────
@@ -338,9 +404,10 @@ jobs:
     if: |
       always() &&
       needs.build.result == 'success' &&
+      needs.serve-binary.result == 'success' &&
       (needs.test.result == 'success' || needs.test.result == 'skipped') &&
       github.ref_type == 'tag'
-    needs: [preflight, test, build]
+    needs: [preflight, test, build, serve-binary]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -356,14 +423,43 @@ jobs:
           name: dist-release
           path: dist
 
+      - name: 🦀 Download awg-serve binaries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: serve-*
+          path: bin
+          merge-multiple: true
+
+      - name: 📋 Assemble archive contents
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          chmod +x bin/awg-serve-linux bin/awg-serve-macos 2>/dev/null || true
+
+          # The archive gets its own README: someone downloading a release has
+          # no repository to read, so the layout and the ways to run it have to
+          # be explained in the thing they actually have.
+          sed "s/__TAG__/${TAG}/g" scripts/archive-README.md > README.md
+
+          # The template is a build input, not something to ship twice.
+          rm -f scripts/archive-README.md
+
+          # The OG image generator is build tooling — it needs the repo and a
+          # font download to do anything, so it is noise in a release archive.
+          rm -rf scripts/og
+
+          echo "Archive contents:"
+          ls -la bin/ scripts/
+          du -sh dist scripts bin
+
       - name: 🗜️ Create archives
         # The tag name is whatever the pusher chose, so it reaches the shell as
         # an environment variable rather than being spliced into the script.
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          zip -rq "amneziawg-architect-${TAG}.zip" dist/ scripts/
-          tar -czf "amneziawg-architect-${TAG}.tar.gz" dist/ scripts/
+          zip -rq "amneziawg-architect-${TAG}.zip" dist/ scripts/ bin/ README.md
+          tar -czf "amneziawg-architect-${TAG}.tar.gz" dist/ scripts/ bin/ README.md
 
           sha256sum "amneziawg-architect-${TAG}.zip" \
                     "amneziawg-architect-${TAG}.tar.gz" \

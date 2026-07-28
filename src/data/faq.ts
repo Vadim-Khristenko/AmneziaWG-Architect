@@ -224,6 +224,29 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     ],
   },
   {
+    id: "server-installer",
+    category: "clients",
+    question: {
+      ru: "Как поставить AmneziaWG на свой сервер?",
+      en: "How do I install AmneziaWG on my own server?",
+    },
+    answer: {
+      ru: "Помимо установки через приложение Amnezia VPN, у Architect есть свой установщик: awg-containers-and-tools. Он работает на Windows, macOS и Linux, ставит все версии протоколов, умеет генерировать конфигурации и берёт на себя часть рутины по развёртыванию. Это альтернатива клиентскому способу установки, а не замена: если вам привычнее ставить через приложение — пользуйтесь приложением, оба пути ведут к рабочему серверу. Репозиторий: github.com/Vadim-Khristenko/awg-containers-and-tools",
+      en: "Besides installing through the Amnezia VPN app, Architect has its own installer: awg-containers-and-tools. It runs on Windows, macOS and Linux, installs every protocol version, can generate configurations and takes care of much of the deployment legwork. It is an alternative to the client-side install path rather than a replacement — if the app suits you better, use the app; both get you a working server. Repository: github.com/Vadim-Khristenko/awg-containers-and-tools",
+    },
+    keywords: [
+      "установка",
+      "install",
+      "installer",
+      "сервер",
+      "server",
+      "containers",
+      "docker",
+      "развернуть",
+      "deploy",
+    ],
+  },
+  {
     id: "client-limits",
     category: "clients",
     question: {

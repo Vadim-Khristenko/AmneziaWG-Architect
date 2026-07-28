@@ -1,0 +1,537 @@
+<script setup lang="ts">
+/**
+ * Where each parameter goes in the Amnezia client.
+ *
+ * A recreation of the client's own parameter form rather than screenshots:
+ * the field names and their order match what the app shows, so the mapping is
+ * unambiguous, but it renders in this site's theme and — when a config has
+ * been generated — carries the visitor's real values instead of placeholders.
+ *
+ * Field labels are copied verbatim from the client, including the ones that do
+ * not match the protocol docs. H3 is "Underload packet magic header" there,
+ * not "Cookie reply"; matching the app matters more than matching the spec,
+ * because the app is what the visitor is looking at.
+ */
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
+import { useI18n } from "@/i18n";
+import type { AWGConfig } from "@/utils/generator";
+
+const { locale } = useI18n();
+const isRu = computed(() => locale.value === "ru");
+
+const cfg = ref<AWGConfig | null>(null);
+const copied = ref<string | null>(null);
+let copyTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Sixteen fields is a lot of page, and most FAQ visitors are not mid-setup, so
+ * it starts folded. Anyone arriving on the #client-fields anchor — the link
+ * from the generator — clearly does want it, so that opens it.
+ */
+const open = ref(false);
+
+onMounted(() => {
+    try {
+        const raw = sessionStorage.getItem("awg_pending_cfg");
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.cfg) cfg.value = { ...parsed.cfg, version: parsed.ver };
+        }
+    } catch {
+        // A malformed entry just means placeholders — nothing to report.
+    }
+
+    if (window.location.hash === "#client-fields") {
+        open.value = true;
+        nextTick(() => {
+            document
+                .getElementById("client-fields")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
+});
+
+onBeforeUnmount(() => clearTimeout(copyTimer));
+
+interface Field {
+    key: string;
+    /**
+     * Verbatim from the client. The app labels these in English whatever its
+     * UI language is set to, so translating them here would send a Russian
+     * reader looking for text that is not on their screen.
+     */
+    label: string;
+    /** Russian gloss, shown as a secondary line — never as the field name. */
+    hint: { ru: string; en: string };
+    value: () => string;
+}
+
+const ph = (name: string) => `—< ${name} >—`;
+
+const c = () => cfg.value;
+const v = (get: (k: AWGConfig) => unknown, name: string) => () => {
+    const k = c();
+    if (!k) return ph(name);
+    const out = get(k);
+    return out === undefined || out === null || out === "" ? ph(name) : String(out);
+};
+
+/** 2.0 and 3.0 use ranged headers; 1.0 and 1.5 use single values. */
+const ranged = () => {
+    const k = c();
+    return !k || k.version === "2.0" || k.version === "3.0";
+};
+
+const groups = computed<{ title: { ru: string; en: string }; fields: Field[] }[]>(
+    () => [
+        {
+            title: { ru: "Мусорные пакеты", en: "Junk packets" },
+            fields: [
+                {
+                    key: "Jc",
+                    label: "Jc – Junk packet count",
+                    hint: { ru: "количество мусорных пакетов", en: "" },
+                    value: v((k) => k.jc, "JC"),
+                },
+                {
+                    key: "Jmin",
+                    label: "Jmin – Junk packet minimum size",
+                    hint: { ru: "минимальный размер мусорного пакета", en: "" },
+                    value: v((k) => k.jmin, "JMIN"),
+                },
+                {
+                    key: "Jmax",
+                    label: "Jmax – Junk packet maximum size",
+                    hint: { ru: "максимальный размер мусорного пакета", en: "" },
+                    value: v((k) => k.jmax, "JMAX"),
+                },
+            ],
+        },
+        {
+            title: { ru: "Размеры паддинга", en: "Junk sizes" },
+            fields: [
+                {
+                    key: "S1",
+                    label: "S1 – Init packet junk size",
+                    hint: { ru: "паддинг пакета init", en: "" },
+                    value: v((k) => k.s1, "S1"),
+                },
+                {
+                    key: "S2",
+                    label: "S2 – Response packet junk size",
+                    hint: { ru: "паддинг пакета response", en: "" },
+                    value: v((k) => k.s2, "S2"),
+                },
+                {
+                    key: "S3",
+                    label: "S3 – Cookie reply packet junk size",
+                    hint: { ru: "паддинг cookie reply", en: "" },
+                    value: v((k) => k.s3, "S3"),
+                },
+                {
+                    key: "S4",
+                    label: "S4 – Transport packet junk size",
+                    hint: { ru: "паддинг транспортного пакета", en: "" },
+                    value: v((k) => k.s4, "S4"),
+                },
+            ],
+        },
+        {
+            title: { ru: "Магические заголовки", en: "Magic headers" },
+            fields: [
+                {
+                    key: "H1",
+                    label: "H1 – Init packet magic header",
+                    hint: { ru: "заголовок пакета init", en: "" },
+                    value: v((k) => (ranged() ? k.h1 : k.h1s), "H1"),
+                },
+                {
+                    key: "H2",
+                    label: "H2 – Response packet magic header",
+                    hint: { ru: "заголовок пакета response", en: "" },
+                    value: v((k) => (ranged() ? k.h2 : k.h2s), "H2"),
+                },
+                {
+                    key: "H3",
+                    label: "H3 – Underload packet magic header",
+                    // The client calls this "Underload"; the protocol calls the
+                    // same field the cookie reply header. Both names, so the
+                    // form and the docs line up.
+                    hint: { ru: "заголовок cookie reply", en: "cookie reply header" },
+                    value: v((k) => (ranged() ? k.h3 : k.h3s), "H3"),
+                },
+                {
+                    key: "H4",
+                    label: "H4 – Transport packet magic header",
+                    hint: { ru: "заголовок транспортного пакета", en: "" },
+                    value: v((k) => (ranged() ? k.h4 : k.h4s), "H4"),
+                },
+            ],
+        },
+        {
+            title: { ru: "CPS-цепочки", en: "Special junk" },
+            fields: ([1, 2, 3, 4, 5] as const).map((n) => ({
+                key: `I${n}`,
+                label: `I${n} – Special junk ${n}`,
+                hint: { ru: `CPS-цепочка ${n}`, en: "" },
+                value: v((k) => k[`i${n}` as keyof AWGConfig], `I${n}`),
+            })),
+        },
+    ],
+);
+
+const hasConfig = computed(() => cfg.value !== null);
+
+async function copyValue(key: string, value: string) {
+    if (value.startsWith("—<")) return;
+    try {
+        await navigator.clipboard.writeText(value);
+        copied.value = key;
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => (copied.value = null), 1600);
+    } catch {
+        /* clipboard unavailable */
+    }
+}
+</script>
+
+<template>
+    <section id="client-fields" class="cfg-guide" :class="{ open }">
+        <!-- Collapsed by default: the full form is sixteen cards tall. -->
+        <button
+            class="cfg-toggle"
+            type="button"
+            :aria-expanded="open"
+            aria-controls="client-fields-body"
+            @click="open = !open"
+        >
+            <span class="cfg-toggle-icon"><LayoutGrid :size="18" /></span>
+            <span class="cfg-toggle-text">
+                <b>
+                    {{
+                        isRu
+                            ? "Куда вставлять параметры в клиенте"
+                            : "Where each parameter goes in the client"
+                    }}
+                </b>
+                <small>
+                    {{
+                        isRu
+                            ? hasConfig
+                                ? "Форма приложения Amnezia с вашими значениями"
+                                : "Форма приложения Amnezia, поле за полем"
+                            : hasConfig
+                              ? "The Amnezia app's form, filled with your values"
+                              : "The Amnezia app's form, field by field"
+                    }}
+                </small>
+            </span>
+            <ChevronDown :size="18" class="cfg-toggle-arrow" />
+        </button>
+
+        <div v-show="open" id="client-fields-body" class="cfg-body">
+        <header class="cfg-head">
+            <p>
+                {{
+                    isRu
+                        ? "Так выглядит форма параметров в приложении Amnezia. Названия полей приведены по-английски, как в самом клиенте — оно не переводит их даже при русском интерфейсе. Русские пояснения даны рядом, серым."
+                        : "This is the parameter form as the Amnezia app lays it out, with field names exactly as the client shows them."
+                }}
+            </p>
+
+            <div class="cfg-state" :class="{ live: hasConfig }">
+                <Info :size="14" />
+                <span v-if="hasConfig">
+                    {{
+                        isRu
+                            ? "Показаны значения вашего последнего конфига — нажмите на поле, чтобы скопировать."
+                            : "Showing your last generated config — click a field to copy it."
+                    }}
+                </span>
+                <span v-else>
+                    {{
+                        isRu
+                            ? "Сгенерируйте конфиг на главной, и здесь появятся ваши значения."
+                            : "Generate a config on the home page and your own values will appear here."
+                    }}
+                </span>
+            </div>
+        </header>
+
+        <div class="cfg-groups">
+            <div v-for="g in groups" :key="g.title.en" class="cfg-group">
+                <h3 class="cfg-group-title">{{ g.title[locale] }}</h3>
+
+                <div class="cfg-fields">
+                    <!-- One card per client field, mirroring the app's layout -->
+                    <button
+                        v-for="f in g.fields"
+                        :key="f.key"
+                        class="cfg-field"
+                        :class="{
+                            filled: hasConfig && !f.value().startsWith('—<'),
+                            copied: copied === f.key,
+                        }"
+                        type="button"
+                        @click="copyValue(f.key, f.value())"
+                    >
+                        <span class="cfg-field-label">
+                            {{ f.label }}
+                            <em v-if="f.hint[locale]">— {{ f.hint[locale] }}</em>
+                        </span>
+                        <span class="cfg-field-value">{{ f.value() }}</span>
+                        <span class="cfg-field-copy" aria-hidden="true">
+                            <Check v-if="copied === f.key" :size="15" />
+                            <Copy v-else :size="15" />
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </section>
+</template>
+
+<style scoped>
+.cfg-guide {
+    margin: 1.75rem 0;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    scroll-margin-top: 90px;
+    transition: border-color var(--trans-fast);
+}
+
+.cfg-guide.open {
+    border-color: var(--amber-dim);
+}
+
+/* ── Toggle ───────────────────────────────────────────────────────────── */
+.cfg-toggle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 18px 22px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--trans-fast);
+}
+
+.cfg-toggle:hover {
+    background: var(--bg3);
+}
+
+.cfg-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius);
+    background: var(--bg4);
+    color: var(--amber);
+}
+
+.cfg-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cfg-toggle-text b {
+    font-family: var(--fw);
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.cfg-toggle-text small {
+    font-size: 0.78rem;
+    color: var(--text2);
+}
+
+.cfg-toggle-arrow {
+    flex-shrink: 0;
+    color: var(--text3);
+    transition: transform var(--trans-fast);
+}
+
+.cfg-guide.open .cfg-toggle-arrow {
+    transform: rotate(180deg);
+    color: var(--amber);
+}
+
+.cfg-body {
+    padding: 4px 22px 24px;
+}
+
+/* ── Head ─────────────────────────────────────────────────────────────── */
+.cfg-head p {
+    margin: 0 0 14px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text2);
+    text-wrap: pretty;
+}
+
+.cfg-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 10px 13px;
+    border-left: 2px solid var(--border3);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--bg3);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text2);
+}
+
+.cfg-state svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text3);
+}
+
+.cfg-state.live {
+    border-left-color: var(--green);
+}
+
+.cfg-state.live svg {
+    color: var(--green);
+}
+
+/* ── Groups ───────────────────────────────────────────────────────────── */
+.cfg-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.cfg-group-title {
+    margin: 0 0 10px;
+    font-family: var(--fw);
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+}
+
+.cfg-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── Field card — the client's own shape, in this site's palette ──────── */
+.cfg-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+    padding: 15px 46px 15px 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg3);
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color var(--trans-fast),
+        background var(--trans-fast);
+}
+
+.cfg-field:hover {
+    border-color: var(--border3);
+    background: var(--bg4);
+}
+
+.cfg-field.filled {
+    border-color: var(--amber-dim);
+}
+
+.cfg-field.copied {
+    border-color: var(--green);
+}
+
+.cfg-field-label {
+    font-family: var(--fw);
+    font-size: 0.78rem;
+    color: var(--text2);
+}
+
+/* The gloss sits behind the English name, never in place of it. */
+.cfg-field-label em {
+    font-style: normal;
+    color: var(--text3);
+}
+
+.cfg-field-value {
+    font-family: var(--fm);
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: var(--text);
+    /* CPS chains are long; wrap rather than clip so the whole value is
+       readable without a horizontal scrollbar inside every card. */
+    word-break: break-all;
+}
+
+.cfg-field:not(.filled) .cfg-field-value {
+    color: var(--text3);
+}
+
+.cfg-field-copy {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    color: var(--text4);
+    opacity: 0;
+    transition: opacity var(--trans-fast);
+}
+
+.cfg-field:hover .cfg-field-copy,
+.cfg-field.copied .cfg-field-copy {
+    opacity: 1;
+}
+
+.cfg-field.copied .cfg-field-copy {
+    color: var(--green);
+}
+
+.cfg-field:not(.filled) .cfg-field-copy {
+    display: none;
+}
+
+@media (max-width: 480px) {
+    .cfg-toggle {
+        padding: 15px 16px;
+        gap: 12px;
+    }
+
+    .cfg-body {
+        padding: 2px 16px 20px;
+    }
+
+    .cfg-field {
+        padding: 13px 14px;
+    }
+
+    /* No hover on touch, so the copy affordance would never show. */
+    .cfg-field-copy {
+        opacity: 1;
+        top: 13px;
+        right: 12px;
+    }
+}
+</style>

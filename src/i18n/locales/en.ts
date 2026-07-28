@@ -156,6 +156,12 @@ export const en: Catalog = {
   "history.legacy": "Legacy entry — copy only",
 
   /* ── Knowledge base CTA ───────────────────────────────────────────────── */
+  "kb.fields.short": "The client's form, with your values",
+  "kb.fields.title": "Where do these parameters go?",
+  "kb.fields.desc":
+    "The Amnezia app's form field by field, filled with your values — nothing left to guess.",
+  "kb.fields.action": "Show the fields",
+  "kb.short": "Parameters, versions, common problems",
   "kb.title": "The knowledge base moved to the FAQ",
   "kb.desc":
     "Parameter walkthroughs, the differences between 1.0 and 3.0, tuning guidance and common problems — now in one place, with search and filters.",

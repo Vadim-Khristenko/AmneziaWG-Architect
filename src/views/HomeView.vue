@@ -10,6 +10,8 @@ import {
 import { useRouter } from "vue-router";
 import {
     KeyRound,
+
+    LayoutGrid,
     Cpu,
     Settings2,
     RefreshCw,
@@ -235,6 +237,12 @@ const isModernVersion = (v: AWGVersion) => v === "2.0" || v === "3.0";
 
 /** FAQ link, prefixed for the active locale. */
 const faqPath = computed(() => localizePath("/faq", locale.value));
+
+/** Deep link straight to the field guide, which opens itself on this anchor. */
+const fieldsPath = computed(() => ({
+    path: localizePath("/faq", locale.value),
+    hash: "#client-fields",
+}));
 
 const isRu = computed(() => locale.value === "ru");
 
@@ -1613,20 +1621,30 @@ const paramGroups = computed((): ParamGroup[] => {
                 </div>
             </div>
 
-            <!-- ── Knowledge base → FAQ ─────────────────────────────────── -->
-            <section class="kb-cta">
-                <div class="kb-cta-icon">
-                    <BookOpen :size="22" />
-                </div>
-                <div class="kb-cta-body">
-                    <h2>{{ t("kb.title") }}</h2>
-                    <p>{{ t("kb.desc") }}</p>
-                </div>
-                <router-link :to="faqPath" class="btn btn-secondary kb-cta-btn">
-                    <span>{{ t("kb.action") }}</span>
-                    <ArrowRight :size="15" />
+            <!-- ── Pointers into the FAQ ────────────────────────────────
+                 Two links, not two banners. They were full-width cards with
+                 the same icon-title-description-button shape as the MergeKeys
+                 block above, which gave three unrelated things identical
+                 weight; these are references, not actions.               -->
+            <nav class="help-links" :aria-label="t('kb.title')">
+                <router-link :to="fieldsPath" class="help-link">
+                    <LayoutGrid :size="18" />
+                    <span class="help-link-text">
+                        <b>{{ t("kb.fields.title") }}</b>
+                        <small>{{ t("kb.fields.short") }}</small>
+                    </span>
+                    <ArrowRight :size="15" class="help-link-arrow" />
                 </router-link>
-            </section>
+
+                <router-link :to="faqPath" class="help-link">
+                    <BookOpen :size="18" />
+                    <span class="help-link-text">
+                        <b>{{ t("kb.title") }}</b>
+                        <small>{{ t("kb.short") }}</small>
+                    </span>
+                    <ArrowRight :size="15" class="help-link-arrow" />
+                </router-link>
+            </nav>
         </div>
     </div>
 </template>
@@ -3109,53 +3127,81 @@ const paramGroups = computed((): ParamGroup[] => {
     flex-shrink: 0;
 }
 
-/* ── Knowledge base → FAQ ─────────────────────────────────────────────── */
-.kb-cta {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 2rem;
-    padding: 20px;
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-lg);
+/* ── Pointers into the FAQ ────────────────────────────────────────────
+   Deliberately lighter than the MergeKeys block above it: no icon plates,
+   no separate button. These are references, and the rhythm should say so —
+   one action block, then a quieter pair.                                  */
+.help-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+    margin-top: 1.25rem;
 }
 
-.kb-cta-icon {
+.help-link {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--bg4);
+    background: var(--bg2);
+    color: inherit;
+    text-decoration: none;
+    transition:
+        border-color var(--trans-fast),
+        background var(--trans-fast);
+}
+
+.help-link:hover {
+    border-color: var(--amber-dim);
+    background: var(--bg3);
+}
+
+.help-link > svg:first-child {
+    flex-shrink: 0;
     color: var(--amber);
 }
 
-.kb-cta-body {
+.help-link-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     flex: 1;
     min-width: 0;
 }
 
-.kb-cta-body h2 {
-    margin: 0 0 5px;
+.help-link-text b {
     font-family: var(--fw);
-    font-weight: 800;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 0.88rem;
     color: var(--text);
 }
 
-.kb-cta-body p {
-    margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.6;
+.help-link-text small {
+    font-size: 0.76rem;
+    line-height: 1.4;
     color: var(--text2);
-    text-wrap: pretty;
 }
 
-.kb-cta-btn {
+.help-link-arrow {
     flex-shrink: 0;
+    color: var(--text3);
+    transition: transform var(--trans-fast);
+}
+
+.help-link:hover .help-link-arrow {
+    color: var(--amber);
+    transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .help-link-arrow {
+        transition: none;
+    }
+    .help-link:hover .help-link-arrow {
+        transform: none;
+    }
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
@@ -3199,12 +3245,6 @@ const paramGroups = computed((): ParamGroup[] => {
         flex: 1;
     }
 
-    .kb-cta {
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-    }
-
     .cps-unavailable {
         flex-wrap: wrap;
     }
@@ -3213,11 +3253,6 @@ const paramGroups = computed((): ParamGroup[] => {
         width: 100%;
         justify-content: center;
         margin-top: 4px;
-    }
-
-    .kb-cta-btn {
-        width: 100%;
-        justify-content: center;
     }
 
     .history-entry {
