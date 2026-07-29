@@ -1,6 +1,6 @@
 {
   "name": "amneziawg-architect",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "description": "AmneziaWG Architect — advanced config generator, batch tooling, packet simulator and health checker for AmneziaWG obfuscation.",
   "author": "Vadim Khristenko <vadim@vai-rice.space>",
   "private": true,

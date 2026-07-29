@@ -9,6 +9,7 @@
 import { parseRange } from "./generator/validators";
 import { translate } from "@/i18n";
 import type { AWGConfig } from "./generator/types";
+import { capsFor } from "./generator/versions";
 
 export type PacketKind =
   | "cps"
@@ -68,9 +69,9 @@ function pickHeader(rangeStr: string): number {
   return Math.floor(min + Math.random() * (max - min + 1));
 }
 
-/** AWG 2.0 and 3.0 draw headers from ranges; 1.0 and 1.5 use fixed values. */
+/** Ranged versions draw headers from a range; the rest use fixed values. */
 function headerFor(cfg: AWGConfig, slot: 1 | 2 | 3 | 4): number {
-  if (cfg.version === "2.0" || cfg.version === "3.0") {
+  if (capsFor(cfg.version).rangedHeaders) {
     return pickHeader(cfg[`h${slot}`] as string);
   }
   return (cfg[`h${slot}s`] as number) ?? 0;
@@ -98,14 +99,15 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
 
   // AWG 3.0 features. Header protection only applies when a key is set, and
   // content padding replaces the pad-to-multiple-of-16 rule when configured.
-  const hp = Boolean(cfg.version === "3.0" && cfg.awg3?.headerProtectionKey);
+  const caps = capsFor(cfg.version);
+  const hp = Boolean(caps.headerProtection && cfg.awg3?.headerProtectionKey);
   const cpaRange =
-    cfg.version === "3.0" && cfg.awg3?.contentPaddingAddition
+    caps.headerProtection && cfg.awg3?.contentPaddingAddition
       ? parseRange(cfg.awg3.contentPaddingAddition)
       : null;
 
-  /** Cookie replies exist only where S3 does — 1.0 and 1.5 have no S3. */
-  const hasCookie = cfg.version === "2.0" || cfg.version === "3.0";
+  /** Cookie replies exist only where S3 does. */
+  const hasCookie = caps.extraSizes;
 
   // 1. CPS chain (sent by client before the real WG handshake)
   for (let i = 1; i <= 5; i++) {

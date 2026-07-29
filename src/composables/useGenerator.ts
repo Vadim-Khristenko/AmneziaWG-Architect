@@ -33,6 +33,7 @@ import { confToVpn, buildVpnConfig } from "../utils/awgFormat";
 import type { VpnConfig } from "../utils/awgFormat";
 import type { AwgContainer } from "../utils/mergekeys";
 import type { GeneratorInput } from "../utils/generator";
+import { AWG_VERSIONS, capsFor } from "../utils/generator/versions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы
@@ -59,7 +60,7 @@ export function useGenerator() {
   // ── Версия и интенсивность ────────────────────────────────────────────────
 
   const VERSION_KEY = "awg-architect:version";
-  const VERSIONS: AWGVersion[] = ["1.0", "1.5", "2.0", "3.0"];
+  const VERSIONS: AWGVersion[] = AWG_VERSIONS.map((v) => v.id);
 
   /**
    * Remember the chosen protocol version across navigations. Without this,
@@ -514,16 +515,17 @@ export function useGenerator() {
   /** true если включён режим роутера */
   const isRouterMode = computed(() => config.routerMode);
 
-  /** true для AWG 1.0 (CPS не поддерживается) */
-  const isCPSSupported = computed(() => version.value !== "1.0");
+  /** Возможности выбранной версии — единственный источник истины о форме. */
+  const caps = computed(() => capsFor(version.value));
 
-  /** true для AWG 2.0+ (S3/S4 и H1–H4 диапазонами) */
-  const isFullObfuscation = computed(
-    () => version.value === "2.0" || version.value === "3.0",
-  );
+  /** true если доступна цепочка CPS I1–I5 */
+  const isCPSSupported = computed(() => caps.value.cps);
 
-  /** true только для AWG 3.0 (защита заголовков, паддинг, тайминги) */
-  const isAwg3 = computed(() => version.value === "3.0");
+  /** true для версий с S3/S4 и H1–H4 диапазонами */
+  const isFullObfuscation = computed(() => caps.value.extraSizes);
+
+  /** true для версий с защитой заголовков, паддингом и таймингами */
+  const isAwg3 = computed(() => caps.value.headerProtection);
 
   /** Метка режима интенсивности (для отображения в UI) */
   const intensityLabel = computed(() => intensity.value.toUpperCase());

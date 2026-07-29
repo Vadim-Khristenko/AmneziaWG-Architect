@@ -200,7 +200,7 @@ export const TIMELINE: TimelineEntry[] = [
   },
   {
     version: "3.2",
-    date: { ru: "Текущий", en: "Current" },
+    date: { ru: "Релиз", en: "Release" },
     title: {
       ru: "AmneziaWG 3.0, английская версия, FAQ",
       en: "AmneziaWG 3.0, English locale, FAQ",
@@ -210,6 +210,20 @@ export const TIMELINE: TimelineEntry[] = [
     desc: {
       ru: "Поддержка AmneziaWG 3.0, выверенная по исходникам amneziawg-go v3.0.1: HeaderProtectionKey, ContentPaddingAddition и рандомизация таймеров, включая правило S1–S4 ≥ 12 при защите заголовков. Английская локализация с отдельным деревом /en и hreflang. FAQ с поиском, категориями и разметкой FAQPage. Страница VAIEXIA вместо IAA. Крипто-донаты. Эмодзи заменены иконками, история генераций чинится и переживает перезагрузку.",
       en: "AmneziaWG 3.0 support, derived from the amneziawg-go v3.0.1 sources: HeaderProtectionKey, ContentPaddingAddition and timer randomisation, including the S1–S4 ≥ 12 rule that header protection imposes. English localisation on its own /en tree with hreflang. A searchable, categorised FAQ with FAQPage structured data. The VAIEXIA page replacing IAA. Crypto donations. Emoji replaced with icons, and generation history fixed and made to survive a reload.",
+    },
+  },
+  {
+    version: "3.2.3",
+    date: { ru: "Текущий", en: "Current" },
+    title: {
+      ru: "Одна таблица версий вместо литералов",
+      en: "One version table instead of literals",
+    },
+    icon: "Layers",
+    color: "green",
+    desc: {
+      ru: "Панель параметров при выбранной 3.0 рисовала форму 1.x: пропадали S3/S4, а H1–H4 показывались одним числом вместо диапазона — при том что сам .conf был верным. Причина в том, что «современную» версию каждый файл определял своей парой литералов, и в одном месте про 3.0 забыли. Теперь возможности версии объявлены один раз в generator/versions.ts, и генератор, рендер, симулятор, валидатор, гайд по полям и вкладки читают их оттуда: AmneziaWG 4.0 добавляется одной записью. Панель истории переехала под свою кнопку — раньше она открывалась под блоком опций 3.0.",
+      en: "With 3.0 selected, the parameter panel rendered a 1.x shape: S3/S4 disappeared and H1–H4 showed a single value instead of a range, even though the .conf underneath was correct. Each file decided what counted as a modern version with its own pair of literals, and one of them had never learned about 3.0. Version capabilities are now declared once in generator/versions.ts, and the generator, renderer, simulator, validator, field guide and version tabs all read from it: AmneziaWG 4.0 becomes a single entry. The history panel moved up under the button that opens it, instead of below the 3.0 options block.",
     },
   },
 ];

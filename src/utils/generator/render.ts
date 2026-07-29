@@ -11,6 +11,7 @@
  */
 
 import type { AWGConfig, AWGVersion } from "./types";
+import { capsFor } from "./versions";
 
 export type ConfLineType = "comment" | "kv" | "section";
 
@@ -95,11 +96,12 @@ export function renderConfLines(
     lines.push(cm(`# ${L.address}`));
   }
 
-  const modern = v === "2.0" || v === "3.0";
+  // Shape comes from the capability table, so this renderer and the on-screen
+  // parameter panel cannot disagree about what a version looks like.
+  const caps = capsFor(v);
 
-  if (modern) {
+  if (caps.rangedHeaders) {
     lines.push(kv("H1", cfg.h1), kv("H2", cfg.h2), kv("H3", cfg.h3), kv("H4", cfg.h4));
-    lines.push(kv("S1", cfg.s1), kv("S2", cfg.s2), kv("S3", cfg.s3), kv("S4", cfg.s4));
   } else {
     lines.push(
       kv("H1", cfg.h1s),
@@ -107,12 +109,14 @@ export function renderConfLines(
       kv("H3", cfg.h3s),
       kv("H4", cfg.h4s),
     );
-    lines.push(kv("S1", cfg.s1), kv("S2", cfg.s2));
   }
+
+  lines.push(kv("S1", cfg.s1), kv("S2", cfg.s2));
+  if (caps.extraSizes) lines.push(kv("S3", cfg.s3), kv("S4", cfg.s4));
 
   lines.push(kv("Jc", cfg.jc), kv("Jmin", cfg.jmin), kv("Jmax", cfg.jmax));
 
-  if (v === "1.0") {
+  if (!caps.cps) {
     lines.push(cm(`# ${L.noCps}`));
   } else {
     if (v === "1.5") lines.push(cm(`# ${L.cpsClientOnly}`));
@@ -125,7 +129,7 @@ export function renderConfLines(
     );
   }
 
-  if (v === "3.0" && cfg.awg3) {
+  if (caps.headerProtection && cfg.awg3) {
     const p = cfg.awg3;
 
     if (p.headerProtectionKey) {

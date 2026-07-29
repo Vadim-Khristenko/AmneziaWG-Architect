@@ -9,6 +9,7 @@ import type {
   ClientCapability,
 } from "./types";
 import { CLIENTS } from "./clients";
+import { capsFor } from "./versions";
 import {
   HEADER_PROTECTION_KEY_BYTES,
   MIN_S_WITH_HEADER_PROTECTION,
@@ -198,7 +199,7 @@ export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
   const out: ValidationFinding[] = [];
   if (!p) return out;
 
-  if (cfg.version !== "3.0") {
+  if (!capsFor(cfg.version).headerProtection) {
     const active = Object.values(p).some((v) => v !== "");
     if (active) {
       out.push({

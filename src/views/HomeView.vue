@@ -56,6 +56,7 @@ import {
 import { useGenerator } from "@/composables/useGenerator";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
 import type { AWGConfig, AWGVersion, Intensity } from "@/utils/generator";
+import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
 import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();
@@ -153,9 +154,11 @@ function generateAndSave() {
 
     persistCurrentConfig();
 
-    nextTick(() => {
-        setTimeout(() => saveToHistory(), 20);
-    });
+    // Written synchronously. generate() assigns currentAwg and plainText is a
+    // plain computed off it, so there is nothing to wait for — and the deferred
+    // version meant the very first config, generated on mount, could be dropped
+    // if anything re-rendered inside that window.
+    saveToHistory();
 }
 
 /*
@@ -232,8 +235,8 @@ function saveHistory() {
     }
 }
 
-/** AWG 2.0 and 3.0 share the same S3/S4 + ranged-header parameter shape. */
-const isModernVersion = (v: AWGVersion) => v === "2.0" || v === "3.0";
+/** Capabilities of the selected protocol version — see generator/versions.ts. */
+const caps = computed(() => capsFor(version.value));
 
 /** FAQ link, prefixed for the active locale. */
 const faqPath = computed(() => localizePath("/faq", locale.value));
@@ -258,9 +261,12 @@ function saveToHistory() {
         S2: awg.s2,
     };
 
-    if (isModernVersion(v)) {
+    const c = capsFor(v);
+    if (c.extraSizes) {
         params.S3 = awg.s3 ?? 0;
         params.S4 = awg.s4 ?? 0;
+    }
+    if (c.rangedHeaders) {
         params.H1 = awg.h1;
         params.H2 = awg.h2;
         params.H3 = awg.h3;
@@ -272,7 +278,7 @@ function saveToHistory() {
         params.H4 = awg.h4s;
     }
 
-    if (v !== "1.0") {
+    if (c.cps) {
         params.I1 = awg.i1;
         params.I2 = awg.i2;
         params.I3 = awg.i3;
@@ -282,7 +288,7 @@ function saveToHistory() {
 
     // AWG 3.0 additions — without these a 3.0 entry looked identical to a 2.0
     // one in the history panel.
-    if (v === "3.0" && awg.awg3) {
+    if (c.headerProtection && awg.awg3) {
         const a = awg.awg3;
         if (a.headerProtectionKey)
             params.HeaderProtectionKey = a.headerProtectionKey;
@@ -424,7 +430,11 @@ interface ParamGroup {
 const paramGroups = computed((): ParamGroup[] => {
     const p = currentAwg.value;
     if (!p) return [];
-    const v = version.value;
+    // Read the shape off the config that is actually on screen, not off the
+    // selected version: the two disagree for one tick while a regeneration is
+    // in flight, and that tick was enough to render 3.0 with 1.x headers.
+    const v = p.version ?? version.value;
+    const c = capsFor(v);
     const groups: ParamGroup[] = [];
 
     // Junk Train
@@ -446,7 +456,7 @@ const paramGroups = computed((): ParamGroup[] => {
         { label: "S1", value: p.s1 },
         { label: "S2", value: p.s2 },
     ];
-    if (v === "2.0") {
+    if (c.extraSizes) {
         sizeItems.push({ label: "S3", value: p.s3 ?? 0 });
         sizeItems.push({ label: "S4", value: p.s4 ?? 0 });
     }
@@ -460,7 +470,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
     // Headers — always wide so large numbers / ranges are fully visible
     const headerItems: ParamItem[] = [];
-    if (v === "2.0") {
+    if (c.rangedHeaders) {
         headerItems.push(
             { label: "H1", value: p.h1, wide: true },
             { label: "H2", value: p.h2, wide: true },
@@ -484,7 +494,7 @@ const paramGroups = computed((): ParamGroup[] => {
     });
 
     // CPS Signatures
-    if (v !== "1.0") {
+    if (c.cps) {
         const cpsItems: ParamItem[] = [
             { label: "I1", value: p.i1, wide: true },
             { label: "I2", value: p.i2, wide: true },
@@ -505,7 +515,7 @@ const paramGroups = computed((): ParamGroup[] => {
     }
 
     // AWG 3.0 — only the parameters that are actually enabled
-    if (v === "3.0" && p.awg3) {
+    if (c.headerProtection && p.awg3) {
         const a = p.awg3;
         const awg3Items: ParamItem[] = [];
         if (a.headerProtectionKey)
@@ -564,37 +574,23 @@ const paramGroups = computed((): ParamGroup[] => {
 
             <!-- ── Version Tabs ────────────────────────────────────────── -->
             <div class="version-bar">
+                <!-- Driven by AWG_VERSIONS so a future release is one entry in
+                     generator/versions.ts, not four more literals in here. -->
                 <div class="ver-tabs">
                     <button
-                        class="ver-tab ver-tab-new"
-                        :class="{ active: version === '3.0' }"
-                        @click="setVersion('3.0' as AWGVersion)"
-                    >
-                        <ShieldCheck :size="14" />
-                        <span>AWG 3.0</span>
-                        <span class="ver-tag">NEW</span>
-                    </button>
-                    <button
+                        v-for="ver in AWG_VERSIONS"
+                        :key="ver.id"
                         class="ver-tab"
-                        :class="{ active: version === '2.0' }"
-                        @click="setVersion('2.0' as AWGVersion)"
+                        :class="{
+                            active: version === ver.id,
+                            'ver-tab-new': ver.isNewest,
+                        }"
+                        @click="setVersion(ver.id)"
                     >
-                        <Layers :size="14" />
-                        <span>AWG 2.0</span>
-                    </button>
-                    <button
-                        class="ver-tab"
-                        :class="{ active: version === '1.5' }"
-                        @click="setVersion('1.5' as AWGVersion)"
-                    >
-                        <span>AWG 1.5</span>
-                    </button>
-                    <button
-                        class="ver-tab"
-                        :class="{ active: version === '1.0' }"
-                        @click="setVersion('1.0' as AWGVersion)"
-                    >
-                        <span>AWG 1.0</span>
+                        <ShieldCheck v-if="ver.headerProtection" :size="14" />
+                        <Layers v-else-if="ver.rangedHeaders" :size="14" />
+                        <span>{{ ver.label }}</span>
+                        <span v-if="ver.isNewest" class="ver-tag">NEW</span>
                     </button>
                 </div>
 
@@ -648,63 +644,10 @@ const paramGroups = computed((): ParamGroup[] => {
                 </div>
             </transition>
 
-            <!-- ── AWG 3.0 options ─────────────────────────────────────── -->
-            <transition name="expand">
-                <div v-if="version === '3.0'" class="awg3-panel">
-                    <div class="awg3-head">
-                        <ShieldCheck :size="16" />
-                        <span>{{ t("awg3.panel.title") }}</span>
-                    </div>
-
-                    <label class="awg3-opt">
-                        <input
-                            type="checkbox"
-                            v-model="config.useHeaderProtection"
-                            @change="generate()"
-                        />
-                        <span class="awg3-opt-body">
-                            <b>{{ t("awg3.hpk.title") }}</b>
-                            <small>{{ t("awg3.hpk.desc") }}</small>
-                        </span>
-                    </label>
-
-                    <label class="awg3-opt">
-                        <input
-                            type="checkbox"
-                            v-model="config.useContentPadding"
-                            @change="generate()"
-                        />
-                        <span class="awg3-opt-body">
-                            <b>{{ t("awg3.cpa.title") }}</b>
-                            <small>{{ t("awg3.cpa.desc") }}</small>
-                        </span>
-                    </label>
-
-                    <label class="awg3-opt">
-                        <input
-                            type="checkbox"
-                            v-model="config.useRandomTimings"
-                            @change="generate()"
-                        />
-                        <span class="awg3-opt-body">
-                            <b>{{ t("awg3.timings.title") }}</b>
-                            <small>{{ t("awg3.timings.desc") }}</small>
-                        </span>
-                    </label>
-
-                    <p class="awg3-note">
-                        <Info :size="13" />
-                        <span>
-                            {{ t("awg3.groundwork.lead") }}
-                            <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code>
-                            {{ t("common.and") }} <code>&lt;dz&gt;</code>
-                            {{ t("awg3.groundwork.note") }}
-                        </span>
-                    </p>
-                </div>
-            </transition>
-
             <!-- ── History Panel ────────────────────────────────────────── -->
+            <!-- Sits above the version-specific options: its toggle lives in
+                 the version bar, and rendering it after the 3.0 panel opened
+                 it a screenful away from the button that opened it. -->
             <transition name="expand">
                 <div v-if="showHistory" class="history-panel">
                     <div class="history-header">
@@ -727,10 +670,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
                     <div v-if="!historyEntries.length" class="history-empty">
                         <Clock :size="20" />
-                        <span
-                            >Пока нет генераций. Нажмите «Сгенерировать» чтобы
-                            начать.</span
-                        >
+                        <span>{{ t("history.empty") }}</span>
                     </div>
 
                     <div v-else class="history-list">
@@ -841,6 +781,62 @@ const paramGroups = computed((): ParamGroup[] => {
                             </div>
                         </transition-group>
                     </div>
+                </div>
+            </transition>
+
+            <!-- ── Version-specific options ────────────────────────────── -->
+            <transition name="expand">
+                <div v-if="caps.headerProtection" class="awg3-panel">
+                    <div class="awg3-head">
+                        <ShieldCheck :size="16" />
+                        <span>{{ t("awg3.panel.title") }}</span>
+                    </div>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useHeaderProtection"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>{{ t("awg3.hpk.title") }}</b>
+                            <small>{{ t("awg3.hpk.desc") }}</small>
+                        </span>
+                    </label>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useContentPadding"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>{{ t("awg3.cpa.title") }}</b>
+                            <small>{{ t("awg3.cpa.desc") }}</small>
+                        </span>
+                    </label>
+
+                    <label class="awg3-opt">
+                        <input
+                            type="checkbox"
+                            v-model="config.useRandomTimings"
+                            @change="generate()"
+                        />
+                        <span class="awg3-opt-body">
+                            <b>{{ t("awg3.timings.title") }}</b>
+                            <small>{{ t("awg3.timings.desc") }}</small>
+                        </span>
+                    </label>
+
+                    <p class="awg3-note">
+                        <Info :size="13" />
+                        <span>
+                            {{ t("awg3.groundwork.lead") }}
+                            <code>&lt;d&gt;</code>, <code>&lt;ds&gt;</code>
+                            {{ t("common.and") }} <code>&lt;dz&gt;</code>
+                            {{ t("awg3.groundwork.note") }}
+                        </span>
+                    </p>
                 </div>
             </transition>
 

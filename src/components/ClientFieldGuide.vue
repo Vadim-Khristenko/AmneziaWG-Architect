@@ -16,6 +16,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
 import { useI18n } from "@/i18n";
 import type { AWGConfig } from "@/utils/generator";
+import { capsFor } from "@/utils/generator/versions";
 
 const { locale } = useI18n();
 const isRu = computed(() => locale.value === "ru");
@@ -77,10 +78,14 @@ const v = (get: (k: AWGConfig) => unknown, name: string) => () => {
     return out === undefined || out === null || out === "" ? ph(name) : String(out);
 };
 
-/** 2.0 and 3.0 use ranged headers; 1.0 and 1.5 use single values. */
+/**
+ * Whether headers are ranges. With no config yet, assume the newest shape —
+ * that is what capsFor returns for an unknown version, and it matches the
+ * generator's own default of showing the richest form.
+ */
 const ranged = () => {
     const k = c();
-    return !k || k.version === "2.0" || k.version === "3.0";
+    return !k || capsFor(k.version).rangedHeaders;
 };
 
 const groups = computed<{ title: { ru: string; en: string }; fields: Field[] }[]>(

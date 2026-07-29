@@ -147,7 +147,7 @@ export const en: Catalog = {
 
   /* ── History ──────────────────────────────────────────────────────────── */
   "history.title": "Generation history",
-  "history.empty": "No generations yet.",
+  "history.empty": "No generations yet. Press Generate to start.",
   "history.clear": "Clear history",
   "history.restore": "Restore config",
   "history.restored": "Restored AWG {version} config from {time}",

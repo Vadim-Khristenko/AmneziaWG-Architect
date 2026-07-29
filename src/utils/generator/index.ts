@@ -28,6 +28,7 @@ import {
 } from "./profiles";
 import { validateGeneratedConfig } from "./validators";
 import { genAwg3, MIN_S_WITH_HEADER_PROTECTION } from "./awg3";
+import { capsFor } from "./versions";
 
 export * from "./types";
 export * from "./constants";
@@ -76,6 +77,9 @@ export function genI1(
 export function genCfg(input: GeneratorInput): AWGConfig {
   const { version, intensity, profile, iterCount, junkLevel, useExtremeMax } =
     input;
+
+  /** What this protocol version supports — see ./versions.ts. */
+  const caps = capsFor(version);
 
   const client = CLIENTS[input.clientId] ?? CLIENTS[DEFAULT_CLIENT_ID];
 
@@ -139,24 +143,25 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     s2 = rnd(1, 150);
   }
 
-  let s3 = rnd(1, 64);
-  let s3Attempts = 0;
-  while ((s3 === s1 + 56 || s3 === s2 + 92) && s3Attempts < 10) {
-    s3 = rnd(1, 64);
-    s3Attempts++;
-  }
+  // S3/S4 exist only from the version that introduced cookie-reply and data
+  // padding. Drawing them for 1.0/1.5 and letting the renderer hide them meant
+  // the config object carried values no client would ever see — which is how
+  // the parameter panel and the .conf ended up disagreeing about S3/S4.
+  let s3 = 0;
+  let s4 = 0;
 
-  // S4 is hard-capped at 32 bytes by the AmneziaWG protocol.
-  // Client-specific maxS4 may be even lower.
-  let s4 = rnd(1, Math.min(32, client.maxS4));
-
-  if (useExtremeMax) {
-    s3 = rnd(65, 256);
-    s3Attempts = 0;
+  if (caps.extraSizes) {
+    const s3Range: readonly [number, number] = useExtremeMax ? [65, 256] : [1, 64];
+    s3 = rnd(...s3Range);
+    let s3Attempts = 0;
     while ((s3 === s1 + 56 || s3 === s2 + 92) && s3Attempts < 10) {
-      s3 = rnd(65, 256);
+      s3 = rnd(...s3Range);
       s3Attempts++;
     }
+
+    // S4 is hard-capped at 32 bytes by the AmneziaWG protocol.
+    // Client-specific maxS4 may be even lower.
+    s4 = rnd(1, Math.min(32, client.maxS4));
   }
 
   const minJc = version === "1.0" ? 4 : 3;
@@ -211,22 +216,25 @@ export function genCfg(input: GeneratorInput): AWGConfig {
    * bytes of the S-padding, so every S has to carry at least that much random
    * data. Applied last so router-mode clamping cannot pull it back under.
    */
-  const needsSFloor = version === "3.0" && input.useHeaderProtection;
+  const needsSFloor = caps.headerProtection && input.useHeaderProtection;
   if (needsSFloor) {
     const floor = MIN_S_WITH_HEADER_PROTECTION;
     s1 = Math.max(s1, floor);
     s2 = Math.max(s2, floor);
-    s3 = Math.max(s3, floor);
-    s4 = Math.max(s4, floor);
 
     // Raising the floor can recreate the size collisions we avoided above.
     if (s2 === s1 + 56) s2 = s2 + 1;
-    if (s3 === s1 + 56 || s3 === s2 + 92) s3 = s3 + 1;
-    // S4 is capped at 32 by the protocol; the floor still fits.
-    s4 = Math.min(s4, Math.min(32, client.maxS4));
+
+    if (caps.extraSizes) {
+      s3 = Math.max(s3, floor);
+      s4 = Math.max(s4, floor);
+      if (s3 === s1 + 56 || s3 === s2 + 92) s3 = s3 + 1;
+      // S4 is capped at 32 by the protocol; the floor still fits.
+      s4 = Math.min(s4, Math.min(32, client.maxS4));
+    }
   }
 
-  const hasCPS = version !== "1.0";
+  const hasCPS = caps.cps;
   const isComposite = profile === "tls_to_quic" || profile === "quic_burst";
   const isDns = profile === "dns_query";
 
@@ -310,7 +318,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
     i3,
     i4,
     i5,
-    ...(version === "3.0" ? { awg3: genAwg3(input) } : {}),
+    ...(caps.headerProtection ? { awg3: genAwg3(input) } : {}),
   };
 
   // Safety net: throw if we ever emit a config that fails our own validators.
