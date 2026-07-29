@@ -3,21 +3,27 @@
 #
 # Architecture:
 #
-#   ┌──────────────┐
-#   │   preflight   │  ← парсит commit message на [skip ci], [skip test] и т.д.
-#   └──────┬───────┘
-#          │
-#   ┌──────┴──────┐     ┌───────────┐     ┌──────────────┐
-#   │  lint &     │     │   build   │     │   deploy     │
-#   │  test       ├────►│ + bundle  ├──┬─►│  gh-pages    │
-#   └─────────────┘     └───────────┘  │  └──────────────┘
-#                                      │  ┌──────────────┐
-#                                      ├─►│  release     │
-#                                      │  └──────────────┘
-#                                      │  ┌──────────────┐
-#                                      └─►│  standalone  │
-#                                         │  artifact    │
-#                                         └──────────────┘
+#   ┌─────────────┐
+#   │  preflight  │  ← reads [skip ci] / [skip test] / [skip deploy]
+#   └──────┬──────┘
+#          ├──────────────┬───────────────────────────┐
+#   ┌──────┴──────┐  ┌────┴────────┐        ┌─────────┴─────────┐
+#   │ lint, types │  │    build    │        │    serve-binary   │
+#   │ and tests   │  │  + bundle   │        │  (tags only, one  │
+#   └──────┬──────┘  └────┬────────┘        │  runner per OS)   │
+#          │              │                 └─────────┬─────────┘
+#          │              ├──► deploy to gh-pages     │
+#          │              │    (branch pushes)        │
+#          └──────────────┴───────────┬───────────────┘
+#                                     ▼
+#                            ┌─────────────────┐
+#                            │     release     │  (tags only)
+#                            │  archive + bin  │
+#                            └─────────────────┘
+#
+# Release notes are built from the annotated tag message first, then the
+# commit log since the previous version tag. Write the tag with -F and the
+# text lands in the release verbatim.
 #
 # Commit message directives:
 #   [skip ci]    / [ci skip]       — skip entire pipeline
@@ -478,15 +484,47 @@ jobs:
           DIST_SIZE: ${{ needs.build.outputs.dist-size }}
           FILE_COUNT: ${{ needs.build.outputs.file-count }}
         run: |
+          # The checkout gives us the tag ref, but not necessarily the tag
+          # *object* the message lives in. Fetch it explicitly, or the notes
+          # silently fall back to the commit list.
+          git fetch --force --tags --quiet || true
+
           # Only version tags are candidates for "previous release" — the repo
           # also carries non-version tags, which would otherwise be picked up
-          # and produce a nonsensical changelog range.
+          # and produce a nonsensical changelog range. -Fx, not a bare -v: the
+          # tag name is full of dots, and as a regex `v3.2.3` also matches
+          # `v3x2x3`.
           PREV_TAG=$(git tag -l 'v*' --sort=-version:refname \
-            | grep -v "^${TAG}$" | head -n 1)
+            | grep -vFx "${TAG}" | head -n 1)
+
+          # The annotated tag message is the human account of the release, and
+          # it was being thrown away — every release so far was described only
+          # by a list of commit subjects. contents:subject + contents:body
+          # rather than plain contents, because for a signed tag the latter
+          # includes the whole PGP signature block.
+          TAG_SUBJECT=$(git tag -l --format='%(contents:subject)' "${TAG}")
+          TAG_BODY=$(git tag -l --format='%(contents:body)' "${TAG}")
 
           {
             echo "## AmneziaWG Architect ${TAG}"
             echo ""
+
+            if [ -n "$TAG_BODY" ] || [ -n "$TAG_SUBJECT" ]; then
+              # The subject usually repeats the heading above — with or
+              # without the tag's leading `v` — so keep it only when it
+              # actually says something else.
+              case "$TAG_SUBJECT" in
+                "AmneziaWG Architect ${TAG}"|"AmneziaWG Architect ${TAG#v}"|"") ;;
+                *) echo "**${TAG_SUBJECT}**"; echo "" ;;
+              esac
+              if [ -n "$TAG_BODY" ]; then
+                echo "$TAG_BODY"
+                echo ""
+              fi
+              echo "---"
+              echo ""
+            fi
+
             echo "| | |"
             echo "|---|---|"
             echo "| **Version** | \`${VERSION}\` |"
@@ -534,20 +572,35 @@ jobs:
             echo ""
             echo "## Quick Start"
             echo ""
-            echo "Download the archive, extract, and run:"
+            echo "Extract the archive and run the bundled server. It has no"
+            echo "dependencies — nothing needs to be installed:"
             echo ""
             echo '```bash'
-            echo "# Linux / macOS"
-            echo "./scripts/serve.sh"
-            echo ""
-            echo "# Windows (PowerShell)"
-            echo ".\\scripts\\serve.ps1"
-            echo ""
-            echo "# Windows (CMD)"
-            echo "scripts\\serve.bat"
+            echo "./bin/awg-serve-linux            # Linux"
+            echo "./bin/awg-serve-macos            # macOS"
+            echo "bin\\awg-serve-windows.exe       # Windows"
             echo '```'
             echo ""
-            echo "The script auto-detects bun/npm/python or installs bun."
+            echo "It serves on port 8080 and opens a browser."
+            echo "Pass a port to change it (\`awg-serve 3000\`), or"
+            echo "\`--no-open\` to skip launching the browser."
+            echo ""
+            echo "If you would rather use a runtime you already have, the"
+            echo "launchers look for bun, npx or python and offer to install"
+            echo "bun only if none is found:"
+            echo ""
+            echo '```bash'
+            echo "./scripts/serve.sh               # Linux / macOS"
+            echo ".\\scripts\\serve.ps1             # Windows (PowerShell)"
+            echo "scripts\\serve.bat               # Windows (CMD)"
+            echo '```'
+            echo ""
+            echo "Add \`--check\` to either launcher to see what it found"
+            echo "without starting anything."
+            echo ""
+            echo "The archive also carries \`scripts/awg-gen.sh\`, which"
+            echo "generates configurations from a terminal with no browser"
+            echo "and no network, and a \`README.md\` describing the layout."
             echo ""
             echo "## Checksums"
             echo ""
