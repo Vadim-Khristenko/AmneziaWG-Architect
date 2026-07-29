@@ -88,13 +88,35 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "Do the server and client need matching parameters?",
     },
     answer: {
-      ru: "Частично. Jc, Jmin и Jmax — чисто клиентские: сервер о них ничего не знает и знать не должен. I1–I5 тоже отправляются только клиентом. А вот H1–H4, S1–S4 и все параметры 3.0, включая HeaderProtectionKey, обязаны совпадать на обеих сторонах: это то, как стороны договорились кодировать пакеты. Если они разойдутся, сервер просто не распознает пакеты клиента, и соединение не поднимется — без внятной ошибки, туннель будет молча молчать.",
-      en: "Partly. Jc, Jmin and Jmax are client-only: the server neither knows nor needs to know them. I1–I5 are also sent by the client alone. But H1–H4, S1–S4 and every 3.0 parameter including HeaderProtectionKey must match on both ends — they define how the two sides agreed to encode packets. If they diverge the server simply will not recognise the client's packets and the tunnel never comes up, with no clear error to point at.",
+      ru: "Частично, и это стоит разделить точно. Совпадать обязаны S1–S4, H1–H4 и HeaderProtectionKey: именно ими принимающая сторона опознаёт пакет, и расхождение означает, что он будет отброшен молча, без ошибки. Не обязаны совпадать Jc, Jmin, Jmax, цепочка I1–I5 и ContentPaddingAddition — это отправитель делает у себя, а получателю знать о них нечего. Таймеры 3.0 у каждой стороны свои. Подробный разбор с тем, откуда это следует в коде, — в ответе про клиентские, общие и локальные параметры.",
+      en: "Partly, and the split is worth getting exact. S1–S4, H1–H4 and HeaderProtectionKey must match: they are what the receiving side uses to recognise a packet, and a mismatch means it is dropped silently, with no error. Jc, Jmin, Jmax, the I1–I5 chain and ContentPaddingAddition do not have to match — the sender does those locally and the receiver has no need to know about them. The 3.0 timers are per-side. There is a fuller breakdown, with where this comes from in the code, in the answer on client-side, shared and local parameters.",
     },
     keywords: ["сервер", "server", "клиент", "client", "симметрия"],
   },
 
   /* ── Parameters ───────────────────────────────────────────────────────── */
+  {
+    id: "param-classes",
+    category: "params",
+    question: {
+      ru: "Какие параметры клиентские, какие общие, а какие локальные?",
+      en: "Which parameters are client-side, which are shared, and which are local?",
+    },
+    answer: {
+      ru: "Разделение следует из того, как принимающая сторона разбирает пакет. В amneziawg-go функция DeterminePacketTypeAndPadding (device/receive.go) пробует опознать входящий пакет по двум признакам: длина должна быть равна собственному S плюс известный размер сообщения, а четыре байта на позиции S должны попадать в собственный диапазон H. Не совпало — пакет получает тип Unknown и молча отбрасывается. Отсюда три группы. Первая, общие: S1–S4, H1–H4 и HeaderProtectionKey. Они обязаны быть одинаковыми, потому что получатель разбирает чужие пакеты своими значениями; ключ защиты заголовков попадает сюда же, так как шифр строится из своего ключа и nonce, взятого из S-паддинга пришедшего пакета. Вторая, клиентские: Jc, Jmin, Jmax, цепочка I1–I5 и ContentPaddingAddition. Мусорные пакеты и I-цепочка уходят перед handshake initiation и на приёме не разбираются вовсе — они как раз и попадают в ветку Unknown, для того и сделаны. ContentPaddingAddition добавляет паддинг внутрь шифрованной нагрузки, а получатель отрезает лишнее по длине из IP-заголовка, поэтому знать величину ему не нужно. Третья, локальные: таймеры 3.0 — RekeyAfterTime, RekeyTimeout, RejectAfterTime, KeepaliveTimeout, MaxHandshakeAttempts. Каждая сторона живёт по своим; договорённости они не требуют, но разводить их до крайностей не стоит, иначе одна сторона начнёт переустанавливать сессию, которую другая ещё считает живой. Практический вывод: разным устройствам полезно давать разные Jc, Jmin, Jmax и I1–I5. Одинаковый у сотни клиентов мусорный поезд — готовый шаблон для DPI, разный такого шаблона не даёт.",
+      en: "The split follows from how the receiving side parses a packet. In amneziawg-go, DeterminePacketTypeAndPadding (device/receive.go) tries to identify an incoming packet by two things: its length must equal the receiver's own S plus a known message size, and the four bytes at offset S must fall inside the receiver's own H range. No match means the packet is typed Unknown and silently dropped. That gives three groups. First, the shared ones: S1–S4, H1–H4 and HeaderProtectionKey. They must be identical, because the receiver parses the other side's packets using its own values; the header protection key belongs here too, since the cipher is built from the local key and a nonce taken from the arriving packet's S padding. Second, the client-side ones: Jc, Jmin, Jmax, the I1–I5 chain and ContentPaddingAddition. Junk packets and the I chain are sent before the handshake initiation and are never parsed on receipt — falling into the Unknown branch is precisely their purpose. ContentPaddingAddition adds padding inside the encrypted payload, and the receiver truncates to the length in the IP header, so it has no need to know the amount. Third, the local ones: the 3.0 timers — RekeyAfterTime, RekeyTimeout, RejectAfterTime, KeepaliveTimeout, MaxHandshakeAttempts. Each side runs on its own; they need no agreement, though pushing them to opposite extremes invites one side to rebuild a session the other still considers live. The practical consequence: giving different devices different Jc, Jmin, Jmax and I1–I5 is worth doing. One junk train shared by a hundred clients is a ready-made template for DPI; varied ones offer no such template.",
+    },
+    keywords: [
+      "клиентские",
+      "серверные",
+      "общие",
+      "client-side",
+      "server-side",
+      "shared",
+      "симметрия",
+      "какие совпадать",
+    ],
+  },
   {
     id: "jc-jmin-jmax",
     category: "params",
@@ -438,8 +460,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "What does ContentPaddingAddition do?",
     },
     answer: {
-      ru: "До 3.0 транспортные пакеты дополнялись до кратного 16 байтам. Это скрывает точный размер полезной нагрузки, но само по себе является приметой: длины пакетов ложатся на сетку с шагом 16, и такое распределение хорошо заметно со стороны. ContentPaddingAddition добавляет сверху ещё случайную величину, выбираемую для каждого пакета из заданного диапазона, — сетка размывается. Платой становится трафик: средний прирост равен середине диапазона, умноженной на число пакетов, поэтому широкий диапазон на мобильном тарифе ощущается. Параметр обязан совпадать на обеих сторонах и требует 3.0 и там, и там.",
-      en: "Before 3.0, transport packets were padded to a multiple of 16 bytes. That hides the exact payload size, but is a signature in itself: packet lengths land on a 16-byte grid, and that distribution is easy to spot from outside. ContentPaddingAddition adds a further random amount on top, drawn per packet from the configured range, which smears the grid out. The cost is bandwidth: the average increase is the middle of the range times the number of packets, so a wide range is noticeable on a metered mobile plan. The parameter must match on both ends and requires 3.0 on both.",
+      ru: "До 3.0 транспортные пакеты дополнялись до кратного 16 байтам. Это скрывает точный размер полезной нагрузки, но само по себе является приметой: длины пакетов ложатся на сетку с шагом 16, и такое распределение хорошо заметно со стороны. ContentPaddingAddition добавляет сверху ещё случайную величину, выбираемую для каждого пакета из заданного диапазона, — сетка размывается. Платой становится трафик: средний прирост равен середине диапазона, умноженной на число пакетов, поэтому широкий диапазон на мобильном тарифе ощущается. Совпадать с другой стороной параметр не обязан: паддинг уходит внутрь шифрованной нагрузки, а получатель отрезает лишнее по длине из заголовка самого IP-пакета, сколько бы его ни было. Это клиентский параметр — нужен только 3.0 на той стороне, которая его использует.",
+      en: "Before 3.0, transport packets were padded to a multiple of 16 bytes. That hides the exact payload size, but is a signature in itself: packet lengths land on a 16-byte grid, and that distribution is easy to spot from outside. ContentPaddingAddition adds a further random amount on top, drawn per packet from the configured range, which smears the grid out. The cost is bandwidth: the average increase is the middle of the range times the number of packets, so a wide range is noticeable on a metered mobile plan. It does not have to match the other side: the padding goes inside the encrypted payload, and the receiver truncates to the length carried in the IP header itself, however much padding follows. It is a client-side parameter — only the side using it needs 3.0.",
     },
     keywords: [
       "contentpaddingaddition",
@@ -513,8 +535,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "The config is generated but the tunnel will not come up. Where do I start?",
     },
     answer: {
-      ru: "Сначала проверьте симметрию: H1–H4, S1–S4 и параметры 3.0 обязаны совпадать на сервере и клиенте — это причина большинства случаев. Затем убедитесь, что версия совпадает с тем, что реально поддерживает ваш клиент: конфиг 2.0 на клиенте, знающем только 1.0, не заработает, а параметры 3.0 требуют amneziawg-go 3.0.1 или новее. Если с этим порядок, попробуйте уменьшить Jc до 2–3: некоторые провайдеры режут длинные очереди UDP-пакетов на старте. Наконец, проверьте, что H-диапазоны не пересекаются — генератор это гарантирует, но если конфиг правился руками, пересечение легко внести.",
-      en: "Start with symmetry: H1–H4, S1–S4 and the 3.0 parameters must match on server and client — this accounts for most cases. Next confirm the version matches what your client actually supports: a 2.0 config will not work against a client that only knows 1.0, and the 3.0 parameters need amneziawg-go 3.0.1 or newer. If that all checks out, try lowering Jc to 2 or 3, since some providers throttle long UDP bursts at connection start. Finally verify the H ranges do not overlap — the generator guarantees this, but a hand-edited config can easily reintroduce it.",
+      ru: "Сначала проверьте симметрию, но именно тех параметров, которые обязаны совпадать: H1–H4, S1–S4 и HeaderProtectionKey. Это причина большинства случаев. Jc, Jmin, Jmax, I1–I5 и ContentPaddingAddition сюда не относятся — их расхождение подключению не мешает, и искать ошибку там не нужно. Затем убедитесь, что версия совпадает с тем, что реально поддерживает ваш клиент: конфиг 2.0 на клиенте, знающем только 1.0, не заработает, а параметры 3.0 требуют amneziawg-go 3.0.1 или новее. Если с этим порядок, попробуйте уменьшить Jc до 2–3: некоторые провайдеры режут длинные очереди UDP-пакетов на старте. Наконец, проверьте, что H-диапазоны не пересекаются — генератор это гарантирует, но если конфиг правился руками, пересечение легко внести.",
+      en: "Start with symmetry, but only of the parameters that actually require it: H1–H4, S1–S4 and HeaderProtectionKey. That accounts for most cases. Jc, Jmin, Jmax, I1–I5 and ContentPaddingAddition are not in that group — a mismatch there does not prevent a connection, so there is no point looking for the fault in them. Next confirm the version matches what your client actually supports: a 2.0 config will not work against a client that only knows 1.0, and the 3.0 parameters need amneziawg-go 3.0.1 or newer. If that all checks out, try lowering Jc to 2 or 3, since some providers throttle long UDP bursts at connection start. Finally verify the H ranges do not overlap — the generator guarantees this, but a hand-edited config can easily reintroduce it.",
     },
     keywords: ["не работает", "not working", "handshake", "отладка", "debug"],
   },
@@ -592,10 +614,16 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "Does each device need its own parameters?",
     },
     answer: {
-      ru: "Нет. Параметры обфускации относятся к серверу, а не к отдельному пиру: все клиенты одного сервера обязаны использовать один и тот же набор Jc, Jmin, Jmax, S, H и I. Различаются у них только ключи. Генерировать по конфигу на устройство не нужно и вредно — рассинхронизация обфускации выглядит для сервера как мусор, и такой клиент просто не подключится. Отдельный набор имеет смысл заводить на отдельный сервер: если один адрес заблокируют по сигнатуре, второй с другими параметрами это переживёт.",
-      en: "No. Obfuscation parameters belong to the server, not to an individual peer: every client of one server must use the same Jc, Jmin, Jmax, S, H and I values. Only their keys differ. Generating a config per device is unnecessary and harmful — mismatched obfuscation looks like garbage to the server, and such a client simply will not connect. A separate set makes sense per server instead: if one address is blocked by signature, another with different parameters survives it.",
+      ru: "Совпадать обязаны только общие параметры: S1–S4, H1–H4 и HeaderProtectionKey. Их все клиенты одного сервера делят с ним и между собой. А вот клиентские — Jc, Jmin, Jmax, цепочка I1–I5 и ContentPaddingAddition — у каждого устройства могут быть свои, и это не просто допустимо, а полезно: если сто клиентов шлют одинаковый по счёту и размерам мусорный поезд, DPI получает готовый шаблон и учится по нему быстрее. Разные значения такого шаблона не дают. Единственная причина держать их одинаковыми — удобство раздачи одного конфига. Если конфиг у вас один на всех и он работает, менять ничего не нужно.",
+      en: "Only the shared parameters have to match: S1–S4, H1–H4 and HeaderProtectionKey. Every client of a server shares those with it and with each other. The client-side ones — Jc, Jmin, Jmax, the I1–I5 chain and ContentPaddingAddition — can differ per device, and that is not merely allowed but useful: if a hundred clients emit an identically sized and counted junk train, DPI gets a ready-made template and learns from it faster. Varied values give it no such template. The only reason to keep them identical is the convenience of handing out one config. If you have one config for everyone and it works, there is nothing to change.",
     },
-    keywords: ["несколько устройств", "multiple devices", "пиры", "peers"],
+    keywords: [
+      "несколько устройств",
+      "multiple devices",
+      "пиры",
+      "peers",
+      "разные параметры",
+    ],
   },
   {
     id: "vpn-keys-mergekeys",

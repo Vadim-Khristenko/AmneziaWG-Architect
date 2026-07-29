@@ -66,8 +66,12 @@ scripts\serve.bat              # Windows CMD
 Скрипт выдаёт только параметры обфускации. Свои `PrivateKey`, `Address`, `DNS`
 и секцию `[Peer]` добавьте сами — с ключами он не работает.
 
-> **Важно.** `H1`–`H4`, `S1`–`S4` и все параметры 3.0 должны совпадать на
-> клиенте и на сервере. `Jc`, `Jmin`, `Jmax` и `I1`–`I5` — только на клиенте.
+> **Важно.** Совпадать на клиенте и на сервере обязаны `H1`–`H4`, `S1`–`S4` и
+> `HeaderProtectionKey` — ими принимающая сторона опознаёт пакет, и расхождение
+> означает, что он будет отброшен молча. Клиентские — `Jc`, `Jmin`, `Jmax`,
+> `I1`–`I5` и `ContentPaddingAddition`: у каждого устройства могут быть свои, и
+> разные значения даже полезнее одинаковых. Таймеры 3.0 локальны для каждой
+> стороны.
 
 ## Проверка подлинности
 
@@ -149,9 +153,12 @@ No browser required — `awg-gen.sh` applies the same rules:
 It emits obfuscation parameters only. Add your own `PrivateKey`, `Address`,
 `DNS` and `[Peer]` section — it never touches key material.
 
-> **Important.** `H1`–`H4`, `S1`–`S4` and every 3.0 parameter must match on
-> both the client and the server. `Jc`, `Jmin`, `Jmax` and `I1`–`I5` are
-> client-side only.
+> **Important.** `H1`–`H4`, `S1`–`S4` and `HeaderProtectionKey` must match on
+> the client and the server — they are what the receiving side uses to
+> recognise a packet, and a mismatch means it is dropped silently. The
+> client-side ones are `Jc`, `Jmin`, `Jmax`, `I1`–`I5` and
+> `ContentPaddingAddition`: each device may set its own, and varied values are
+> better than identical ones. The 3.0 timers are local to each side.
 
 ## Verifying the download
 

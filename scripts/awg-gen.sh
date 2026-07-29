@@ -374,7 +374,9 @@ generate_config() {
     printf '# %s\n' "$PROJECT_URL"
     printf '#\n'
     printf '# Add your own PrivateKey, Address, DNS and [Peer] section.\n'
-    printf '# H1-H4, S1-S4 and every 3.0 parameter must match on BOTH ends.\n'
+    printf '# H1-H4, S1-S4 and HeaderProtectionKey must match on BOTH ends.\n'
+    printf '# Jc, Jmin, Jmax, I1-I5 and ContentPaddingAddition are sender-side\n'
+    printf '# only - each device may use its own, and varied values are better.\n'
     printf '\n'
     printf '[Interface]\n'
     printf '# PrivateKey = <your private key>\n'
