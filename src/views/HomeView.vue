@@ -427,6 +427,19 @@ interface ParamGroup {
     copyText: string;
 }
 
+/**
+ * Split a CamelCase parameter name into its words.
+ *
+ * The 3.0 names are long enough that HeaderProtectionKey and
+ * MaxHandshakeAttempts arrive as one unbroken block. The clients spell them
+ * exactly that way, so the text cannot change — but it can be rendered as
+ * segments, which lets it breathe and gives the line somewhere to wrap.
+ * Short names (S1, Jc, I1) come back as a single segment and look untouched.
+ */
+function labelParts(label: string): string[] {
+    return label.match(/[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])|./g) ?? [label];
+}
+
 const paramGroups = computed((): ParamGroup[] => {
     const p = currentAwg.value;
     if (!p) return [];
@@ -1483,9 +1496,31 @@ const paramGroups = computed((): ParamGroup[] => {
                                             "
                                             :title="`${t('gen.clickToCopy')} ${item.label}`"
                                         >
-                                            <span class="param-cell-label">{{
-                                                item.label
-                                            }}</span>
+                                            <!-- CamelCase names are split into
+                                                 segments so HeaderProtectionKey
+                                                 reads as three words and can
+                                                 wrap between them. The text
+                                                 itself is untouched — clients
+                                                 spell it exactly this way, and
+                                                 copying goes through
+                                                 item.label. -->
+                                            <span
+                                                class="param-cell-label"
+                                                :class="{
+                                                    'param-cell-label-words':
+                                                        labelParts(item.label)
+                                                            .length > 1,
+                                                }"
+                                            >
+                                                <template
+                                                    v-for="(part, pi) in labelParts(item.label)"
+                                                    :key="pi"
+                                                    ><wbr v-if="pi" /><span
+                                                        class="pk-seg"
+                                                        >{{ part }}</span
+                                                    ></template
+                                                >
+                                            </span>
                                             <span
                                                 class="param-cell-value"
                                                 :class="{
@@ -2797,11 +2832,32 @@ const paramGroups = computed((): ParamGroup[] => {
 .param-cell-label {
     font-size: 0.6rem;
     font-family: var(--fm);
-    color: var(--text3);
+    color: var(--text2);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     flex-shrink: 0;
     min-width: 24px;
+}
+
+/*
+ * Multi-word names (HeaderProtectionKey, MaxHandshakeAttempts) keep their own
+ * casing. Uppercasing them erased the only cue to where one word ends and the
+ * next begins, which is what turned them into a single unreadable block.
+ */
+.param-cell-label-words {
+    text-transform: none;
+    font-size: 0.66rem;
+    letter-spacing: 0.01em;
+    white-space: normal;
+}
+
+/*
+ * A hair of space between segments, without putting a character there.
+ * The general sibling combinator, not the adjacent one: a <wbr> sits between
+ * each pair, so `+` would never match.
+ */
+.pk-seg ~ .pk-seg {
+    margin-left: 0.14em;
 }
 
 .param-cell-value {

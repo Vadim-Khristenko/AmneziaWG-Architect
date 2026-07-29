@@ -431,6 +431,25 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     keywords: ["rekey", "таймеры", "timers", "rejectaftertime", "keepalive"],
   },
   {
+    id: "content-padding",
+    category: "awg3",
+    question: {
+      ru: "Что делает ContentPaddingAddition?",
+      en: "What does ContentPaddingAddition do?",
+    },
+    answer: {
+      ru: "До 3.0 транспортные пакеты дополнялись до кратного 16 байтам. Это скрывает точный размер полезной нагрузки, но само по себе является приметой: длины пакетов ложатся на сетку с шагом 16, и такое распределение хорошо заметно со стороны. ContentPaddingAddition добавляет сверху ещё случайную величину, выбираемую для каждого пакета из заданного диапазона, — сетка размывается. Платой становится трафик: средний прирост равен середине диапазона, умноженной на число пакетов, поэтому широкий диапазон на мобильном тарифе ощущается. Параметр обязан совпадать на обеих сторонах и требует 3.0 и там, и там.",
+      en: "Before 3.0, transport packets were padded to a multiple of 16 bytes. That hides the exact payload size, but is a signature in itself: packet lengths land on a 16-byte grid, and that distribution is easy to spot from outside. ContentPaddingAddition adds a further random amount on top, drawn per packet from the configured range, which smears the grid out. The cost is bandwidth: the average increase is the middle of the range times the number of packets, so a wide range is noticeable on a metered mobile plan. The parameter must match on both ends and requires 3.0 on both.",
+    },
+    keywords: [
+      "contentpaddingaddition",
+      "паддинг",
+      "padding",
+      "3.0",
+      "размер пакета",
+    ],
+  },
+  {
     id: "awg3-support",
     category: "awg3",
     question: {
@@ -526,6 +545,110 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     keywords: ["перестал", "stopped", "разрыв", "drops", "блокировка"],
   },
 
+  {
+    id: "keys-not-generated",
+    category: "basics",
+    question: {
+      ru: "Генерирует ли Architect приватные ключи?",
+      en: "Does Architect generate private keys?",
+    },
+    answer: {
+      ru: "Нет, и это важное разграничение. Architect создаёт только параметры обфускации — Jc, Jmin, Jmax, S1–S4, H1–H4, цепочку I1–I5 и блок 3.0. Ключи WireGuard — PrivateKey, PublicKey, PresharedKey — выпускает ваш сервер или клиент, и в сгенерированном конфиге они остаются заготовками, которые вы подставляете сами. Отсюда же следует правило для обращений: приватные ключи не нужны для воспроизведения ни одной проблемы, поэтому вырезайте их из всего, что публикуете. Ключ, попавший в issue, придётся перевыпускать.",
+      en: "No, and the distinction matters. Architect produces obfuscation parameters only — Jc, Jmin, Jmax, S1–S4, H1–H4, the I1–I5 chain and the 3.0 block. WireGuard keys, meaning PrivateKey, PublicKey and PresharedKey, are issued by your server or client, and the generated config leaves them as placeholders for you to fill in. The same split gives the rule for bug reports: no private key is ever needed to reproduce a problem, so strip them from anything you publish. A key posted in an issue has to be reissued.",
+    },
+    keywords: ["ключи", "keys", "privatekey", "presharedkey", "wireguard"],
+  },
+  {
+    id: "run-offline",
+    category: "basics",
+    question: {
+      ru: "Можно ли пользоваться генератором без интернета?",
+      en: "Can I use the generator without internet access?",
+    },
+    answer: {
+      ru: "Да, и способов три. Первый: скачать релизный архив — внутри лежит собранный сайт и бинарник awg-serve под Linux, macOS и Windows, который поднимает его локально и не требует ничего установленного. Второй: запустить scripts/serve.sh или serve.ps1, если у вас уже есть bun, npx или python; флаг --check покажет, что нашлось, ничего не запуская. Третий, если браузера нет вовсе: scripts/awg-gen.sh — те же правила генерации в виде обычного shell-скрипта без зависимостей и без сети. Сама страница и в онлайне работает целиком на вашем устройстве, так что офлайн ничего не отнимает.",
+      en: "Yes, in three ways. First, download a release archive: it contains the built site and an awg-serve binary for Linux, macOS and Windows that serves it locally with nothing installed. Second, run scripts/serve.sh or serve.ps1 if you already have bun, npx or python; the --check flag reports what it found without starting anything. Third, if there is no browser at all: scripts/awg-gen.sh carries the same generation rules as a plain shell script with no dependencies and no network. The page runs entirely on your device online too, so going offline costs you nothing.",
+    },
+    keywords: ["офлайн", "offline", "awg-serve", "локально", "архив", "release"],
+  },
+  {
+    id: "simulator-what",
+    category: "basics",
+    question: {
+      ru: "Что показывает симулятор пакетов?",
+      en: "What does the packet simulator show?",
+    },
+    answer: {
+      ru: "Он рисует, как выглядит подключение с вашими параметрами: сначала цепочка CPS I1–I5, затем мусорный поезд из Jc пакетов размером от Jmin до Jmax, затем рукопожатие, где к каждому пакету добавлены свои H и S. Это модель, а не перехват: значения берутся из вашего конфига, но реальная сеть добавит задержки, повторы и фрагментацию, которых здесь нет. Смысл в том, чтобы увидеть порядок величин — сколько пакетов уйдёт до первого полезного и насколько распухнет каждый, — и понять, откуда берётся задержка при подключении, если поставить Jc побольше.",
+      en: "It draws what a connection looks like with your parameters: first the I1–I5 CPS chain, then the junk train of Jc packets sized between Jmin and Jmax, then the handshake, with each packet carrying its own H and S. It is a model, not a capture: the values come from your config, but a real network adds latency, retransmits and fragmentation that are not shown here. The point is to see the orders of magnitude — how many packets go out before the first useful one, and how much each one swells — and to understand where the connection delay comes from when Jc is set high.",
+    },
+    keywords: ["симулятор", "simulator", "пакеты", "handshake", "визуализация"],
+  },
+  {
+    id: "same-params-many-clients",
+    category: "clients",
+    question: {
+      ru: "Нужны ли отдельные параметры для каждого устройства?",
+      en: "Does each device need its own parameters?",
+    },
+    answer: {
+      ru: "Нет. Параметры обфускации относятся к серверу, а не к отдельному пиру: все клиенты одного сервера обязаны использовать один и тот же набор Jc, Jmin, Jmax, S, H и I. Различаются у них только ключи. Генерировать по конфигу на устройство не нужно и вредно — рассинхронизация обфускации выглядит для сервера как мусор, и такой клиент просто не подключится. Отдельный набор имеет смысл заводить на отдельный сервер: если один адрес заблокируют по сигнатуре, второй с другими параметрами это переживёт.",
+      en: "No. Obfuscation parameters belong to the server, not to an individual peer: every client of one server must use the same Jc, Jmin, Jmax, S, H and I values. Only their keys differ. Generating a config per device is unnecessary and harmful — mismatched obfuscation looks like garbage to the server, and such a client simply will not connect. A separate set makes sense per server instead: if one address is blocked by signature, another with different parameters survives it.",
+    },
+    keywords: ["несколько устройств", "multiple devices", "пиры", "peers"],
+  },
+  {
+    id: "vpn-keys-mergekeys",
+    category: "clients",
+    question: {
+      ru: "Что такое ключ vpn:// и зачем нужен MergeKeys?",
+      en: "What is a vpn:// key, and what is MergeKeys for?",
+    },
+    answer: {
+      ru: "Приложения Amnezia делятся настройками одной строкой вида vpn://…: это сжатый zlib JSON в кодировке base64url с четырёхбайтным заголовком длины. Внутри лежит всё подключение целиком, включая параметры обфускации. MergeKeys открывает такую строку прямо в браузере, показывает содержимое, позволяет подставить в неё новые параметры и собрать обратно, а также объединить несколько ключей в один. Это удобнее, чем просить всех пользователей вручную править шестнадцать полей в клиенте: вы обновляете обфускацию и рассылаете новую строку. Декодирование и сборка происходят на вашем устройстве, ключ никуда не отправляется.",
+      en: "The Amnezia apps share a setup as a single vpn://… string: zlib-compressed JSON in base64url with a four-byte length header. It carries the whole connection, obfuscation parameters included. MergeKeys opens such a string in the browser, shows what is inside, lets you patch new parameters into it and pack it back up, and can merge several keys into one. That beats asking every user to edit sixteen fields by hand in the client: you update the obfuscation and hand out a new string. Decoding and packing happen on your device; the key is never sent anywhere.",
+    },
+    keywords: ["vpn://", "mergekeys", "ключ", "base64", "zlib", "обмен"],
+  },
+  {
+    id: "obfuscation-cost",
+    category: "tuning",
+    question: {
+      ru: "Насколько обфускация замедляет соединение?",
+      en: "How much does obfuscation slow the connection down?",
+    },
+    answer: {
+      ru: "Расходы делятся на разовые и постоянные, и путать их не стоит. Разовые платятся при подключении: цепочка CPS и мусорный поезд уходят один раз, но их объём равен примерно Jc, умноженному на середину диапазона Jmin–Jmax, поэтому Jc 15 при Jmax 1000 заметно растягивает установку туннеля. Постоянные платятся с каждого пакета: S1–S4 добавляют байты ко всему трафику, а в 3.0 к ним прибавляются ChaCha20 на заголовок и ContentPaddingAddition. На современном процессоре шифрование не заметно, а вот лишние байты съедают полезный MTU. Если устройство слабое — роутер, одноплатник, — включите режим роутера: он держит шумы на минимуме.",
+      en: "The costs split into one-off and per-packet, and the two should not be confused. One-off costs are paid at connect: the CPS chain and the junk train go out once, but their volume is roughly Jc times the middle of the Jmin–Jmax range, so Jc 15 with Jmax 1000 visibly stretches how long a tunnel takes to come up. Per-packet costs apply to everything: S1–S4 add bytes to all traffic, and 3.0 adds ChaCha20 over the header plus ContentPaddingAddition on top. On a modern CPU the encryption is not noticeable, but the extra bytes eat into usable MTU. On weak hardware — a router, a single-board computer — turn on router mode, which keeps the noise minimal.",
+    },
+    keywords: ["скорость", "speed", "производительность", "performance", "cpu"],
+  },
+  {
+    id: "batch-generation",
+    category: "tuning",
+    question: {
+      ru: "Зачем нужна массовая генерация?",
+      en: "What is batch generation for?",
+    },
+    answer: {
+      ru: "Она нужна тем, кто держит несколько серверов. Одному серверу нужен ровно один набор параметров на всех его клиентов, но два сервера с одинаковой обфускацией теряют смысл: заблокировав сигнатуру, отсекут оба сразу. Массовая генерация выдаёт нужное количество независимых наборов за раз и складывает их в один файл, откуда их удобно разложить по серверам. Больше пятидесяти конфигов считаются в Web Worker, чтобы страница не подвисала; максимум — тысяча за проход.",
+      en: "It is for people running several servers. One server needs exactly one parameter set for all of its clients, but two servers sharing the same obfuscation defeat the point: block the signature and both go down together. Batch generation produces the requested number of independent sets at once and writes them to a single file, ready to be distributed across servers. Above fifty configs the work moves into a Web Worker so the page stays responsive; the ceiling is a thousand per run.",
+    },
+    keywords: ["batch", "массовая", "несколько серверов", "worker"],
+  },
+  {
+    id: "changed-params-one-side",
+    category: "troubleshooting",
+    question: {
+      ru: "Я поменял параметры на сервере — почему всё отвалилось?",
+      en: "I changed the parameters on the server and everything dropped. Why?",
+    },
+    answer: {
+      ru: "Потому что согласования этих параметров не существует. Обфускация — это правила, по которым сторона узнаёт пакет собеседника: сколько мусора игнорировать, сколько байт отрезать, какой заголовок считать своим. Клиент со старыми значениями шлёт то, что сервер уже не опознаёт, и его трафик отбрасывается молча — ошибки вы не увидите, будет просто тишина. Поэтому смену параметров планируют как миграцию: сначала раздайте всем новый конфиг или новый ключ vpn://, и только потом переключайте сервер. Если пользователей много, проще поднять второй сервер с новыми параметрами и переводить людей постепенно.",
+      en: "Because there is no negotiation for these parameters. Obfuscation is the set of rules by which each side recognises the other's packets: how much junk to ignore, how many bytes to strip, which header counts as its own. A client with the old values sends something the server no longer recognises, and that traffic is dropped silently — you get no error, just silence. So treat a parameter change as a migration: hand out the new config or the new vpn:// key first, and switch the server only afterwards. With many users it is easier to stand up a second server with the new parameters and move people over gradually.",
+    },
+    keywords: ["отвалилось", "dropped", "миграция", "migration", "рассинхрон"],
+  },
   /* ── Privacy ──────────────────────────────────────────────────────────── */
   {
     id: "data-leaves",
@@ -552,5 +675,25 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "Every parameter comes from crypto.getRandomValues(), the browser's cryptographic randomness source — the same one used for key generation. Math.random() appears nowhere in the generator. Sampling additionally uses rejection to eliminate modulo bias: without it some values would come up more often than others, which is undesirable for obfuscation parameters.",
     },
     keywords: ["случайность", "randomness", "crypto", "энтропия", "entropy"],
+  },
+  {
+    id: "history-storage",
+    category: "privacy",
+    question: {
+      ru: "Где хранится история генераций?",
+      en: "Where is the generation history stored?",
+    },
+    answer: {
+      ru: "В localStorage вашего браузера, то есть на вашем устройстве и больше нигде. Хранится ограниченное число последних генераций, и каждая запись содержит только параметры обфускации — приватных ключей там нет, потому что генератор их и не создаёт. Кнопка очистки в панели истории удаляет всё сразу, а удаление данных сайта в браузере даёт тот же результат. На чужом или общем компьютере имеет смысл почистить историю после работы: сами по себе параметры не секрет, но они указывают на то, что вы настраивали.",
+      en: "In your browser's localStorage, meaning on your device and nowhere else. A limited number of recent generations is kept, and each entry holds obfuscation parameters only — no private keys, because the generator never creates any. The clear button in the history panel removes everything at once, and clearing site data in the browser does the same. On a shared or borrowed computer it is worth clearing the history afterwards: the parameters are not secret in themselves, but they do show what you were setting up.",
+    },
+    keywords: [
+      "история",
+      "history",
+      "localstorage",
+      "хранение",
+      "storage",
+      "очистить",
+    ],
   },
 ];
