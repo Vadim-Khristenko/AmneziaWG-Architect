@@ -22,6 +22,8 @@ import {
     type FaqCategoryId,
 } from "@/data/faq";
 import ClientFieldGuide from "@/components/ClientFieldGuide.vue";
+import { stripRich } from "@/utils/richText";
+import RichText from "@/components/RichText";
 
 const { locale } = useI18n();
 const route = useRoute();
@@ -60,8 +62,10 @@ const filtered = computed(() => {
             [
                 entry.question.ru,
                 entry.question.en,
-                entry.answer.ru,
-                entry.answer.en,
+                // Stripped, so a search for HeaderProtectionKey still matches
+                // where the answer writes it in backticks.
+                stripRich(entry.answer.ru),
+                stripRich(entry.answer.en),
                 ...(entry.keywords ?? []),
             ].join(" "),
         );
@@ -147,7 +151,9 @@ function syncJsonLd(): void {
             name: entry.question[loc],
             acceptedAnswer: {
                 "@type": "Answer",
-                text: entry.answer[loc],
+                // Structured data must not carry markup, so the marks come
+                // out here rather than the source being kept flat.
+                text: stripRich(entry.answer[loc]),
             },
         })),
     };
@@ -282,7 +288,7 @@ onBeforeUnmount(() => {
                             :id="`${entry.id}-answer`"
                             class="faq-a"
                         >
-                            <p>{{ entry.answer[locale] }}</p>
+                            <RichText :text="entry.answer[locale]" />
                             <button
                                 class="faq-link"
                                 @click="copyLink(entry.id)"
@@ -540,6 +546,68 @@ onBeforeUnmount(() => {
     line-height: 1.7;
     color: var(--text2);
     text-wrap: pretty;
+}
+
+.faq-a p:last-child {
+    margin-bottom: 0;
+}
+
+/*
+ * Subheadings for answers long enough to have parts. Sized below the question
+ * they sit under, so the hierarchy stays question → section → prose.
+ */
+.faq-a h2,
+.faq-a h3 {
+    margin: 16px 0 7px;
+    font-size: 0.86rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    color: var(--text);
+}
+
+.faq-a h3 {
+    font-size: 0.82rem;
+    color: var(--text2);
+}
+
+.faq-a h2:first-child,
+.faq-a h3:first-child {
+    margin-top: 0;
+}
+
+.faq-a strong {
+    color: var(--text);
+    font-weight: 650;
+}
+
+/*
+ * Asides and caveats. The italic carries the demotion on its own; dropping to
+ * --text3 as well would put this text near 2.4:1, and an aside a reader
+ * cannot make out is worse than no aside.
+ */
+.faq-a em {
+    font-style: italic;
+}
+
+.faq-a a {
+    color: var(--amber);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+}
+
+.faq-a a:hover {
+    text-decoration-thickness: 2px;
+}
+
+.faq-a code {
+    font-family: var(--fm);
+    font-size: 0.86em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--bg3);
+    color: var(--amber);
+    white-space: nowrap;
 }
 
 .faq-link {

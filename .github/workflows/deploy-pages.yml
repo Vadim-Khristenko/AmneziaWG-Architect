@@ -22,8 +22,15 @@
 #                            └─────────────────┘
 #
 # Release notes are built from the annotated tag message first, then the
-# commit log since the previous version tag. Write the tag with -F and the
-# text lands in the release verbatim.
+# commit log since the previous version tag. The tag message is Markdown and
+# is emitted as-is, so it brings its own heading.
+#
+#   git tag -s --cleanup=verbatim vX.Y.Z -F .git/TAG_MSG_vX.Y.Z.txt
+#
+# --cleanup=verbatim is not optional: git's default strips every line that
+# starts with `#`, which silently deletes all Markdown headings from the
+# message — and the deletion happens at tag time, so nothing downstream can
+# tell it happened.
 #
 # Commit message directives:
 #   [skip ci]    / [ci skip]       — skip entire pipeline
@@ -506,22 +513,21 @@ jobs:
           TAG_BODY=$(git tag -l --format='%(contents:body)' "${TAG}")
 
           {
-            echo "## AmneziaWG Architect ${TAG}"
-            echo ""
-
-            if [ -n "$TAG_BODY" ] || [ -n "$TAG_SUBJECT" ]; then
-              # The subject usually repeats the heading above — with or
-              # without the tag's leading `v` — so keep it only when it
-              # actually says something else.
-              case "$TAG_SUBJECT" in
-                "AmneziaWG Architect ${TAG}"|"AmneziaWG Architect ${TAG#v}"|"") ;;
-                *) echo "**${TAG_SUBJECT}**"; echo "" ;;
-              esac
+            if [ -n "$TAG_SUBJECT" ]; then
+              # Tag messages are written as Markdown, so they go out verbatim
+              # and bring their own heading. Adding one here on top produced a
+              # duplicate title the moment the message started with `#`.
+              echo "$TAG_SUBJECT"
               if [ -n "$TAG_BODY" ]; then
-                echo "$TAG_BODY"
                 echo ""
+                echo "$TAG_BODY"
               fi
+              echo ""
               echo "---"
+              echo ""
+            else
+              # Nothing on the tag — fall back to naming the release.
+              echo "## AmneziaWG Architect ${TAG}"
               echo ""
             fi
 

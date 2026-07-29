@@ -40,6 +40,7 @@ import {
 import SupportSection from "@/components/SupportSection.vue";
 import { localizePath, useI18n } from "@/i18n";
 import { TIMELINE } from "@/data/changelog";
+import RichText from "@/components/RichText";
 
 const { locale, t } = useI18n();
 const isRu = computed(() => locale.value === "ru");
@@ -208,7 +209,7 @@ const statCards = computed(() => [
                         </div>
                         <transition name="expand">
                             <div v-if="activeTimeline === idx" class="tl-body">
-                                <p>{{ ev.desc }}</p>
+                                <RichText :text="ev.desc" />
                             </div>
                         </transition>
                     </div>
@@ -846,7 +847,51 @@ const statCards = computed(() => [
 .tl-body p {
     font-size: 0.85rem;
     line-height: 1.65;
-    margin: 0;
+    margin: 0 0 10px;
+}
+
+.tl-body p:last-child {
+    margin-bottom: 0;
+}
+
+.tl-body h2,
+.tl-body h3 {
+    margin: 14px 0 6px;
+    font-size: 0.83rem;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.tl-body h2:first-child,
+.tl-body h3:first-child {
+    margin-top: 0;
+}
+
+.tl-body strong {
+    color: var(--text);
+    font-weight: 650;
+}
+
+/* The italic alone carries the demotion — dimming it too would drop this
+   below the contrast floor. */
+.tl-body em {
+    font-style: italic;
+}
+
+.tl-body code {
+    font-family: var(--fm);
+    font-size: 0.86em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--bg3);
+    color: var(--amber);
+    white-space: nowrap;
+}
+
+.tl-body a {
+    color: var(--amber);
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 /* ── Privacy Grid ─────────────────────────────────────────────────────── */
