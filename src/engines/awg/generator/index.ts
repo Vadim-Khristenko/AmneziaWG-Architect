@@ -13,7 +13,7 @@ import type {
   MimicProfile,
 } from "./types";
 import { PROFILE_LABELS } from "./constants";
-import { CLIENTS, DEFAULT_CLIENT_ID } from "./clients";
+import { clientCaps } from "./clients";
 import { rnd, rRange } from "./utils";
 import {
   mkQUICi,
@@ -97,7 +97,7 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   /** What this protocol version supports — see ./versions.ts. */
   const caps = capsFor(version);
 
-  const client = CLIENTS[input.clientId] ?? CLIENTS[DEFAULT_CLIENT_ID];
+  const client = clientCaps(input.clientId, input.clientRelease).limits;
 
   // Enforce client capability limits without mutating the caller's input.
   const effectiveInput: GeneratorInput = {
@@ -147,11 +147,15 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   const h3 = rRange(rnd(hPools.h3.min, hPools.h3.max), hPools.h3.spread, maxH);
   const h4 = rRange(rnd(hPools.h4.min, hPools.h4.max), hPools.h4.spread, maxH);
 
+  // Single H values for 1.0/1.5 come out of the same zones as the ranges.
+  // They used to be written as absolute constants and clamped to `maxH`,
+  // which on a capped client turned H2, H3 and H4 into exactly the cap —
+  // three identical headers, the same three for everyone on that client.
   const h1sSpread = useExtremeMax ? 10_000_000 : 4_000_000;
-  const h1s = Math.min(100_000_000 + rnd(0, h1sSpread), maxH);
-  const h2s = Math.min(1_200_000_000 + rnd(0, h2Spread), maxH);
-  const h3s = Math.min(2_400_000_000 + rnd(0, h3Spread), maxH);
-  const h4s = Math.min(3_600_000_000 + rnd(0, h4Spread), maxH);
+  const h1s = Math.min(hPools.h1.min + rnd(0, h1sSpread), maxH);
+  const h2s = Math.min(hPools.h2.min + rnd(0, h2Spread), maxH);
+  const h3s = Math.min(hPools.h3.min + rnd(0, h3Spread), maxH);
+  const h4s = Math.min(hPools.h4.min + rnd(0, h4Spread), maxH);
 
   let s1 = rnd(1, 150);
   let s2 = rnd(1, 150);

@@ -126,6 +126,10 @@ export function useGenerator() {
     // Целевой клиент для фильтрации совместимости
     clientId: DEFAULT_CLIENT_ID,
 
+    // Конкретная сборка клиента. null — текущая: у клиента лимиты не одни
+    // и те же навсегда, и генерировать надо под ту сборку, куда конфиг поедет.
+    clientRelease: null as string | null,
+
     // ── AWG 3.0 ─────────────────────────────────────────────────────────────
     // Защита заголовков ChaCha20. Поднимает S1–S4 до 12 байт: из паддинга
     // берётся nonce шифра.
@@ -176,6 +180,7 @@ export function useGenerator() {
       routerMode: config.routerMode,
       useExtremeMax: config.useExtremeMax,
       clientId: config.clientId,
+      clientRelease: config.clientRelease,
       useHeaderProtection: config.useHeaderProtection,
       useContentPadding: config.useContentPadding,
       useRandomTimings: config.useRandomTimings,

@@ -60,6 +60,15 @@ export const en: Catalog = {
 
   /* ── Generator controls ───────────────────────────────────────────────── */
   "gen.client.label": "Target client",
+  "client.note.windowsHCap":
+    "Before 2.0.2 the editor underlines H values above 2,147,483,647 in red and will not save the config. Those values work fine on the server — the limit was only in the client-side check (PR #85, fixed in #87).",
+  "client.note.wgTunnelBattery":
+    "Large S3/S4 may drain battery or behave inconsistently; keep S4 modest.",
+  "client.note.keeneticI1":
+    "Sensitive to I1: prefer a simple <r 64> or a DNS mimicry profile.",
+  "client.note.awgGoTagC":
+    "Tag <c> is not implemented — ErrorCode 1000.",
+  "gen.client.releaseCurrent": "Current client version",
   "gen.client.hint":
     "Parameters are filtered to what the selected client supports.",
   "gen.profile.label": "Mimicry profile",

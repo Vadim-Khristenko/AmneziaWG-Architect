@@ -66,6 +66,7 @@ function createDefaults(): GeneratorInput {
     routerMode: false,
     useExtremeMax: false,
     clientId: DEFAULT_CLIENT_ID,
+    clientRelease: null,
 
     useHeaderProtection: true,
     useContentPadding: true,

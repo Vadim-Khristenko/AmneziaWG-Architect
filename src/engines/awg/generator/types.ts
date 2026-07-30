@@ -62,6 +62,15 @@ export interface GeneratorInput {
   clientId: string;
 
   /**
+   * A specific older build of that client, when the user has one.
+   *
+   * Null means the current build. A client is not one set of limits forever —
+   * AmneziaWG for Windows capped H values at 2^31-1 until v2.0.2 — and the
+   * generator has to produce for the build the config is going to.
+   */
+  clientRelease?: string | null;
+
+  /**
    * AWG 3.0 — emit a HeaderProtectionKey (ChaCha20 header/message encryption).
    * Forces S1–S4 ≥ 12, because the cipher nonce is read from the S-padding.
    */

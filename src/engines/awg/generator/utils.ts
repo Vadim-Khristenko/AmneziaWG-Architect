@@ -48,13 +48,19 @@ export function assertEvenHex(hex: string, label = "?"): string {
  * Если передан maxEnd, конец диапазона не превысит его.
  */
 export function rRange(base: number, spread = 500_000, maxEnd?: number): string {
+  const width = rnd(1000, 50_000);
   let start = base + rnd(0, spread);
-  let end = start + rnd(1000, 50_000);
+
   if (maxEnd !== undefined) {
-    end = Math.min(end, maxEnd);
-    start = Math.min(start, maxEnd);
-    if (end < start) end = start;
+    // Slide the window down rather than clamping both ends onto the ceiling.
+    // Clamping produced `2147483647-2147483647` — a range of one value, the
+    // same one for every user of a capped client, which is a signature rather
+    // than a random header. Sliding keeps the width whenever the cap has room
+    // for it, and only a cap narrower than the window itself collapses.
+    start = Math.min(start, Math.max(0, maxEnd - width));
   }
+
+  const end = maxEnd === undefined ? start + width : Math.min(start + width, maxEnd);
   return `${start}-${end}`;
 }
 

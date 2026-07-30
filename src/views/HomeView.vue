@@ -55,7 +55,13 @@ import {
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
-import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/engines/awg/generator";
+import {
+    YANDEX_UNSTABLE_PROFILES,
+    CLIENTS,
+    CLIENT_IDS,
+    clientCaps,
+    clientReleases,
+} from "@/engines/awg/generator";
 import type { AWGConfig, AWGVersion, Intensity } from "@/engines/awg/generator";
 import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
 import { localizePath, useI18n } from "@/i18n";
@@ -115,6 +121,35 @@ const paramCopied = (key: string) => isCopied(`param:${key}`);
 const historyCopied = (id: number) => isCopied(`history:${id}`);
 const wasRestored = (id: number) => isCopied(`restore:${id}`);
 const justGenerated = ref(false);
+
+/**
+ * Builds selectable for the chosen client.
+ *
+ * Most clients have one, and the picker stays hidden for them: a limit that
+ * never changed is not a question worth asking.
+ */
+const clientReleaseChoices = computed(() => clientReleases(config.clientId));
+
+/**
+ * What is wrong with the build the user picked, in their language.
+ *
+ * The data holds catalogue keys rather than sentences, the same way findings
+ * do — a note written in one language is a note half the visitors cannot read.
+ */
+const clientReleaseNotes = computed(() =>
+    clientCaps(config.clientId, config.clientRelease).notes.map((key) =>
+        t(key as Parameters<typeof t>[0]),
+    ),
+);
+
+// A release id only means something for the client it belongs to; carrying
+// it across would silently apply another client's limits.
+watch(
+    () => config.clientId,
+    () => {
+        config.clientRelease = null;
+    },
+);
 
 const isYandexUnstable = () =>
     config.useBrowserFp &&
@@ -867,6 +902,43 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="field-hint">
                                 {{ t("gen.client.hint") }}
                             </div>
+
+                            <!--
+                                Only shown for a client whose limits actually
+                                changed between builds. A picker with one entry
+                                is a question the user cannot answer wrongly
+                                and should not have to read.
+                            -->
+                            <template v-if="clientReleaseChoices.length > 1">
+                                <select
+                                    v-model="config.clientRelease"
+                                    class="select-field client-release"
+                                    @change="generate"
+                                >
+                                    <option
+                                        v-for="choice in clientReleaseChoices"
+                                        :key="choice.id ?? 'current'"
+                                        :value="choice.id"
+                                    >
+                                        {{
+                                            choice.id === null
+                                                ? t("gen.client.releaseCurrent")
+                                                : choice.label
+                                        }}
+                                    </option>
+                                </select>
+                                <ul
+                                    v-if="clientReleaseNotes.length"
+                                    class="client-notes"
+                                >
+                                    <li
+                                        v-for="(note, i) in clientReleaseNotes"
+                                        :key="i"
+                                    >
+                                        {{ note }}
+                                    </li>
+                                </ul>
+                            </template>
                         </div>
 
                         <!-- Profile Select -->
@@ -2291,6 +2363,24 @@ const paramGroups = computed((): ParamGroup[] => {
     font-size: 0.7rem;
     color: var(--text3);
     line-height: 1.4;
+}
+
+/* Sits under the client select as a refinement of it, not a field of its own. */
+.client-release {
+    margin-top: 8px;
+}
+
+.client-notes {
+    margin: 8px 0 0;
+    padding-left: 16px;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: var(--amber2);
+    text-wrap: pretty;
+}
+
+.client-notes li + li {
+    margin-top: 4px;
 }
 
 .toggle-row {

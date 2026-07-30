@@ -8,7 +8,7 @@ import type {
   ValidationFinding,
   ClientCapability,
 } from "./types";
-import { CLIENTS } from "./clients";
+import { clientCaps } from "./clients";
 import { capsFor } from "./versions";
 import {
   HEADER_PROTECTION_KEY_BYTES,
@@ -124,13 +124,19 @@ export function validateSizes(cfg: AWGConfig): ValidationFinding[] {
   return out;
 }
 
-/** Validate a generated config against a specific AWG client. */
+/**
+ * Validate a generated config against a specific AWG client.
+ *
+ * `release` narrows it to one build of that client — the limits a user on an
+ * old install actually has, rather than the ones the current version has.
+ */
 export function validateConfigForClient(
   cfg: AWGConfig,
   clientId: string,
+  release?: string | null,
 ): ValidationFinding[] {
-  const client = CLIENTS[clientId];
-  if (!client) return [];
+  const resolved = clientCaps(clientId, release);
+  const client = { ...resolved.limits, name: resolved.name };
 
   const out: ValidationFinding[] = [];
 
@@ -365,6 +371,7 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
 export function validateGeneratedConfig(
   cfg: AWGConfig,
   clientId?: string,
+  clientRelease?: string | null,
 ): ValidationFinding[] {
   const out: ValidationFinding[] = [
     ...validateHeaderRanges(cfg.h1, cfg.h2, cfg.h3, cfg.h4),
@@ -372,7 +379,7 @@ export function validateGeneratedConfig(
     ...validateAwg3(cfg),
   ];
   if (clientId) {
-    out.push(...validateConfigForClient(cfg, clientId));
+    out.push(...validateConfigForClient(cfg, clientId, clientRelease));
   }
   return out;
 }
