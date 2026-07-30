@@ -30,6 +30,7 @@ import {
 } from "@/engines/awg/generator";
 import { translate } from "@/i18n";
 import { copyText } from "@/utils/clipboard";
+import { downloadText } from "@/utils/download";
 import { confToVpn, buildVpnConfig } from "@/engines/awg/awgFormat";
 import type { VpnConfig } from "@/engines/awg/awgFormat";
 import type { AwgContainer } from "@/engines/awg/mergekeys";
@@ -407,14 +408,11 @@ export function useGenerator() {
       addLog(translate("log.generateFirst"), "bad");
       return;
     }
-    const blob = new Blob([text], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    addLog(translate("log.saved"), "info");
+    const saved = downloadText(text, filename, mime);
+    addLog(
+      saved ? translate("log.saved") : translate("log.copyFailed"),
+      saved ? "info" : "bad",
+    );
   }
 
   // ── Лог ───────────────────────────────────────────────────────────────────

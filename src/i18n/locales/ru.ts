@@ -47,7 +47,7 @@ export const ru = {
   "awg3.panel.title": "Параметры AmneziaWG 3.0",
   "awg3.hpk.title": "HeaderProtectionKey",
   "awg3.hpk.desc":
-    "ChaCha20 поверх заголовков. Хендшейк и cookie шифруются целиком, транспорт — только заголовок. Nonce берётся из паддинга, поэтому S1–S4 автоматически поднимаются до 12 байт.",
+    "ChaCha20 поверх заголовков. Хендшейк и cookie шифруются целиком, транспорт — только заголовок. Nonce берётся из паддинга, поэтому S1–S4 не могут быть меньше 12 байт: значение ниже порога перевыбирается в допустимом диапазоне, а не прижимается к 12.",
   "awg3.cpa.title": "ContentPaddingAddition",
   "awg3.cpa.desc":
     "Случайный добавочный паддинг каждого транспортного пакета вместо выравнивания по 16 байт — размывает гистограмму размеров.",
@@ -244,6 +244,26 @@ export const ru = {
   "sim.legend.response": "WireGuard Handshake Response — ответ сервера.",
   "sim.legend.cookie": "Cookie Reply — защита от DDoS и amplification.",
   "sim.legend.data": "Зашифрованные данные VPN-туннеля.",
+  /* XRay: те же роли, но у другого протокола. */
+  "sim.legend.clientHello":
+    "TLS ClientHello. При REALITY именно он несёт аутентификацию — по размеру и набору расширений неотличим от настоящего браузера.",
+  "sim.legend.serverHello":
+    "ServerHello и цепочка сертификатов. При REALITY они берутся у настоящего сайта-донора, поэтому и размер задаёт он.",
+  "sim.legend.handshakeFinish": "Finished — завершение TLS-хендшейка.",
+  "sim.legend.vlessRequest":
+    "Заголовок запроса VLESS: версия, UUID, flow, адрес и порт назначения. Едет внутри первой прикладной записи.",
+  "sim.legend.appData": "Полезная нагрузка — то, ради чего всё остальное.",
+  "sim.legend.padding": "Паддинг и обмен ключами VLESS Encryption.",
+  "sim.desc.xrayHelloReality":
+    "ClientHello, SNI={sni}, отпечаток {fp}. Аутентификация REALITY спрятана в полях самого приветствия.",
+  "sim.desc.xrayHelloTls": "ClientHello, отпечаток {fp}.",
+  "sim.desc.xrayServerHelloReality":
+    "Ответ от {dest}: сертификат настоящий, потому что он и есть настоящий.",
+  "sim.desc.xrayServerHelloTls": "ServerHello и сертификат сервера.",
+  "sim.desc.xrayFinished": "Finished — хендшейк закрыт, дальше идёт прикладной трафик.",
+  "sim.desc.xrayVlessRequest": "Заголовок VLESS, {bytes} Б, flow={flow}",
+  "sim.desc.xrayEncryption": "Обмен ключами VLESS Encryption: ML-KEM-768 плюс X25519.",
+  "sim.desc.xrayAppData": "Прикладные данные поверх {transport}, +{overhead} Б обвязки",
 
   /* ── MergeKeys ────────────────────────────────────────────────────────── */
   "mk.subtitle": "Редактор ключей и объединение контейнеров Amnezia VPN",

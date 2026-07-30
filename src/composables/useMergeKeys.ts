@@ -12,6 +12,10 @@
 import { ref, computed } from "vue";
 import { translate } from "@/i18n";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
+import {
+  downloadText as saveText,
+  timestampedName,
+} from "@/utils/download";
 import type { Ref } from "vue";
 import {
   vpnDecode,
@@ -309,22 +313,14 @@ export function useMergeKeys() {
 
     try {
       const decoded = vpnDecode(vpnString);
-      const json = JSON.stringify(decoded, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `amnezia-merged-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      saveText(
+        JSON.stringify(decoded, null, 2),
+        timestampedName("amnezia-merged", "json"),
+        "application/json",
+      );
     } catch {
-      const blob = new Blob([vpnString], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `amnezia-key-${Date.now()}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
+      // Not a vpn:// payload — save what the user actually has.
+      saveText(vpnString, timestampedName("amnezia-key", "txt"));
     }
   }
 
@@ -332,13 +328,7 @@ export function useMergeKeys() {
    * Generic text download helper for the editor component.
    */
   function downloadText(text: string, filename: string) {
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    saveText(text, filename);
   }
 
   /* ── Slot validation ──────────────────────────────────────────────────── */

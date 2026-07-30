@@ -119,3 +119,80 @@ describe("copyText", () => {
     expect(await copyText("ssr")).toBe(false);
   });
 });
+
+describe("copyText, called faster than it settles", () => {
+  /**
+   * Three copy buttons clicked in quick succession. `writeText` resolves when
+   * the request is accepted rather than when the clipboard is updated, so
+   * without serialisation the three land in whatever order the browser gets to
+   * them — every click reports success and the clipboard holds one of the
+   * earlier ones.
+   */
+  function orderedClipboard(delays: number[]) {
+    const started: string[] = [];
+    const landed: string[] = [];
+    let call = 0;
+
+    const writeText = vi.fn((text: string) => {
+      const wait = delays[call++] ?? 0;
+      started.push(text);
+      return new Promise<void>((resolve) =>
+        setTimeout(() => {
+          landed.push(text);
+          resolve();
+        }, wait),
+      );
+    });
+
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    return { started, landed };
+  }
+
+  it("lands the writes in the order they were requested", async () => {
+    // The first write is the slowest: unchained, it would land last and the
+    // clipboard would end up holding "first".
+    const { landed } = orderedClipboard([30, 10, 0]);
+
+    const results = await Promise.all([
+      copyText("first"),
+      copyText("second"),
+      copyText("third"),
+    ]);
+
+    expect(results).toEqual([true, true, true]);
+    expect(landed).toEqual(["first", "second", "third"]);
+  });
+
+  it("does not start a write before the previous one settles", async () => {
+    const { started, landed } = orderedClipboard([20, 0, 0]);
+
+    const first = copyText("first");
+    const second = copyText("second");
+    // Still nothing but the first: the second is queued, not racing it.
+    await Promise.resolve();
+    expect(started).toEqual(["first"]);
+
+    await first;
+    expect(landed).toEqual(["first"]);
+    // Awaited so the queue is empty before the next test arms its own mock.
+    await second;
+  });
+
+  it("keeps the queue moving after a write is refused", async () => {
+    const writeText = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("denied"))
+      .mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    stubDocument(() => false);
+
+    const [first, second] = await Promise.all([
+      copyText("refused"),
+      copyText("accepted"),
+    ]);
+
+    // One refusal must not strand every copy behind it.
+    expect(first).toBe(false);
+    expect(second).toBe(true);
+  });
+});

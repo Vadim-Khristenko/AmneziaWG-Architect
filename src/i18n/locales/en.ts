@@ -47,7 +47,7 @@ export const en: Catalog = {
   "awg3.panel.title": "AmneziaWG 3.0 parameters",
   "awg3.hpk.title": "HeaderProtectionKey",
   "awg3.hpk.desc":
-    "ChaCha20 over packet headers. Handshake and cookie messages are encrypted whole; transport packets only in the header. The nonce is taken from the padding, so S1–S4 are raised to 12 bytes automatically.",
+    "ChaCha20 over packet headers. Handshake and cookie messages are encrypted whole; transport packets only in the header. The nonce is taken from the padding, so S1–S4 cannot go below 12 bytes: anything drawn under the floor is redrawn from the rest of its range rather than pinned to 12.",
   "awg3.cpa.title": "ContentPaddingAddition",
   "awg3.cpa.desc":
     "Random extra padding on every transport packet instead of aligning to 16 bytes — it blurs the packet-size histogram.",
@@ -245,6 +245,26 @@ export const en: Catalog = {
   "sim.legend.response": "WireGuard Handshake Response — the server's reply.",
   "sim.legend.cookie": "Cookie Reply — DDoS and amplification protection.",
   "sim.legend.data": "Encrypted VPN tunnel data.",
+  /* XRay: the same roles, in a different protocol. */
+  "sim.legend.clientHello":
+    "TLS ClientHello. Under REALITY this is what carries the authentication — indistinguishable by size or extension list from a real browser.",
+  "sim.legend.serverHello":
+    "ServerHello and the certificate chain. Under REALITY they come from the real target site, which is also what sets their size.",
+  "sim.legend.handshakeFinish": "Finished — the TLS handshake closes.",
+  "sim.legend.vlessRequest":
+    "The VLESS request header: version, UUID, flow, destination address and port. It rides inside the first application record.",
+  "sim.legend.appData": "The payload — what everything else is for.",
+  "sim.legend.padding": "Padding and the VLESS Encryption key exchange.",
+  "sim.desc.xrayHelloReality":
+    "ClientHello, SNI={sni}, fingerprint {fp}. The REALITY authentication is hidden in the hello's own fields.",
+  "sim.desc.xrayHelloTls": "ClientHello, fingerprint {fp}.",
+  "sim.desc.xrayServerHelloReality":
+    "The answer from {dest}: the certificate is genuine, because it is the genuine one.",
+  "sim.desc.xrayServerHelloTls": "ServerHello and the server certificate.",
+  "sim.desc.xrayFinished": "Finished — the handshake is closed and application traffic follows.",
+  "sim.desc.xrayVlessRequest": "VLESS header, {bytes} B, flow={flow}",
+  "sim.desc.xrayEncryption": "VLESS Encryption key exchange: ML-KEM-768 plus X25519.",
+  "sim.desc.xrayAppData": "Application data over {transport}, +{overhead} B of framing",
 
   /* ── MergeKeys ────────────────────────────────────────────────────────── */
   "mk.subtitle": "Key editor and Amnezia VPN container merging",

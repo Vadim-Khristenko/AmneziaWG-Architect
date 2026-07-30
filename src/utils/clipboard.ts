@@ -13,10 +13,41 @@
  */
 
 /**
+ * The tail of the write chain.
+ *
+ * `writeText` resolves when the browser has *accepted* the request, not when
+ * the system clipboard has been updated. Fire three in the same moment — three
+ * copy buttons clicked in quick succession — and all three resolve true while
+ * the order they land in is not defined. The interface then confirms each one
+ * and the clipboard holds whichever won, which is exactly the "I clicked the
+ * second one and got the first" report.
+ *
+ * Chaining them makes the outcome deterministic: the last click wins, and
+ * every earlier one really did reach the clipboard before it.
+ */
+let writeChain: Promise<unknown> = Promise.resolve();
+
+/**
  * Put `text` on the clipboard. Resolves to whether it worked, so a caller can
  * tell the difference between success and a browser that would not allow it.
+ *
+ * Writes are serialised — see `writeChain`.
  */
-export async function copyText(text: string): Promise<boolean> {
+export function copyText(text: string): Promise<boolean> {
+  const write = writeChain.then(
+    () => attemptWrite(text),
+    () => attemptWrite(text),
+  );
+  // The chain must survive a failed write, or one refusal would strand every
+  // copy after it.
+  writeChain = write.then(
+    () => undefined,
+    () => undefined,
+  );
+  return write;
+}
+
+async function attemptWrite(text: string): Promise<boolean> {
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);

@@ -72,6 +72,22 @@ export function genI1(
 }
 
 /**
+ * Bring a value up to `floor` without collapsing onto it.
+ *
+ * `Math.max(value, floor)` was the obvious way to enforce the AWG 3.0 minimum
+ * and the wrong one: S3 draws from 1–64 and S4 from 1–32, so most draws land
+ * under 12 and clamping turns them all into exactly 12. A config with three
+ * identical S values is a signature — the opposite of what padding is for.
+ *
+ * Redrawing from what is left of the range keeps the spread. Only when the
+ * range has nothing above the floor does the floor itself remain.
+ */
+function liftAboveFloor(value: number, floor: number, high: number): number {
+  if (value >= floor) return value;
+  return high > floor ? rnd(floor, high) : floor;
+}
+
+/**
  * Generate a complete AmneziaWG obfuscation configuration.
  */
 export function genCfg(input: GeneratorInput): AWGConfig {
@@ -219,18 +235,23 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   const needsSFloor = caps.headerProtection && input.useHeaderProtection;
   if (needsSFloor) {
     const floor = MIN_S_WITH_HEADER_PROTECTION;
-    s1 = Math.max(s1, floor);
-    s2 = Math.max(s2, floor);
+    // Router mode caps S1/S2 at 20, and the floor still has to win, so the
+    // redraw range narrows rather than disappearing.
+    const sHigh = input.routerMode ? 20 : 150;
+
+    s1 = liftAboveFloor(s1, floor, sHigh);
+    s2 = liftAboveFloor(s2, floor, sHigh);
 
     // Raising the floor can recreate the size collisions we avoided above.
     if (s2 === s1 + 56) s2 = s2 + 1;
 
     if (caps.extraSizes) {
-      s3 = Math.max(s3, floor);
-      s4 = Math.max(s4, floor);
+      const s4High = Math.min(32, client.maxS4);
+      s3 = liftAboveFloor(s3, floor, useExtremeMax ? 256 : 64);
+      s4 = liftAboveFloor(s4, floor, s4High);
       if (s3 === s1 + 56 || s3 === s2 + 92) s3 = s3 + 1;
       // S4 is capped at 32 by the protocol; the floor still fits.
-      s4 = Math.min(s4, Math.min(32, client.maxS4));
+      s4 = Math.min(s4, s4High);
     }
   }
 
