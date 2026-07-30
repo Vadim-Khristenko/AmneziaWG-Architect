@@ -1,0 +1,223 @@
+/**
+ * The seam between the shell and a protocol engine.
+ *
+ * Architect is one product with more than one generator behind it: AmneziaWG
+ * today, XRay/REALITY next. Those two share nothing at the parameter level —
+ * REALITY has no counterpart to Jc or S1–S4, and AmneziaWG has no transport
+ * selection — so this contract deliberately does *not* describe parameters.
+ * It describes what the shell does with them.
+ *
+ * The contract runs in both directions on purpose. Generating a config is only
+ * half of what the product is for; the other half is taking a config somebody
+ * else wrote and saying what is wrong with it. That means every engine owes a
+ * `parse` as well as a `render`, and the two are held together by a round-trip
+ * law: parsing what an engine rendered must give the config back.
+ *
+ * Anything an engine keeps private stays private. `defineEngine` fills in the
+ * optional halves so a new engine starts from working defaults instead of a
+ * blank checklist.
+ */
+
+import type { Component } from "vue";
+
+/* ── Versions ─────────────────────────────────────────────────────────────── */
+
+/** What a protocol version supports. Shape mirrors generator/versions.ts. */
+export interface EngineVersion {
+  /** Value used in configs and URLs — "3.0", "24.11.11". */
+  id: string;
+  /** Shown on the version tab. Not translated: protocols spell themselves. */
+  label: string;
+  /** Marks the newest entry so the tab can flag it. */
+  isNewest?: boolean;
+  /**
+   * The engine still emits and parses this version but does not stand behind
+   * it. The tab says so rather than hiding the option — a config in the wild
+   * does not stop existing because we stopped recommending it.
+   */
+  isLegacy?: boolean;
+}
+
+/* ── Findings ─────────────────────────────────────────────────────────────── */
+
+export type FindingLevel = "error" | "warn" | "info";
+
+/** One thing worth telling the reader about a config. */
+export interface EngineFinding {
+  /** Parameter the finding is about: "S1", "shortId", "flow". */
+  field: string;
+  level: FindingLevel;
+  /** Human-readable fallback; the UI prefers `code` when it can translate it. */
+  msg: string;
+  /** Stable identifier for the rule that fired. */
+  code?: string;
+  /**
+   * 1-indexed line in the text the config was parsed from. Only set when the
+   * finding came from parsing, so the UI can point at the offending line
+   * instead of describing where it is.
+   */
+  line?: number;
+}
+
+/* ── Rendering ────────────────────────────────────────────────────────────── */
+
+/** A rendered config line, so preview and plain text come from one source. */
+export interface EngineLine {
+  key: string;
+  value: string;
+  type: "comment" | "kv" | "section";
+}
+
+/**
+ * Localised strings the renderer needs. Engines take these as an argument
+ * rather than importing the catalogue, which is what lets rendering run in a
+ * worker and in tests where no i18n runtime exists.
+ */
+export type EngineLabels = Record<string, string>;
+
+/* ── Parsing ──────────────────────────────────────────────────────────────── */
+
+/**
+ * The result of reading somebody else's config.
+ *
+ * Findings come back on both paths. A config can be understood and still be
+ * wrong, which is the interesting case: that is where the engine earns its
+ * keep by naming the rule the author broke.
+ */
+export type ParseResult<T> =
+  | { ok: true; config: T; findings: EngineFinding[] }
+  | { ok: false; config: null; findings: EngineFinding[] };
+
+/** Formats an engine can read. Not every engine supports every one. */
+export type ConfigFormat = "text" | "uri" | "json";
+
+/* ── The contract ─────────────────────────────────────────────────────────── */
+
+/**
+ * A protocol generator and validator.
+ *
+ * `TInput` is the engine's own settings object and `TConfig` its own output.
+ * The shell only ever hands them back where it got them, so it never needs to
+ * know their shape.
+ */
+export interface Engine<TInput = unknown, TConfig = unknown> {
+  /** Stable key: "awg", "xray". Used in storage keys and route paths. */
+  id: string;
+  /** Product-facing name, e.g. "AmneziaWG". */
+  label: string;
+  /** Route this engine lives at, without a locale prefix: "/amnezia". */
+  route: string;
+  /** Tab icon, resolved by the view. */
+  icon?: Component;
+
+  /** Supported versions, newest first. */
+  versions: readonly EngineVersion[];
+
+  /** Formats `parse` accepts, in the order detection should try them. */
+  formats: readonly ConfigFormat[];
+
+  /* — create — */
+
+  /** Settings a fresh visitor starts from. */
+  createDefaults(): TInput;
+
+  /** Produce a config. */
+  generate(input: TInput): TConfig;
+
+  /* — encode — */
+
+  /** Render to the protocol's own config format. */
+  render(config: TConfig, labels?: EngineLabels): EngineLine[];
+
+  /** Share link, where the protocol has one: `vpn://`, `vless://`. */
+  toUri?(config: TConfig): string | null;
+
+  /** Payload for clients that import structured data rather than text. */
+  toClientPayload?(config: TConfig): unknown | null;
+
+  /* — decode — */
+
+  /**
+   * Read a config somebody else wrote.
+   *
+   * Must accept anything `render` produced. Beyond that it should be
+   * forgiving about whitespace, comments and key case, because the input is
+   * hand-written far more often than it is generated.
+   */
+  parse(text: string): ParseResult<TConfig>;
+
+  /** True when this engine recognises the text at all. Used to route input. */
+  detect?(text: string): boolean;
+
+  /* — check — */
+
+  /**
+   * Check a config against rules taken from the protocol implementation.
+   * An empty array means nothing to report, not "unchecked".
+   */
+  validate(config: TConfig): EngineFinding[];
+}
+
+/** Convenience for the registry, where parameter types differ per entry. */
+export type AnyEngine = Engine<never, never>;
+
+/* ── Helpers shared by every engine ───────────────────────────────────────── */
+
+/** Rendered lines as the plain text a user copies. */
+export function linesToText(lines: EngineLine[]): string {
+  return lines
+    .map((l) => (l.type === "kv" ? `${l.key} = ${l.value}` : l.value))
+    .join("\n");
+}
+
+/** A failed parse carrying one explanation. */
+export function parseFailed<T>(
+  field: string,
+  msg: string,
+  code?: string,
+  line?: number,
+): ParseResult<T> {
+  return {
+    ok: false,
+    config: null,
+    findings: [{ field, level: "error", msg, code, line }],
+  };
+}
+
+/** Errors first, then warnings, then notes — worst thing read first. */
+const LEVEL_ORDER: Record<FindingLevel, number> = { error: 0, warn: 1, info: 2 };
+
+export function sortFindings(findings: EngineFinding[]): EngineFinding[] {
+  return [...findings].sort(
+    (a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level],
+  );
+}
+
+/**
+ * Build an engine, filling in the parts that have a sensible default.
+ *
+ * Written as a factory rather than a base class because the engines are plain
+ * data with functions attached — there is no state to inherit, and a class
+ * would only add a `this` to get wrong inside a worker.
+ */
+export function defineEngine<TInput, TConfig>(
+  spec: Engine<TInput, TConfig>,
+): Engine<TInput, TConfig> {
+  return {
+    ...spec,
+
+    // Validation output is sorted for everyone, so no engine has to remember.
+    validate: (config) => sortFindings(spec.validate(config)),
+
+    // Parsing usually wants the same ordering, and a parse that reports
+    // nothing at all is indistinguishable from one that was never run.
+    parse: (text) => {
+      const result = spec.parse(text);
+      return { ...result, findings: sortFindings(result.findings) };
+    },
+
+    // Recognising a config is normally "can I parse it", and an engine only
+    // needs its own detect when that is too expensive or too eager.
+    detect: spec.detect ?? ((text) => spec.parse(text).ok),
+  };
+}
