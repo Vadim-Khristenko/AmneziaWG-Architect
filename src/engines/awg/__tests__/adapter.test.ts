@@ -38,6 +38,30 @@ describe("AmneziaWG engine adapter", () => {
     );
   });
 
+  it("generates a config with no errors on every version", () => {
+    // The engine has to be right for all four, not just the newest: a version
+    // tab that produces a rejected config is worse than no tab.
+    for (const version of AWG_VERSIONS) {
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const cfg = awgEngine.generate(seeded({ version: version.id }));
+        const errors = awgEngine
+          .validate(cfg)
+          .filter((f) => f.level === "error")
+          .map((f) => `${f.field}: ${f.code}`);
+        expect(errors, `${version.id}, attempt ${attempt}`).toEqual([]);
+      }
+    }
+  });
+
+  it("gives every finding a code, so every finding can be translated", () => {
+    for (const version of AWG_VERSIONS) {
+      const cfg = awgEngine.generate(seeded({ version: version.id }));
+      for (const f of awgEngine.validate(cfg)) {
+        expect(f.code, `${version.id}: ${f.field}`).toBeTruthy();
+      }
+    }
+  });
+
   for (const version of AWG_VERSIONS) {
     describe(`AWG ${version.id}`, () => {
       const input = seeded({ version: version.id });
