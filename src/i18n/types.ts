@@ -7,36 +7,70 @@
  * gymnastics a nested catalog needs.
  */
 
-/** Locales the UI ships. `ru` is the source catalog. */
-export const LOCALES = ["ru", "en"] as const;
+/**
+ * Everything the app knows about one language.
+ *
+ * One descriptor rather than four parallel `Record<Locale, string>` tables:
+ * adding a language is a single entry, and forgetting a facet is a compile
+ * error instead of a page that renders with the wrong `lang` attribute.
+ *
+ * This is also where per-language processing belongs when a language needs it
+ * — transliteration for anchors, a pronunciation or romanisation scheme, a
+ * collator for sorting. Add the field to the interface, make it optional, and
+ * the locales that do not need it stay as they are.
+ */
+export interface LocaleDescriptor {
+  /**
+   * URL prefix. The source locale stays at the site root so every existing
+   * URL — and everything already indexed against it — keeps working.
+   */
+  prefix: string;
+  /** The language's name, written in that language. */
+  name: string;
+  /** BCP 47 tag, for `<html lang>` and `hreflang`. */
+  tag: string;
+  /**
+   * Writing direction, for `<html dir>`. Only worth setting for a language
+   * that is not left-to-right; everything else defaults.
+   */
+  dir?: "ltr" | "rtl";
+}
 
-export type Locale = (typeof LOCALES)[number];
+/**
+ * Locales the UI ships, in menu order. `ru` is the source catalogue.
+ *
+ * `as const satisfies` rather than a plain annotation: the keys have to stay
+ * literal for `Locale` to be derived from them, and `satisfies` still checks
+ * each entry against the descriptor.
+ */
+const LOCALE_SOURCE = {
+  ru: { prefix: "", name: "Русский", tag: "ru-RU" },
+  en: { prefix: "/en", name: "English", tag: "en" },
+} as const satisfies Record<string, LocaleDescriptor>;
+
+export type Locale = keyof typeof LOCALE_SOURCE;
+
+/**
+ * The same object, typed as descriptors rather than as its own literals.
+ *
+ * Without this, `as const` narrows each entry to exactly the fields it was
+ * written with, and reading an optional one — `dir` on a locale that does not
+ * set it — is a compile error instead of `undefined`.
+ */
+export const LOCALE_META: Record<Locale, LocaleDescriptor> = LOCALE_SOURCE;
+
+/** Menu order, which is the order the descriptors are declared in. */
+export const LOCALES = Object.keys(LOCALE_META) as readonly Locale[];
 
 // A literal, not `Locale`: `Localised<T>` requires exactly this key, and a
 // union-typed constant would make every `content[DEFAULT_LOCALE]` possibly
 // undefined even though the type guarantees it is there.
 export const DEFAULT_LOCALE = "ru" satisfies Locale;
 
-/**
- * URL prefix per locale. The default locale stays at the site root so every
- * existing URL — and everything already indexed against it — keeps working.
- */
-export const LOCALE_PREFIX: Record<Locale, string> = {
-  ru: "",
-  en: "/en",
-};
-
-/** Human-readable names, each written in its own language. */
-export const LOCALE_NAMES: Record<Locale, string> = {
-  ru: "Русский",
-  en: "English",
-};
-
-/** BCP 47 tags for <html lang> and hreflang. */
-export const LOCALE_TAGS: Record<Locale, string> = {
-  ru: "ru-RU",
-  en: "en",
-};
+/** The descriptor for a locale. */
+export function localeMeta(loc: Locale): LocaleDescriptor {
+  return LOCALE_META[loc];
+}
 
 /**
  * Plural forms. Russian needs three (one/few/many), English two (one/other),

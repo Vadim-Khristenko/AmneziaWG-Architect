@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   LOCALES,
-  LOCALE_PREFIX,
-  LOCALE_NAMES,
-  LOCALE_TAGS,
+  LOCALE_META,
   DEFAULT_LOCALE,
   pick,
   translatedInto,
@@ -35,9 +33,9 @@ const CATALOGUES: Record<Locale, Record<string, unknown>> = { ru, en };
 describe("locale tables", () => {
   it("describe every locale exactly once", () => {
     for (const loc of LOCALES) {
-      expect(LOCALE_PREFIX[loc], `${loc} prefix`).toBeDefined();
-      expect(LOCALE_NAMES[loc], `${loc} name`).toBeTruthy();
-      expect(LOCALE_TAGS[loc], `${loc} tag`).toBeTruthy();
+      expect(LOCALE_META[loc].prefix, `${loc} prefix`).toBeDefined();
+      expect(LOCALE_META[loc].name, `${loc} name`).toBeTruthy();
+      expect(LOCALE_META[loc].tag, `${loc} tag`).toBeTruthy();
       expect(CATALOGUES[loc], `${loc} catalogue`).toBeTruthy();
     }
   });
@@ -45,17 +43,32 @@ describe("locale tables", () => {
   it("keep the default locale at the site root", () => {
     // Everything already indexed lives at the root; moving it would break
     // every existing link for the sake of symmetry.
-    expect(LOCALE_PREFIX[DEFAULT_LOCALE]).toBe("");
+    expect(LOCALE_META[DEFAULT_LOCALE].prefix).toBe("");
     for (const loc of LOCALES) {
       if (loc === DEFAULT_LOCALE) continue;
-      expect(LOCALE_PREFIX[loc]).toMatch(/^\/[a-z-]+$/);
+      expect(LOCALE_META[loc].prefix).toMatch(/^\/[a-z-]+$/);
     }
   });
 
   it("use tags Intl actually understands", () => {
     for (const loc of LOCALES) {
-      expect(() => new Intl.PluralRules(LOCALE_TAGS[loc])).not.toThrow();
-      expect(() => new Intl.DateTimeFormat(LOCALE_TAGS[loc])).not.toThrow();
+      expect(() => new Intl.PluralRules(LOCALE_META[loc].tag)).not.toThrow();
+      expect(() => new Intl.DateTimeFormat(LOCALE_META[loc].tag)).not.toThrow();
+    }
+  });
+
+  it("list every declared locale, in declaration order", () => {
+    // LOCALES is derived from the descriptors rather than written out
+    // separately, which is what keeps "add a language" to one entry. If the
+    // two ever come apart, the menu and the routes disagree about what ships.
+    expect(LOCALES).toEqual(Object.keys(LOCALE_META));
+  });
+
+  it("only ever declare a direction Intl and the DOM accept", () => {
+    for (const loc of LOCALES) {
+      const dir = LOCALE_META[loc].dir;
+      // Optional: absent means left-to-right, which is what `<html dir>` gets.
+      if (dir !== undefined) expect(["ltr", "rtl"]).toContain(dir);
     }
   });
 });
@@ -170,7 +183,7 @@ describe("adding a locale stays cheap", () => {
 
 describe("plural rules come from Intl, not from a hardcoded branch", () => {
   it("gets the three Russian forms right", () => {
-    const rules = new Intl.PluralRules(LOCALE_TAGS.ru);
+    const rules = new Intl.PluralRules(LOCALE_META.ru.tag);
     expect(rules.select(1)).toBe("one");
     expect(rules.select(3)).toBe("few");
     expect(rules.select(11)).toBe("many"); // the teens trap

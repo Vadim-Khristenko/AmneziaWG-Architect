@@ -29,8 +29,7 @@ import {
 import {
   DEFAULT_LOCALE,
   LOCALES,
-  LOCALE_PREFIX,
-  LOCALE_TAGS,
+  LOCALE_META,
   applyLocaleFromRoute,
   isLocale,
   type Locale,
@@ -88,7 +87,7 @@ const BASE_ROUTES: BaseRoute[] = [
 
 /** Build the concrete records for one locale. */
 function routesForLocale(loc: Locale): RouteRecordRaw[] {
-  const prefix = LOCALE_PREFIX[loc];
+  const prefix = LOCALE_META[loc].prefix;
 
   return BASE_ROUTES.map(
     ({ path, name, component }): RouteRecordRaw => ({
@@ -195,7 +194,7 @@ router.afterEach((to) => {
   setMeta("og:title", seo.ogTitle, "property");
   setMeta("og:description", seo.ogDescription, "property");
   setMeta("og:image", absoluteUrl(`assets/${seo.ogImage}`), "property");
-  setMeta("og:locale", LOCALE_TAGS[loc].replace("-", "_"), "property");
+  setMeta("og:locale", LOCALE_META[loc].tag.replace("-", "_"), "property");
   setMeta("og:url", absoluteUrl(to.path), "property");
 
   setMeta("twitter:card", "summary_large_image");
@@ -210,16 +209,16 @@ router.afterEach((to) => {
   const barePath =
     loc === DEFAULT_LOCALE
       ? to.path
-      : to.path.slice(LOCALE_PREFIX[loc].length) || "/";
+      : to.path.slice(LOCALE_META[loc].prefix.length) || "/";
 
   for (const alt of LOCALES) {
-    const prefix = LOCALE_PREFIX[alt];
+    const prefix = LOCALE_META[alt].prefix;
     const altPath = prefix
       ? barePath === "/"
         ? prefix
         : `${prefix}${barePath}`
       : barePath;
-    setLink("alternate", absoluteUrl(altPath), LOCALE_TAGS[alt]);
+    setLink("alternate", absoluteUrl(altPath), LOCALE_META[alt].tag);
   }
   setLink("alternate", absoluteUrl(barePath), "x-default");
 });

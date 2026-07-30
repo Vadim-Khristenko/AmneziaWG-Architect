@@ -16,7 +16,7 @@ import {
 } from "lucide-vue-next";
 import {
     LOCALES,
-    LOCALE_NAMES,
+    LOCALE_META,
     localizePath,
     splitLocalePath,
     useI18n,
@@ -168,7 +168,7 @@ onUnmounted(() => {
                                     :aria-selected="loc === locale"
                                     @click="switchLocale(loc)"
                                 >
-                                    <span>{{ LOCALE_NAMES[loc] }}</span>
+                                    <span>{{ LOCALE_META[loc].name }}</span>
                                     <Check v-if="loc === locale" :size="14" />
                                 </button>
                             </li>
@@ -244,7 +244,7 @@ onUnmounted(() => {
                                 toggleMenu();
                             "
                         >
-                            {{ LOCALE_NAMES[loc] }}
+                            {{ LOCALE_META[loc].name }}
                         </button>
                     </div>
                 </div>

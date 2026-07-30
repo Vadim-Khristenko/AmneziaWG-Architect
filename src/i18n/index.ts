@@ -16,8 +16,7 @@ import { computed, ref } from "vue";
 import {
   DEFAULT_LOCALE,
   LOCALES,
-  LOCALE_PREFIX,
-  LOCALE_TAGS,
+  LOCALE_META,
   type Locale,
   type MessageValue,
   type PluralForms,
@@ -78,7 +77,7 @@ function rulesFor(loc: Locale): Intl.PluralRules | null {
   if (typeof Intl === "undefined" || !Intl.PluralRules) return null;
   let rules = pluralRules.get(loc);
   if (!rules) {
-    rules = new Intl.PluralRules(LOCALE_TAGS[loc]);
+    rules = new Intl.PluralRules(LOCALE_META[loc].tag);
     pluralRules.set(loc, rules);
   }
   return rules;
@@ -177,7 +176,10 @@ async function loadCatalog(loc: Locale): Promise<void> {
 
 function syncDocumentLang(loc: Locale): void {
   if (typeof document === "undefined") return;
-  document.documentElement.lang = LOCALE_TAGS[loc];
+  document.documentElement.lang = LOCALE_META[loc].tag;
+  // Written every time rather than only for right-to-left languages, so
+  // switching back out of one puts the document the right way round again.
+  document.documentElement.dir = LOCALE_META[loc].dir ?? "ltr";
 }
 
 /**
@@ -242,7 +244,7 @@ export function splitLocalePath(path: string): {
   path: string;
 } {
   for (const loc of LOCALES) {
-    const prefix = LOCALE_PREFIX[loc];
+    const prefix = LOCALE_META[loc].prefix;
     if (!prefix) continue;
     if (path === prefix || path.startsWith(`${prefix}/`)) {
       return { locale: loc, path: path.slice(prefix.length) || "/" };
@@ -254,7 +256,7 @@ export function splitLocalePath(path: string): {
 /** Prefix a bare path for the given locale. */
 export function localizePath(path: string, loc: Locale): string {
   const bare = path.startsWith("/") ? path : `/${path}`;
-  const prefix = LOCALE_PREFIX[loc];
+  const prefix = LOCALE_META[loc].prefix;
   if (!prefix) return bare;
   return bare === "/" ? prefix : `${prefix}${bare}`;
 }
