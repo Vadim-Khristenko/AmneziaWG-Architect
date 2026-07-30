@@ -24,6 +24,7 @@ import {
 import ClientFieldGuide from "@/components/ClientFieldGuide.vue";
 import { stripRich } from "@/utils/richText";
 import RichText from "@/components/RichText";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 
 const { locale } = useI18n();
 const route = useRoute();
@@ -32,8 +33,7 @@ const router = useRouter();
 const query = ref("");
 const activeCategory = ref<FaqCategoryId | "all">("all");
 const openIds = ref<Set<string>>(new Set());
-const copiedId = ref<string | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | undefined;
+const { copied: copiedId, copy } = useCopyFeedback();
 
 const isRu = computed(() => locale.value === "ru");
 
@@ -110,16 +110,9 @@ function clearSearch(): void {
 /* ── Deep links ──────────────────────────────────────────────────────────── */
 
 async function copyLink(id: string): Promise<void> {
-    const url = `${window.location.origin}${route.path}#${id}`;
-    try {
-        await navigator.clipboard.writeText(url);
-        copiedId.value = id;
-        clearTimeout(copyTimer);
-        copyTimer = setTimeout(() => (copiedId.value = null), 2000);
-    } catch {
-        // Clipboard access can be denied; the hash below still updates so the
-        // address bar carries a shareable URL either way.
-    }
+    await copy(id, `${window.location.origin}${route.path}#${id}`);
+    // The hash updates whether or not the copy worked, so the address bar
+    // carries a shareable URL even when the browser refuses the clipboard.
     router.replace({ hash: `#${id}` }).catch(() => {});
 }
 
@@ -176,7 +169,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    clearTimeout(copyTimer);
     document.getElementById(JSONLD_ID)?.remove();
 });
 </script>

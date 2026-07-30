@@ -11,6 +11,7 @@
 
 import { ref, computed } from "vue";
 import { translate } from "@/i18n";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import type { Ref } from "vue";
 import {
   vpnDecode,
@@ -283,50 +284,20 @@ export function useMergeKeys() {
      ══════════════════════════════════════════════════════════════════════ */
 
   /** Which button IDs are in "copied" animation state. */
-  const copiedButtons = ref<Set<string>>(new Set());
+  // One confirmation at a time, matching every other copy button on the site.
+  // The old version tracked a Set so several buttons could show a tick at
+  // once, which only happened if you clicked two within two seconds.
+  const { copy, isCopied } = useCopyFeedback();
 
   /**
-   * Copy text to clipboard. Sets copiedButtons for 2s for visual feedback.
-   * @param text - The text to copy.
-   * @param buttonId - An arbitrary string ID to track copied state.
+   * Copy text and flag the button that produced it.
+   *
+   * Argument order is (text, buttonId) because the template passes the value
+   * first; the composable underneath takes the key first.
    */
   async function copyToClipboard(text: string, buttonId: string) {
     if (!text) return;
-
-    const markCopied = () => {
-      copiedButtons.value.add(buttonId);
-      // Force reactivity (Set mutation is not tracked by Vue)
-      copiedButtons.value = new Set(copiedButtons.value);
-      setTimeout(() => {
-        copiedButtons.value.delete(buttonId);
-        copiedButtons.value = new Set(copiedButtons.value);
-      }, 2000);
-    };
-
-    if (navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(text);
-        markCopied();
-        return;
-      } catch {
-        // fallback
-      }
-    }
-
-    // Fallback for insecure contexts
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-    markCopied();
-  }
-
-  function isCopied(buttonId: string): boolean {
-    return copiedButtons.value.has(buttonId);
+    await copy(buttonId, text);
   }
 
   /**

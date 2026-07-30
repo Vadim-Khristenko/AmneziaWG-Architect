@@ -29,6 +29,7 @@ import {
   type RenderLabels,
 } from "@/engines/awg/generator";
 import { translate } from "@/i18n";
+import { copyText } from "@/utils/clipboard";
 import { confToVpn, buildVpnConfig } from "@/engines/awg/awgFormat";
 import type { VpnConfig } from "@/engines/awg/awgFormat";
 import type { AwgContainer } from "@/engines/awg/mergekeys";
@@ -394,24 +395,11 @@ export function useGenerator() {
       addLog(translate("log.generateFirst"), "bad");
       return false;
     }
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.cssText = "position:fixed;left:-9999px;top:0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      addLog(okMsg, "ok");
-      return true;
-    } catch {
-      addLog(translate("log.copyFailed"), "bad");
-      return false;
-    }
+    // The selection fallback lives in the shared helper, which reports
+    // whether it worked rather than swallowing a refusal.
+    const ok = await copyText(text);
+    addLog(ok ? okMsg : translate("log.copyFailed"), ok ? "ok" : "bad");
+    return ok;
   }
 
   function downloadBlob(text: string, filename: string, mime: string) {

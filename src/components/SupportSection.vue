@@ -5,7 +5,7 @@
  * Lives on the About page under the `#support` anchor, which the footer's
  * donate button links to.
  */
-import { ref, computed, onBeforeUnmount } from "vue";
+import { computed } from "vue";
 import {
     Coffee,
     Copy,
@@ -17,6 +17,7 @@ import {
     ArrowUpRight,
 } from "lucide-vue-next";
 import { useI18n } from "@/i18n";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import {
     CRYPTO_WALLETS,
     FIAT_METHODS,
@@ -26,43 +27,21 @@ import {
 const { locale, t } = useI18n();
 const isRu = computed(() => locale.value === "ru");
 
-const copiedId = ref<string | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | undefined;
+const { copied: copiedId, copy } = useCopyFeedback();
 
 /**
- * Copy an address. The fallback matters here more than elsewhere: without a
- * working copy the visitor has to retype a 40-plus character string by hand,
- * and a single wrong character loses the money.
+ * Copy an address.
+ *
+ * The selection fallback matters here more than anywhere else on the site:
+ * without a working copy the visitor retypes a forty-character string by hand,
+ * and one wrong character loses the money. It used to live only here; it is in
+ * the shared helper now, so every other copy button gets it too.
  */
-async function copyAddress(id: string, address: string): Promise<void> {
-    let ok = false;
-    try {
-        await navigator.clipboard.writeText(address);
-        ok = true;
-    } catch {
-        const el = document.createElement("textarea");
-        el.value = address;
-        el.style.cssText = "position:fixed;left:-9999px;top:0";
-        document.body.appendChild(el);
-        el.select();
-        try {
-            ok = document.execCommand("copy");
-        } catch {
-            ok = false;
-        }
-        document.body.removeChild(el);
-    }
-    if (!ok) return;
-
-    copiedId.value = id;
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => (copiedId.value = null), 2000);
-}
+const copyAddress = (id: string, address: string) => copy(id, address);
 
 /** Internal routes get a router-link; everything else an external anchor. */
 const isInternal = (url: string) => url.startsWith("/");
 
-onBeforeUnmount(() => clearTimeout(copyTimer));
 </script>
 
 <template>

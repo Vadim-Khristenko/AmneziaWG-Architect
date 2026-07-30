@@ -12,9 +12,10 @@
  * not "Cookie reply"; matching the app matters more than matching the spec,
  * because the app is what the visitor is looking at.
  */
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
 import { useI18n, pick } from "@/i18n";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import type { AWGConfig } from "@/engines/awg/generator";
 import { capsFor } from "@/engines/awg/generator/versions";
 
@@ -22,8 +23,7 @@ const { locale } = useI18n();
 const isRu = computed(() => locale.value === "ru");
 
 const cfg = ref<AWGConfig | null>(null);
-const copied = ref<string | null>(null);
-let copyTimer: ReturnType<typeof setTimeout> | undefined;
+const { copied, copy } = useCopyFeedback();
 
 /**
  * Sixteen fields is a lot of page, and most FAQ visitors are not mid-setup, so
@@ -53,7 +53,6 @@ onMounted(() => {
     }
 });
 
-onBeforeUnmount(() => clearTimeout(copyTimer));
 
 interface Field {
     key: string;
@@ -188,16 +187,11 @@ const groups = computed<{ title: { ru: string; en: string }; fields: Field[] }[]
 
 const hasConfig = computed(() => cfg.value !== null);
 
-async function copyValue(key: string, value: string) {
+function copyValue(key: string, value: string) {
+    // Placeholders are not values; copying "—< S1 >—" would be worse than
+    // doing nothing.
     if (value.startsWith("—<")) return;
-    try {
-        await navigator.clipboard.writeText(value);
-        copied.value = key;
-        clearTimeout(copyTimer);
-        copyTimer = setTimeout(() => (copied.value = null), 1600);
-    } catch {
-        /* clipboard unavailable */
-    }
+    void copy(key, value);
 }
 </script>
 

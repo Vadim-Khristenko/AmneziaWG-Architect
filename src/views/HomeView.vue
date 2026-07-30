@@ -54,6 +54,7 @@ import {
     Boxes,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/engines/awg/generator";
 import type { AWGConfig, AWGVersion, Intensity } from "@/engines/awg/generator";
 import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
@@ -101,9 +102,18 @@ const {
 } = useGenerator();
 
 const activeFaqIdx = ref<number | null>(null);
-const copyFeedback = ref(false);
-const copiedGroupKey = ref<string | null>(null);
-const copiedParamKey = ref<string | null>(null);
+/**
+ * Every confirmation on this page — the config, a parameter group, a single
+ * parameter, a history entry, a restore — is the same flash of feedback, so
+ * they share one instance and one timing. The keys are prefixed because a
+ * group key and a parameter name live in the same namespace here.
+ */
+const { copy, isCopied, mark } = useCopyFeedback();
+const configCopied = computed(() => isCopied("config"));
+const groupCopied = (key: string) => isCopied(`group:${key}`);
+const paramCopied = (key: string) => isCopied(`param:${key}`);
+const historyCopied = (id: number) => isCopied(`history:${id}`);
+const wasRestored = (id: number) => isCopied(`restore:${id}`);
 const justGenerated = ref(false);
 
 const isYandexUnstable = () =>
@@ -202,8 +212,6 @@ const HISTORY_LIMIT = 20;
 
 const historyEntries = ref<HistoryEntry[]>([]);
 const showHistory = ref(false);
-const restoredId = ref<number | null>(null);
-const copiedHistoryId = ref<number | null>(null);
 let historyIdCounter = 0;
 
 /** History survives a reload — regenerating a config you liked is annoying. */
@@ -327,8 +335,7 @@ function saveToHistory() {
 async function restoreFromHistory(entry: HistoryEntry) {
     if (entry.cfg) {
         restoreConfig(entry.cfg);
-        restoredId.value = entry.id;
-        setTimeout(() => (restoredId.value = null), 1600);
+        mark(`restore:${entry.id}`);
         addLog(
             isRu.value
                 ? `Восстановлен конфиг AWG ${entry.cfg.version} от ${formatTime(entry.timestamp)}`
@@ -338,22 +345,14 @@ async function restoreFromHistory(entry: HistoryEntry) {
         showHistory.value = false;
         return;
     }
-    try {
-        await navigator.clipboard.writeText(entry.text);
-    } catch {
-        // Clipboard denied — nothing further we can do for a legacy entry.
-    }
+    // A legacy entry has no config to restore, so the best we can do is put
+    // its text on the clipboard.
+    await copy(`history:${entry.id}`, entry.text);
     showHistory.value = false;
 }
 
 async function copyHistoryEntry(entry: HistoryEntry) {
-    try {
-        await navigator.clipboard.writeText(entry.text);
-        copiedHistoryId.value = entry.id;
-        setTimeout(() => (copiedHistoryId.value = null), 1600);
-    } catch {
-        /* clipboard unavailable */
-    }
+    await copy(`history:${entry.id}`, entry.text);
 }
 
 function removeHistoryEntry(id: number) {
@@ -378,37 +377,17 @@ function formatTime(ts: number): string {
 /* ── Copy with feedback ────────────────────────────────────────────────── */
 
 async function handleCopy() {
-    const ok = await copyConfig();
-    if (ok) {
-        copyFeedback.value = true;
-        setTimeout(() => {
-            copyFeedback.value = false;
-        }, 2000);
-    }
+    // copyConfig does the copying and the logging; all that is left is the
+    // confirmation on the button.
+    if (await copyConfig()) mark("config");
 }
 
 async function copyGroupToClipboard(groupKey: string, text: string) {
-    try {
-        await navigator.clipboard.writeText(text);
-        copiedGroupKey.value = groupKey;
-        setTimeout(() => {
-            copiedGroupKey.value = null;
-        }, 1500);
-    } catch {
-        /* noop */
-    }
+    await copy(`group:${groupKey}`, text);
 }
 
 async function copySingleParam(key: string, value: string | number) {
-    try {
-        await navigator.clipboard.writeText(`${key} = ${value}`);
-        copiedParamKey.value = key;
-        setTimeout(() => {
-            copiedParamKey.value = null;
-        }, 1200);
-    } catch {
-        /* noop */
-    }
+    await copy(`param:${key}`, `${key} = ${value}`);
 }
 
 /* ── Grouped params computed ───────────────────────────────────────────── */
@@ -742,7 +721,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     <button
                                         class="btn btn-ghost btn-icon sm"
                                         :class="{
-                                            'copy-ok': restoredId === entry.id,
+                                            'copy-ok': wasRestored(entry.id),
                                         }"
                                         :disabled="!entry.cfg"
                                         @click="restoreFromHistory(entry)"
@@ -757,7 +736,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                         "
                                     >
                                         <Check
-                                            v-if="restoredId === entry.id"
+                                            v-if="wasRestored(entry.id)"
                                             :size="14"
                                         />
                                         <RotateCcw v-else :size="14" />
@@ -766,7 +745,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                         class="btn btn-ghost btn-icon sm"
                                         :class="{
                                             'copy-ok':
-                                                copiedHistoryId === entry.id,
+                                                historyCopied(entry.id),
                                         }"
                                         @click="copyHistoryEntry(entry)"
                                         :data-tooltip="
@@ -776,7 +755,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                         "
                                     >
                                         <ClipboardCheck
-                                            v-if="copiedHistoryId === entry.id"
+                                            v-if="historyCopied(entry.id)"
                                             :size="14"
                                         />
                                         <Copy v-else :size="14" />
@@ -1394,12 +1373,12 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="output-head-actions">
                                 <button
                                     class="btn btn-ghost btn-icon sm"
-                                    :class="{ 'copy-ok': copyFeedback }"
+                                    :class="{ 'copy-ok': configCopied }"
                                     @click="handleCopy"
                                     :data-tooltip='t("gen.copyAll")'
                                 >
                                     <ClipboardCheck
-                                        v-if="copyFeedback"
+                                        v-if="configCopied"
                                         :size="16"
                                     />
                                     <Clipboard v-else :size="16" />
@@ -1444,8 +1423,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                             class="btn btn-ghost btn-icon xs"
                                             :class="{
                                                 'copy-ok':
-                                                    copiedGroupKey ===
-                                                    group.key,
+                                                    groupCopied(group.key),
                                             }"
                                             @click="
                                                 copyGroupToClipboard(
@@ -1454,14 +1432,14 @@ const paramGroups = computed((): ParamGroup[] => {
                                                 )
                                             "
                                             :data-tooltip="
-                                                copiedGroupKey === group.key
+                                                groupCopied(group.key)
                                                     ? t('action.copied')
                                                     : t('gen.copyGroup')
                                             "
                                         >
                                             <ClipboardCheck
                                                 v-if="
-                                                    copiedGroupKey === group.key
+                                                    groupCopied(group.key)
                                                 "
                                                 :size="13"
                                             />
@@ -1531,15 +1509,13 @@ const paramGroups = computed((): ParamGroup[] => {
                                                     'param-cps-value':
                                                         group.key === 'cps',
                                                     'param-copied':
-                                                        copiedParamKey ===
-                                                        item.label,
+                                                        paramCopied(item.label),
                                                 }"
                                                 >{{ item.value }}</span
                                             >
                                             <span
                                                 v-if="
-                                                    copiedParamKey ===
-                                                    item.label
+                                                    paramCopied(item.label)
                                                 "
                                                 class="param-copied-badge"
                                                 >✓</span
@@ -1557,17 +1533,17 @@ const paramGroups = computed((): ParamGroup[] => {
                                     <div class="export-grid">
                                         <button
                                             class="btn btn-secondary export-btn"
-                                            :class="{ 'copy-ok': copyFeedback }"
+                                            :class="{ 'copy-ok': configCopied }"
                                             @click="handleCopy"
                                         >
                                             <ClipboardCheck
-                                                v-if="copyFeedback"
+                                                v-if="configCopied"
                                                 :size="15"
                                             />
                                             <Copy v-else :size="15" />
                                             <span>
                                                 {{
-                                                    copyFeedback
+                                                    configCopied
                                                         ? t("action.copied")
                                                         : t(
                                                               "gen.export.copyConf",

@@ -5,7 +5,6 @@
  * Replaces the retired IAA page. /iaa redirects here so old links keep landing
  * somewhere useful rather than on a 404.
  */
-import { ref } from "vue";
 import {
     LayoutDashboard,
     Bot,
@@ -23,38 +22,17 @@ import {
     TriangleAlert,
 } from "lucide-vue-next";
 import { useI18n, pick } from "@/i18n";
+import { useCopyFeedback } from "@/composables/useCopyFeedback";
 
 const { locale } = useI18n();
 
 const MIRROR_URL = "https://git.vai-rice.space/amnezia-vpn";
 
-const copied = ref(false);
-let copyTimer: ReturnType<typeof setTimeout> | undefined;
+const { isCopied, copy } = useCopyFeedback();
 
-async function copyMirror() {
-    try {
-        await navigator.clipboard.writeText(MIRROR_URL);
-    } catch {
-        // Clipboard is unavailable over plain HTTP and in some hardened
-        // browsers. Fall back to a selection the visitor can copy by hand.
-        const el = document.createElement("textarea");
-        el.value = MIRROR_URL;
-        el.style.position = "fixed";
-        el.style.opacity = "0";
-        document.body.appendChild(el);
-        el.select();
-        try {
-            document.execCommand("copy");
-        } catch {
-            document.body.removeChild(el);
-            return;
-        }
-        document.body.removeChild(el);
-    }
-    copied.value = true;
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => (copied.value = false), 2000);
-}
+/** One button, so the key is a constant. */
+const MIRROR_KEY = "mirror";
+const copyMirror = () => copy(MIRROR_KEY, MIRROR_URL);
 
 interface Feature {
     icon: typeof Server;
@@ -202,13 +180,13 @@ const features: Feature[] = [
                     <code class="vx-mirror-url">{{ MIRROR_URL }}</code>
                     <button
                         class="btn btn-ghost btn-icon"
-                        :class="{ 'vx-copied': copied }"
+                        :class="{ 'vx-copied': isCopied(MIRROR_KEY) }"
                         :aria-label="
                             locale === 'ru' ? 'Скопировать ссылку' : 'Copy link'
                         "
                         @click="copyMirror"
                     >
-                        <Check v-if="copied" :size="16" />
+                        <Check v-if="isCopied(MIRROR_KEY)" :size="16" />
                         <Copy v-else :size="16" />
                     </button>
                     <a
