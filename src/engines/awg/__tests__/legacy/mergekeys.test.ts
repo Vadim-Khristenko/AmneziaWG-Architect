@@ -8,7 +8,7 @@ import {
     patchJsonString,
     type VpnConfig,
     type GeneratedParams,
-} from "../mergekeys";
+} from "@/engines/awg/mergekeys";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test fixtures

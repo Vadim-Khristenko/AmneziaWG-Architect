@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { genCfg, type GeneratorInput } from "@/utils/generator";
+import { genCfg, type GeneratorInput } from "@/engines/awg/generator";
 
 const baseInput: GeneratorInput = {
     version: "2.0",

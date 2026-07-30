@@ -19,12 +19,12 @@ import {
   applyPatchToVpnConfig,
   mergeVpnConfigs,
   escapeHtml,
-} from "@/utils/mergekeys";
+} from "@/engines/awg/mergekeys";
 import type {
   GeneratedParams,
   AwgVersion,
   VpnConfig,
-} from "@/utils/mergekeys";
+} from "@/engines/awg/mergekeys";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Types

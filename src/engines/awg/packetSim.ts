@@ -6,10 +6,10 @@
  * kernel adds encryption overhead and random jitter).
  */
 
-import { parseRange } from "./generator/validators";
+import { parseRange } from "@/engines/awg/generator/validators";
 import { translate } from "@/i18n";
-import type { AWGConfig } from "./generator/types";
-import { capsFor } from "./generator/versions";
+import type { AWGConfig } from "@/engines/awg/generator/types";
+import { capsFor } from "@/engines/awg/generator/versions";
 
 export type PacketKind =
   | "cps"

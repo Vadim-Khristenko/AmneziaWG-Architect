@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { healthCheckConf } from "@/utils/healthCheck";
+import { healthCheckConf } from "@/engines/awg/healthCheck";
 
 const makeConf = (extra = "") => `
 [Interface]

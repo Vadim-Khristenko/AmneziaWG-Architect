@@ -13,13 +13,13 @@
  * first thing a person edits by hand.
  */
 
-import { parseConf, type ParsedConf } from "@/utils/awgFormat";
-import { capsFor, AWG_VERSIONS } from "@/utils/generator/versions";
+import { parseConf, type ParsedConf } from "@/engines/awg/awgFormat";
+import { capsFor, AWG_VERSIONS } from "@/engines/awg/generator/versions";
 import type {
   AWGConfig,
   AWGVersion,
   AWG3Params,
-} from "@/utils/generator/types";
+} from "@/engines/awg/generator/types";
 import type { EngineFinding, ParseResult } from "@/types/engine";
 import { parseFailed } from "@/types/engine";
 import { error, warn } from "@/shared/findings";

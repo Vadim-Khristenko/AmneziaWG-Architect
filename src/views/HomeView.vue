@@ -54,9 +54,9 @@ import {
     Boxes,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
-import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/utils/generator";
-import type { AWGConfig, AWGVersion, Intensity } from "@/utils/generator";
-import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
+import { YANDEX_UNSTABLE_PROFILES, CLIENTS, CLIENT_IDS } from "@/engines/awg/generator";
+import type { AWGConfig, AWGVersion, Intensity } from "@/engines/awg/generator";
+import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
 import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();

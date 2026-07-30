@@ -3,7 +3,7 @@
  */
 
 import { ref } from "vue";
-import type { GeneratorInput, AWGConfig } from "@/utils/generator";
+import type { GeneratorInput, AWGConfig } from "@/engines/awg/generator";
 import type { WorkerRequest, WorkerResponse } from "@/workers/generator.worker";
 
 let worker: Worker | null = null;

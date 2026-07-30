@@ -9,6 +9,7 @@
 
 import { cryptoBytes, cryptoRnd, cryptoPick } from "@/shared/rng";
 import { generateX25519Pair, toBase64Url } from "@/shared/x25519";
+import { bytesToHex } from "@/shared/hex";
 import { fingerprintById } from "@/shared/fingerprints";
 import { xrayCaps } from "./versions";
 import { REALITY_TRANSPORTS } from "./types";
@@ -27,7 +28,7 @@ export function uuidV4(): string {
   const b = cryptoBytes(16);
   b[6] = (b[6] & 0x0f) | 0x40;
   b[8] = (b[8] & 0x3f) | 0x80;
-  const hex = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  const hex = bytesToHex(b);
   return [
     hex.slice(0, 8),
     hex.slice(8, 12),
@@ -47,9 +48,7 @@ export function uuidV4(): string {
  */
 export function makeShortId(hexChars: number): string {
   const even = Math.max(2, Math.min(16, hexChars - (hexChars % 2)));
-  return [...cryptoBytes(even / 2)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return bytesToHex(cryptoBytes(even / 2));
 }
 
 /**

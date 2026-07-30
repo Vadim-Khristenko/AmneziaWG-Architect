@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateAwgParams } from "@/utils/awgValidate";
+import { validateAwgParams } from "@/engines/awg/awgValidate";
 
 const findings = (p: Record<string, string | number>, mtu?: number) =>
   validateAwgParams(p, { mtu });

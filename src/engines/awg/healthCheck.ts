@@ -7,10 +7,10 @@
  * Pure module — returns findings, never throws.
  */
 
-import type { Finding } from "./awgValidate";
-import { parseConf, getField } from "./awgFormat";
-import { validateAwgParams } from "./awgValidate";
-import { CLIENTS, DEFAULT_CLIENT_ID } from "./generator/clients";
+import type { Finding } from "@/engines/awg/awgValidate";
+import { parseConf, getField } from "@/engines/awg/awgFormat";
+import { validateAwgParams } from "@/engines/awg/awgValidate";
+import { CLIENTS, DEFAULT_CLIENT_ID } from "@/engines/awg/generator/clients";
 
 const AWG_FIELDS = [
   "Jc",

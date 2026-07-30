@@ -4,8 +4,8 @@ import {
     kindColor,
     kindLabel,
     kindDescription,
-} from "@/utils/packetSim";
-import type { AWGConfig } from "@/utils/generator/types";
+} from "@/engines/awg/packetSim";
+import type { AWGConfig } from "@/engines/awg/generator/types";
 
 const cfg: AWGConfig = {
     version: "2.0",

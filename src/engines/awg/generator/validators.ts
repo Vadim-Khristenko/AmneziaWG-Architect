@@ -15,8 +15,17 @@ import {
   MIN_S_WITH_HEADER_PROTECTION,
 } from "./awg3";
 
-/** Parse a magic-header range string "N-M" or "N" into [min, max]. */
-export function parseRange(rangeStr: string): [number, number] | null {
+/**
+ * Parse a range — "N-M", or "N" for a single value — into [min, max].
+ *
+ * Accepts numbers and undefined as well as strings: the validators read
+ * hand-written config fields, where a value may be missing or already numeric,
+ * and a second near-identical copy of this used to exist for that reason.
+ */
+export function parseRange(
+  rangeStr: string | number | undefined,
+): [number, number] | null {
+  if (rangeStr === undefined || rangeStr === "") return null;
   const s = String(rangeStr).trim();
   const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
   if (m) return [parseInt(m[1], 10), parseInt(m[2], 10)];

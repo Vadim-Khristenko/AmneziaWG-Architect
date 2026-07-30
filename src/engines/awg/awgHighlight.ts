@@ -7,7 +7,7 @@
  * — the page perf budget matters more than perfect tokenisation.
  */
 
-import type { AwgFormat } from "@/utils/awgFormat";
+import type { AwgFormat } from "@/engines/awg/awgFormat";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

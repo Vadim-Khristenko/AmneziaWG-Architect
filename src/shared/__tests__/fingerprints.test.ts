@@ -7,7 +7,7 @@ import {
   fingerprintById,
   detectBrowser,
 } from "../fingerprints";
-import { BFP } from "@/utils/generator/constants";
+import { BFP } from "@/engines/awg/generator/constants";
 
 /**
  * One browser, two facets: packet sizes for AmneziaWG, a uTLS profile for

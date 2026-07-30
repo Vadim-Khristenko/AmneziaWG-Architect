@@ -6,8 +6,8 @@ import {
   getField,
   confToVpn,
   vpnToConf,
-} from "@/utils/awgFormat";
-import { vpnDecode } from "@/utils/mergekeys";
+} from "@/engines/awg/awgFormat";
+import { vpnDecode } from "@/engines/awg/mergekeys";
 
 describe("detectFormat", () => {
   it("detects vpn:// keys by prefix", () => {

@@ -26,15 +26,9 @@ const num = (v: string | number | undefined): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** Parse "N" or "N-M" magic-header range into [start, end], or null. */
-function parseRange(v: string | number | undefined): [number, number] | null {
-  if (v === undefined || v === "") return null;
-  const s = String(v).trim();
-  const m = s.match(/^(\d+)\s*-\s*(\d+)$/);
-  if (m) return [parseInt(m[1], 10), parseInt(m[2], 10)];
-  const single = parseInt(s, 10);
-  return Number.isFinite(single) ? [single, single] : null;
-}
+// Range parsing lives with the generator's other validators; this file used
+// to carry a near-identical copy that differed only in accepting undefined.
+import { parseRange } from "./generator/validators";
 
 /** A CPS chain is one or more well-formed tags concatenated. */
 const VALID_TAG = /^(<(b 0x[0-9a-fA-F]*|t|c|r \d+|rc \d+|rd \d+|d|ds|dz)>)+$/;

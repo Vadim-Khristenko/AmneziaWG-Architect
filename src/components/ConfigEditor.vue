@@ -30,10 +30,10 @@ import {
     useConfigEditor,
     OBFUSCATION_KEYS,
 } from "@/composables/useConfigEditor";
-import { parseConf, vpnToConf } from "@/utils/awgFormat";
+import { parseConf, vpnToConf } from "@/engines/awg/awgFormat";
 import { pluralRu } from "@/utils/plural";
 import { useI18n } from "@/i18n";
-import type { GeneratedParams, AwgVersion } from "@/utils/mergekeys";
+import type { GeneratedParams, AwgVersion } from "@/engines/awg/mergekeys";
 
 const { locale, t } = useI18n();
 

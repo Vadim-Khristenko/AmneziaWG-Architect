@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 
 import { awgEngine } from "../index";
 import { linesToText } from "@/types/engine";
-import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
-import type { GeneratorInput } from "@/utils/generator";
+import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
+import type { GeneratorInput } from "@/engines/awg/generator";
 
 /**
  * The round-trip law: parsing what the engine rendered must give the config

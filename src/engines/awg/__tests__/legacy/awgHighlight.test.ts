@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { highlight } from "@/utils/awgHighlight";
+import { highlight } from "@/engines/awg/awgHighlight";
 
 describe("highlight", () => {
   it("wraps conf section headers, keys and numbers in spans", () => {

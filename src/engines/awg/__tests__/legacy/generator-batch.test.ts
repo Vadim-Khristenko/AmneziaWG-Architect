@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { generateBatch, genCfg } from "@/utils/generator";
-import type { GeneratorInput } from "@/utils/generator";
+import { generateBatch, genCfg } from "@/engines/awg/generator";
+import type { GeneratorInput } from "@/engines/awg/generator";
 
 const baseInput: GeneratorInput = {
   version: "2.0",

@@ -5,8 +5,8 @@
  * stays responsive even for hundreds of configs.
  */
 
-import { generateBatch } from "../utils/generator";
-import type { GeneratorInput, AWGConfig } from "../utils/generator";
+import { generateBatch } from "@/engines/awg/generator";
+import type { GeneratorInput, AWGConfig } from "@/engines/awg/generator";
 
 export interface WorkerRequest {
   id: string;

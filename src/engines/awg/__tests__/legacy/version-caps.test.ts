@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { genCfg, renderConf, type GeneratorInput } from "@/utils/generator";
-import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
+import { genCfg, renderConf, type GeneratorInput } from "@/engines/awg/generator";
+import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
 
 /**
  * The capability table is what the UI renders from. If it disagrees with what

@@ -27,13 +27,13 @@ import {
   renderConf,
   renderConfLines,
   type RenderLabels,
-} from "../utils/generator";
+} from "@/engines/awg/generator";
 import { translate } from "@/i18n";
-import { confToVpn, buildVpnConfig } from "../utils/awgFormat";
-import type { VpnConfig } from "../utils/awgFormat";
-import type { AwgContainer } from "../utils/mergekeys";
-import type { GeneratorInput } from "../utils/generator";
-import { AWG_VERSIONS, capsFor } from "../utils/generator/versions";
+import { confToVpn, buildVpnConfig } from "@/engines/awg/awgFormat";
+import type { VpnConfig } from "@/engines/awg/awgFormat";
+import type { AwgContainer } from "@/engines/awg/mergekeys";
+import type { GeneratorInput } from "@/engines/awg/generator";
+import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Типы

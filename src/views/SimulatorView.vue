@@ -22,9 +22,9 @@ import {
     kindColor,
     kindLabel,
     kindDescription,
-} from "@/utils/packetSim";
-import type { SimPacket, SimResult } from "@/utils/packetSim";
-import type { AWGConfig, AWGVersion } from "@/utils/generator/types";
+} from "@/engines/awg/packetSim";
+import type { SimPacket, SimResult } from "@/engines/awg/packetSim";
+import type { AWGConfig, AWGVersion } from "@/engines/awg/generator/types";
 import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();

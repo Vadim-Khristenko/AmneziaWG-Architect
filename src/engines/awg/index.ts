@@ -30,9 +30,9 @@ import {
   type AWGConfig,
   type GeneratorInput,
   type RenderLabels,
-} from "@/utils/generator";
-import { AWG_VERSIONS } from "@/utils/generator/versions";
-import { buildVpnConfig } from "@/utils/awgFormat";
+} from "@/engines/awg/generator";
+import { AWG_VERSIONS } from "@/engines/awg/generator/versions";
+import { buildVpnConfig } from "@/engines/awg/awgFormat";
 
 import { defineEngine, linesToText } from "@/types/engine";
 import type { EngineLabels, EngineLine, EngineFinding } from "@/types/engine";

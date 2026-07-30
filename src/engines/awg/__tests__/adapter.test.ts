@@ -7,8 +7,8 @@ import {
   validateGeneratedConfig,
   validateAwg3,
   type GeneratorInput,
-} from "@/utils/generator";
-import { AWG_VERSIONS } from "@/utils/generator/versions";
+} from "@/engines/awg/generator";
+import { AWG_VERSIONS } from "@/engines/awg/generator/versions";
 
 /**
  * The adapter exists to let a second generator live beside this one. Its only

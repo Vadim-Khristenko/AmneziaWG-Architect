@@ -34,24 +34,24 @@ import {
   confToVpn,
   vpnToConf,
   type AwgFormat,
-} from "@/utils/awgFormat";
-import { validateAwgParams, type Finding } from "@/utils/awgValidate";
-import { healthCheckConf } from "@/utils/healthCheck";
-import { highlight } from "@/utils/awgHighlight";
-import { CLIENTS, CLIENT_IDS, DEFAULT_CLIENT_ID } from "@/utils/generator/clients";
+} from "@/engines/awg/awgFormat";
+import { validateAwgParams, type Finding } from "@/engines/awg/awgValidate";
+import { healthCheckConf } from "@/engines/awg/healthCheck";
+import { highlight } from "@/engines/awg/awgHighlight";
+import { CLIENTS, CLIENT_IDS, DEFAULT_CLIENT_ID } from "@/engines/awg/generator/clients";
 import {
   vpnDecode,
   vpnEncode,
   buildObfuscationPatch,
   applyPatchToVpnConfig,
   patchWgQuickString,
-} from "@/utils/mergekeys";
+} from "@/engines/awg/mergekeys";
 import type {
   VpnConfig,
   AwgContainer,
   GeneratedParams,
   AwgVersion,
-} from "@/utils/mergekeys";
+} from "@/engines/awg/mergekeys";
 
 export type EditorViewMode = "code" | "fields";
 

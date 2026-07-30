@@ -15,8 +15,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
 import { useI18n, pick } from "@/i18n";
-import type { AWGConfig } from "@/utils/generator";
-import { capsFor } from "@/utils/generator/versions";
+import type { AWGConfig } from "@/engines/awg/generator";
+import { capsFor } from "@/engines/awg/generator/versions";
 
 const { locale } = useI18n();
 const isRu = computed(() => locale.value === "ru");

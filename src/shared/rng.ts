@@ -6,6 +6,8 @@
  * (browser / node / bun) via `globalThis.crypto`.
  */
 
+import { bytesToHex } from "./hex";
+
 const CRYPTO = globalThis.crypto;
 
 function getCrypto(): Crypto {
@@ -88,11 +90,7 @@ export function cryptoRh(n: number): string {
   const buf = new Uint8Array(bytes);
   crypto.getRandomValues(buf);
 
-  let s = "";
-  for (let i = 0; i < bytes; i++) {
-    s += buf[i].toString(16).padStart(2, "0");
-  }
-  return s;
+  return bytesToHex(buf);
 }
 
 /**

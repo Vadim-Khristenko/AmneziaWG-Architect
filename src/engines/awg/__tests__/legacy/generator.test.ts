@@ -9,7 +9,7 @@ import {
     tagOverhead,
     calcPadding,
     alignTo128,
-} from "@/utils/generator";
+} from "@/engines/awg/generator";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // rnd

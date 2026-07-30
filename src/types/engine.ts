@@ -19,7 +19,8 @@
  */
 
 import type { Component } from "vue";
-import type { Finding, FindingLevel } from "./findings";
+import { sortFindings } from "./findings";
+import type { Finding } from "./findings";
 
 export type { Finding, FindingLevel } from "./findings";
 
@@ -185,14 +186,9 @@ export function parseFailed<T>(
   };
 }
 
-/** Errors first, then warnings, then notes — worst thing read first. */
-const LEVEL_ORDER: Record<FindingLevel, number> = { error: 0, warn: 1, info: 2 };
-
-export function sortFindings(findings: EngineFinding[]): EngineFinding[] {
-  return [...findings].sort(
-    (a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level],
-  );
-}
+// Ordering lives with the finding type itself, not beside the contract that
+// happens to use it.
+export { sortFindings } from "./findings";
 
 /**
  * Build an engine, filling in the parts that have a sensible default.
