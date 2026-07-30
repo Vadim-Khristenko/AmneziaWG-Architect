@@ -484,6 +484,46 @@ export const ru = {
     many: "{n} конфигов",
     other: "{n} конфигов",
   },
+
+  /* ── Находки валидаторов ────────────────────────────────────────────── */
+  // Тексты живут здесь, а не в валидаторах: находка несёт код и значения,
+  // а предложение собирается на языке читателя.
+  "find.awg3.version_mismatch":
+    "Параметры AWG 3.0 заданы, но версия конфига — {version}.",
+  "find.awg3.hpk_format":
+    "HeaderProtectionKey должен быть {bytes} байт в base64 ({chars} символа).",
+  "find.awg3.s_below_nonce":
+    "{name}={value} < {min}: при HeaderProtectionKey из паддинга берётся nonce шифра, и более короткий паддинг молча ослабляет шифрование.",
+  "find.awg3.cpa_format":
+    "ContentPaddingAddition должен быть числом или диапазоном «мин-макс».",
+  "find.awg3.cpa_zero":
+    "ContentPaddingAddition = 0 — дополнительный паддинг отключён.",
+  "find.awg3.timing_format":
+    "{name} должен быть числом или диапазоном «мин-макс».",
+  "find.awg3.timing_inverted":
+    "{name}: нижняя граница больше верхней.",
+  "find.awg3.reject_too_low":
+    "RejectAfterTime ({reject}с) должен быть больше KeepaliveTimeout + RekeyTimeout ({floor}с), иначе сессия умрёт раньше, чем успеет обновиться.",
+  "find.awg3.rekey_after_reject":
+    "RekeyAfterTime (до {rekey}с) должен быть меньше RejectAfterTime (от {reject}с).",
+  "find.awg3.attempts_zero":
+    "MaxHandshakeAttempts должен быть не меньше 1.",
+  "find.parse.empty":
+    "Пустой конфиг.",
+  "find.parse.not_awg":
+    "Не похоже на конфигурацию AmneziaWG: не найдено ни одного параметра.",
+  "find.parse.plain_wireguard":
+    "Не найден Jc — это конфигурация WireGuard без обфускации AmneziaWG.",
+  "find.parse.missing":
+    "Параметр {key} отсутствует.",
+  "find.parse.not_a_number":
+    "{key} должен быть неотрицательным числом, получено «{value}».",
+  "find.parse.not_a_range":
+    "{key} должен быть диапазоном «начало-конец» в версии {version}.",
+  "find.parse.unsupported_for_version":
+    "{key} не используется в версии {version} и будет проигнорирован.",
+  "find.parse.unknown_version":
+    "Версия {version} неизвестна этой сборке.",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

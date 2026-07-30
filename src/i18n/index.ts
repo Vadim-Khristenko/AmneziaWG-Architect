@@ -33,6 +33,22 @@ const STORAGE_KEY = "awg-architect:locale";
 /** Catalogs already in memory. Russian ships in the main bundle. */
 const catalogs: Partial<Record<Locale, Catalog>> = { ru };
 
+/**
+ * How to fetch each catalogue.
+ *
+ * A `Record<Locale, …>` on purpose: adding a locale to `LOCALES` without
+ * adding it here is a compile error. It used to be an `if (loc === "en")`
+ * inside the loader, which meant a new locale loaded nothing at all and the
+ * page quietly fell back to Russian — the worst kind of failure, because it
+ * looks like the translation is merely incomplete.
+ *
+ * Russian resolves to the bundled catalogue rather than a second copy.
+ */
+const LOADERS: Record<Locale, () => Promise<Catalog>> = {
+  ru: async () => ru,
+  en: async () => (await import("./locales/en")).default,
+};
+
 const current = ref<Locale>(DEFAULT_LOCALE);
 
 /** Bumped whenever a catalog finishes loading, to re-run every `t()` computed. */
@@ -53,12 +69,44 @@ function isPluralForms(value: MessageValue): value is PluralForms {
 }
 
 /**
+ * Cached `Intl.PluralRules`, one per locale. Constructing one is not free and
+ * `t()` runs on every render.
+ */
+const pluralRules = new Map<Locale, Intl.PluralRules>();
+
+function rulesFor(loc: Locale): Intl.PluralRules | null {
+  if (typeof Intl === "undefined" || !Intl.PluralRules) return null;
+  let rules = pluralRules.get(loc);
+  if (!rules) {
+    rules = new Intl.PluralRules(LOCALE_TAGS[loc]);
+    pluralRules.set(loc, rules);
+  }
+  return rules;
+}
+
+/**
  * Pick a plural form.
  *
- * Russian: 1, 21, 31 → one; 2-4, 22-24 → few; everything else including the
- * 11-19 teens → many. English: 1 → one, else other.
+ * Delegated to `Intl.PluralRules`, which every target browser ships and which
+ * knows the rules for every language — including the ones that are not
+ * Russian or English. The hand-written version here previously branched on
+ * `loc === "ru"` and gave everything else the English rule, so a third locale
+ * would have pluralised wrongly without anyone being told.
+ *
+ * The manual Russian rule survives only as a fallback for environments
+ * without Intl, which in practice means very old runtimes and some test
+ * sandboxes.
  */
 function selectPlural(forms: PluralForms, n: number, loc: Locale): string {
+  const rules = rulesFor(loc);
+  if (rules) {
+    const category = rules.select(n) as keyof PluralForms;
+    // A catalogue only fills the forms its language uses, so fall back along
+    // the chain the CLDR categories imply rather than assuming `other` exists
+    // for every case.
+    return forms[category] ?? forms.many ?? forms.few ?? forms.other;
+  }
+
   if (loc === "ru") {
     const mod100 = Math.abs(n) % 100;
     const mod10 = mod100 % 10;
@@ -113,9 +161,14 @@ export function translate(key: MessageKey, params?: TranslateParams): string {
 
 async function loadCatalog(loc: Locale): Promise<void> {
   if (catalogs[loc]) return;
-  if (loc === "en") {
-    const mod = await import("./locales/en");
-    catalogs.en = mod.default;
+  try {
+    catalogs[loc] = await LOADERS[loc]();
+  } catch (error) {
+    // A missing catalogue is a build mistake, not a runtime condition, and it
+    // has to be loud: falling back silently is how a half-translated locale
+    // ships without anyone noticing.
+    console.error(`[i18n] failed to load the "${loc}" catalogue`, error);
+    return;
   }
   revision.value++;
 }

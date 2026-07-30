@@ -483,6 +483,46 @@ export const en: Catalog = {
     one: "{n} config",
     other: "{n} configs",
   },
+
+  /* ── Находки валидаторов ────────────────────────────────────────────── */
+  // Тексты живут здесь, а не в валидаторах: находка несёт код и значения,
+  // а предложение собирается на языке читателя.
+  "find.awg3.version_mismatch":
+    "AWG 3.0 parameters are set, but the config version is {version}.",
+  "find.awg3.hpk_format":
+    "HeaderProtectionKey must be {bytes} bytes in base64 ({chars} characters).",
+  "find.awg3.s_below_nonce":
+    "{name}={value} < {min}: with HeaderProtectionKey the cipher nonce is taken from the padding, and shorter padding quietly weakens the encryption.",
+  "find.awg3.cpa_format":
+    "ContentPaddingAddition must be a number or a min-max range.",
+  "find.awg3.cpa_zero":
+    "ContentPaddingAddition = 0 — the extra padding is switched off.",
+  "find.awg3.timing_format":
+    "{name} must be a number or a min-max range.",
+  "find.awg3.timing_inverted":
+    "{name}: the lower bound is above the upper one.",
+  "find.awg3.reject_too_low":
+    "RejectAfterTime ({reject}s) must exceed KeepaliveTimeout + RekeyTimeout ({floor}s), or the session dies before it can rekey.",
+  "find.awg3.rekey_after_reject":
+    "RekeyAfterTime (up to {rekey}s) must be below RejectAfterTime (from {reject}s).",
+  "find.awg3.attempts_zero":
+    "MaxHandshakeAttempts must be at least 1.",
+  "find.parse.empty":
+    "The config is empty.",
+  "find.parse.not_awg":
+    "This does not look like an AmneziaWG config: no parameters were found.",
+  "find.parse.plain_wireguard":
+    "No Jc found — this is a WireGuard config without AmneziaWG obfuscation.",
+  "find.parse.missing":
+    "Parameter {key} is missing.",
+  "find.parse.not_a_number":
+    "{key} must be a non-negative number, got “{value}”.",
+  "find.parse.not_a_range":
+    "{key} must be a start-end range on version {version}.",
+  "find.parse.unsupported_for_version":
+    "{key} is unused on version {version} and will be ignored.",
+  "find.parse.unknown_version":
+    "Version {version} is unknown to this build.",
 };
 
 export default en;
