@@ -1,16 +1,29 @@
 /**
- * AmneziaWG Architect — Packet Simulator.
+ * AmneziaWG Architect — AmneziaWG packet simulator.
  *
  * Simulates the first seconds of an AmneziaWG session to preview packet
  * sizes, headers and the CPS chain. All numbers are approximate (the real
  * kernel adds encryption overhead and random jitter).
+ *
+ * The model — packets, kinds, totals — lives in `shared/simulation`. What is
+ * here is only what makes AmneziaWG traffic AmneziaWG traffic: its six kinds
+ * of message, its magic headers, and the order they go out in.
  */
 
 import { parseRange } from "@/engines/awg/generator/validators";
 import { translate } from "@/i18n";
 import type { AWGConfig } from "@/engines/awg/generator/types";
 import { capsFor } from "@/engines/awg/generator/versions";
+import {
+  kindTable,
+  toResult,
+  type PacketKind as SharedPacketKind,
+  type SimPacket as SharedSimPacket,
+  type SimResult as SharedSimResult,
+  type Simulator,
+} from "@/shared/simulation";
 
+/** Kind ids AmneziaWG can emit, in legend order. */
 export type PacketKind =
   | "cps"
   | "junk"
@@ -19,23 +32,16 @@ export type PacketKind =
   | "cookie"
   | "data";
 
-export interface SimPacket {
-  id: number;
-  /** Human-readable step order, e.g. "1", "2a", "2b". */
-  step: string;
-  kind: PacketKind;
-  label: string;
-  /** Source of the packet. */
-  from: "client" | "server";
-  /** Destination of the packet. */
-  to: "client" | "server";
-  size: number;
+/**
+ * What only AmneziaWG packets carry.
+ *
+ * The magic header is here rather than in the shared packet because no other
+ * protocol has one; a shared `header: number` would be 0 for every XRay
+ * packet ever simulated.
+ */
+export interface AwgPacketExtra {
   /** AWG magic header value (0 for pure padding/junk). */
   header: number;
-  /** Approximate payload size without AWG prefix. */
-  payload: number;
-  /** Localised one-line description. */
-  description: string;
   /**
    * AWG 3.0 — this packet's header is encrypted with the ChaCha20
    * header-protection key. Handshake and cookie messages are encrypted whole;
@@ -46,14 +52,44 @@ export interface SimPacket {
   encryptedWhole?: boolean;
 }
 
-export interface SimResult {
+/**
+ * The kinds, with their colours and how they count.
+ *
+ * `data` is the only payload: everything else — the CPS chain, the junk
+ * train, the handshake — is what it costs to make that payload unremarkable.
+ */
+const KINDS: readonly SharedPacketKind[] = [
+  { id: "cps", label: "CPS", accent: "#a78bfa", descriptionKey: "sim.legend.cps", weight: "overhead" },
+  { id: "junk", label: "Junk", accent: "#f87171", descriptionKey: "sim.legend.junk", weight: "overhead" },
+  { id: "init", label: "Init", accent: "#38bdf8", descriptionKey: "sim.legend.init", weight: "overhead" },
+  { id: "response", label: "Response", accent: "#818cf8", descriptionKey: "sim.legend.response", weight: "overhead" },
+  { id: "cookie", label: "Cookie", accent: "#fbbf24", descriptionKey: "sim.legend.cookie", weight: "overhead" },
+  { id: "data", label: "Data", accent: "#34d399", descriptionKey: "sim.legend.data", weight: "payload" },
+];
+
+const { table: AWG_KIND_TABLE, legend: AWG_LEGEND } = kindTable(KINDS);
+
+export { AWG_KIND_TABLE, AWG_LEGEND };
+
+/** Kind ids that make up the handshake, for the summary line. */
+const HANDSHAKE_KINDS = ["init", "response", "cookie"] as const;
+
+export type SimPacket = SharedSimPacket<AwgPacketExtra> & {
+  kind: PacketKind;
+  /** Flattened for the template, which reads it on every row. */
+  header: number;
+  headerProtected?: boolean;
+  encryptedWhole?: boolean;
+};
+
+export interface SimResult extends SharedSimResult<AwgPacketExtra> {
   packets: SimPacket[];
-  totalBytes: number;
+  /** Bytes spent on the handshake itself — an AmneziaWG-shaped question. */
   handshakeBytes: number;
+  /** Kept beside `totals` because the view reads them on every render. */
+  totalBytes: number;
   dataBytes: number;
   overheadBytes: number;
-  /** Approximate seconds for a 10 Mbit/s upstream. */
-  estSeconds10mbps: number;
 }
 
 const WG_BASE = {
@@ -232,57 +268,40 @@ export function simulateHandshake(cfg: AWGConfig): SimResult {
     });
   }
 
-  const totalBytes = packets.reduce((sum, p) => sum + p.size, 0);
-  const handshakeBytes = packets
-    .filter((p) => ["init", "response", "cookie"].includes(p.kind))
-    .reduce((sum, p) => sum + p.size, 0);
-  const dataBytes = packets
-    .filter((p) => p.kind === "data")
-    .reduce((sum, p) => sum + p.size, 0);
-  const overheadBytes = totalBytes - dataBytes;
+  const result = toResult(packets, AWG_KIND_TABLE);
+  const handshakeBytes = HANDSHAKE_KINDS.reduce(
+    (sum, kind) => sum + (result.totals.byKind[kind] ?? 0),
+    0,
+  );
 
   return {
+    ...result,
     packets,
-    totalBytes,
     handshakeBytes,
-    dataBytes,
-    overheadBytes,
-    estSeconds10mbps: Number((totalBytes * 8 / 10_000_000).toFixed(3)),
+    totalBytes: result.totals.totalBytes,
+    dataBytes: result.totals.payloadBytes,
+    overheadBytes: result.totals.overheadBytes,
   };
 }
 
+/** The simulator, as the shell and the engine registry see it. */
+export const awgSimulator: Simulator<AWGConfig, AwgPacketExtra> = {
+  kinds: AWG_KIND_TABLE,
+  legend: AWG_LEGEND,
+  simulate: simulateHandshake,
+};
+
 export function kindColor(kind: PacketKind): string {
-  const map: Record<PacketKind, string> = {
-    cps: "#a78bfa",
-    junk: "#f87171",
-    init: "#38bdf8",
-    response: "#818cf8",
-    cookie: "#fbbf24",
-    data: "#34d399",
-  };
-  return map[kind];
+  return AWG_KIND_TABLE[kind]?.accent ?? "";
 }
 
 export function kindLabel(kind: PacketKind): string {
-  const map: Record<PacketKind, string> = {
-    cps: "CPS",
-    junk: "Junk",
-    init: "Init",
-    response: "Response",
-    cookie: "Cookie",
-    data: "Data",
-  };
-  return map[kind];
+  return AWG_KIND_TABLE[kind]?.label ?? kind;
 }
 
 export function kindDescription(kind: PacketKind): string {
-  const map: Record<PacketKind, string> = {
-    cps: translate("sim.legend.cps"),
-    junk: translate("sim.legend.junk"),
-    init: translate("sim.legend.init"),
-    response: translate("sim.legend.response"),
-    cookie: translate("sim.legend.cookie"),
-    data: translate("sim.legend.data"),
-  };
-  return map[kind];
+  const key = AWG_KIND_TABLE[kind]?.descriptionKey;
+  // Cast: the keys in the table are catalogue keys, but the table is typed
+  // for every protocol, so it cannot name AmneziaWG's catalogue.
+  return key ? translate(key as Parameters<typeof translate>[0]) : "";
 }
