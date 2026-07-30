@@ -10,7 +10,7 @@ import {
   HEADER_PROTECTION_KEY_BYTES,
   type AWGConfig,
   type GeneratorInput,
-} from "../generator";
+} from "@/utils/generator";
 
 const baseInput: GeneratorInput = {
   version: "3.0",

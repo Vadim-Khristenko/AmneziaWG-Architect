@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { awgEngine } from "../awg";
-import { linesToText } from "../types";
+import { awgEngine } from "../index";
+import { linesToText } from "@/types/engine";
 import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
 import type { GeneratorInput } from "@/utils/generator";
 

@@ -51,6 +51,17 @@ export interface Finding {
    * finding came from parsing.
    */
   line?: number;
+  /**
+   * Ready-made text, from a validator not yet moved onto codes.
+   *
+   * Transitional. `resolveFinding` prefers the catalogue and falls back to
+   * this, so the older AmneziaWG validators keep producing exactly what they
+   * always did while they are ported one at a time. New findings should carry
+   * a code and leave this unset.
+   *
+   * @deprecated Use `code` and add the text to the catalogue.
+   */
+  msg?: string;
 }
 
 /** Sort in place-safe fashion: worst first, original order kept within a level. */

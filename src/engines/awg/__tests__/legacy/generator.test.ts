@@ -9,7 +9,7 @@ import {
     tagOverhead,
     calcPadding,
     alignTo128,
-} from "../generator";
+} from "@/utils/generator";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // rnd

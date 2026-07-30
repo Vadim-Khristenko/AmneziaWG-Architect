@@ -18,6 +18,22 @@ function getCrypto(): Crypto {
 }
 
 /**
+ * `n` cryptographically random bytes.
+ *
+ * The raw form the other helpers build on, and what key generation needs:
+ * an X25519 private key is 32 random bytes before clamping, and a REALITY
+ * shortId is random bytes rendered as hex.
+ */
+export function cryptoBytes(n: number): Uint8Array {
+  if (!Number.isInteger(n) || n < 0) {
+    throw new TypeError("cryptoBytes: n must be a non-negative integer");
+  }
+  const out = new Uint8Array(n);
+  if (n > 0) getCrypto().getRandomValues(out);
+  return out;
+}
+
+/**
  * Returns a uniformly distributed integer in the inclusive range [min, max].
  *
  * Uses rejection sampling to avoid modulo bias.  Works for any range that

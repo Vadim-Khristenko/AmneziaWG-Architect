@@ -524,6 +524,92 @@ export const ru = {
     "{key} не используется в версии {version} и будет проигнорирован.",
   "find.parse.unknown_version":
     "Версия {version} неизвестна этой сборке.",
+
+  /* ── Находки движка XRay ────────────────────────────────────────────── */
+  "find.xray.address_missing":
+    "Не указан адрес сервера.",
+  "find.xray.port_range":
+    "Порт {port} вне диапазона 1–65535.",
+  "find.xray.vision_needs_tls":
+    "xtls-rprx-vision работает только поверх TLS или REALITY: «XTLS only supports TLS and REALITY directly for now».",
+  "find.xray.vision_no_udp":
+    "xtls-rprx-vision не поддерживает UDP и требует TLS 1.3 на внешнем слое.",
+  "find.xray.flow_mismatch":
+    "Значение flow должно совпадать у клиента и сервера: пустой flow против vision-аккаунта отклоняется.",
+  "find.xray.reality_transport":
+    "REALITY не работает поверх транспорта {transport}: поддерживаются только RAW, XHTTP и gRPC.",
+  "find.xray.transport_deprecated":
+    "Транспорт {transport} объявлен устаревшим — ядро рекомендует XHTTP.",
+  "find.xray.reality_missing":
+    "Выбран REALITY, но блок его параметров отсутствует.",
+  "find.xray.server_names_empty":
+    "serverNames не может быть пустым на стороне сервера.",
+  "find.xray.server_name_risky":
+    "{name}: ядро предупреждает, что такая мишень повышает вероятность блокировки IP.",
+  "find.xray.dest_missing":
+    "Не указан target — сайт, под который маскируется рукопожатие.",
+  "find.xray.xver_range":
+    "xver = {xver}: допустимы только 0, 1 и 2.",
+  "find.xray.key_length":
+    "Ключ должен быть 32 байта в base64 RawURL без паддинга.",
+  "find.xray.short_ids_empty":
+    "shortIds не может быть пустым на стороне сервера.",
+  "find.xray.short_id_long":
+    "shortId «{id}» длиннее 16 символов.",
+  "find.xray.short_id_odd":
+    "shortId «{id}» имеет нечётную длину и не декодируется как hex.",
+  "find.xray.short_id_hex":
+    "shortId «{id}» содержит символы вне hex.",
+  "find.xray.spider_x_slash":
+    "spiderX должен начинаться со слеша.",
+  "find.xray.fingerprint_refused":
+    "Отпечаток {fingerprint} отклоняется REALITY.",
+  "find.xray.mldsa_unsupported":
+    "ML-DSA-65 появился в v25.7.23 и недоступен в версии {version}.",
+  "find.xray.mldsa_seed_length":
+    "mldsa65Seed должен быть 32 байта в base64 RawURL.",
+  "find.xray.mldsa_seed_equals_key":
+    "mldsa65Seed не может совпадать с privateKey — ядро это отклоняет.",
+  "find.xray.mldsa_verify_pending":
+    "mldsa65Verify выводится самим алгоритмом ML-DSA-65: получите его командой xray mldsa65 из этого seed.",
+  "find.xray.mldsa_verify_length":
+    "mldsa65Verify должен быть ровно 1952 байта.",
+  "find.xray.vless_enc_unsupported":
+    "VLESS Encryption появился в v25.8.29 и недоступен в версии {version}.",
+  "find.xray.vless_enc_format":
+    "Строка шифрования должна начинаться с mlkem768x25519plus и содержать минимум четыре элемента.",
+  "find.xray.vless_enc_mode":
+    "Режим «{mode}» неизвестен: допустимы native, xorpub и random.",
+  "find.xray.xhttp_path_slash":
+    "Путь XHTTP должен начинаться со слеша.",
+  "find.xray.xhttp_split_mode":
+    "Раздельная загрузка включена, но режим разрешился в {mode}, а не stream-up.",
+  "find.xray.xhttp_session_names":
+    "В версии {version} ключи сессии называются session*, а не sessionID* — конфиг собран под старое имя.",
+  "find.xray.parse.not_vless":
+    "Ссылка должна начинаться с vless://.",
+  "find.xray.parse.malformed_uri":
+    "Не удалось разобрать ссылку.",
+  "find.xray.parse.no_uuid":
+    "В ссылке нет идентификатора клиента.",
+  "find.xray.parse.unknown_transport":
+    "Неизвестный транспорт «{transport}».",
+  "find.xray.parse.version_assumed":
+    "Версия ядра в конфиге не указана — принята {version}.",
+  "find.xray.parse.no_public_key":
+    "В ссылке нет публичного ключа (pbk).",
+  "find.xray.parse.client_half_only":
+    "Это клиентская половина: приватный ключ и target в ссылку не входят.",
+  "find.xray.parse.server_half_only":
+    "Это серверная половина: публичный ключ выводится из приватного и в конфиге не хранится.",
+  "find.xray.parse.bad_json":
+    "Не удалось разобрать JSON.",
+  "find.xray.parse.not_vless_inbound":
+    "Ожидался inbound с protocol = vless, получен «{protocol}».",
+  "find.xray.parse.no_clients":
+    "В конфиге нет ни одного клиента.",
+  "find.xray.parse.unrecognised":
+    "Не похоже ни на ссылку vless://, ни на JSON-конфиг.",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

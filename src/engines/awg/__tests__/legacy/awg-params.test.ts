@@ -11,9 +11,9 @@ import {
   paramFor,
   sharedParams,
   senderParams,
-} from "../generator/params";
-import { AWG_VERSIONS, capsFor } from "../generator/versions";
-import { genCfg, renderConfLines, type GeneratorInput } from "../generator";
+} from "@/utils/generator/params";
+import { AWG_VERSIONS, capsFor } from "@/utils/generator/versions";
+import { genCfg, renderConfLines, type GeneratorInput } from "@/utils/generator";
 
 /**
  * The parameter catalogue only earns its place if it agrees with the code that

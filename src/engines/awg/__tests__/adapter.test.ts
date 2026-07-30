@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { awgEngine } from "../awg";
+import { awgEngine } from "../index";
 import {
   genCfg,
   renderConfLines,
@@ -55,12 +55,22 @@ describe("AmneziaWG engine adapter", () => {
         const viaEngine = awgEngine.validate(cfg);
 
         expect(viaEngine).toHaveLength(direct.length);
-        // Same findings, only ordered errors-first.
-        expect([...viaEngine].sort()).toEqual([...direct].sort());
+
+        // The adapter normalises rather than copies — it guarantees a code
+        // where the older validators left one out — so the invariant is that
+        // the same rules fired about the same fields, not object equality.
+        const shape = (fs: { field: string; level: string }[]) =>
+          fs.map((f) => `${f.level}:${f.field}`).sort();
+        expect(shape(viaEngine)).toEqual(shape(direct));
+
+        // Every finding can be identified, which is what makes it
+        // translatable rather than a hardcoded sentence.
+        for (const f of viaEngine) expect(f.code).toBeTruthy();
+
         const levels = viaEngine.map((f) => f.level);
-        expect(levels).toEqual([...levels].sort((a, b) =>
-          a === b ? 0 : a === "error" ? -1 : 1,
-        ));
+        expect(levels).toEqual(
+          [...levels].sort((a, b) => (a === b ? 0 : a === "error" ? -1 : 1)),
+        );
       });
 
       it("produces a client payload from the same text the user sees", () => {

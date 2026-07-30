@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { genCfg, type GeneratorInput } from "../generator";
+import { genCfg, type GeneratorInput } from "@/utils/generator";
 
 const baseInput: GeneratorInput = {
     version: "2.0",

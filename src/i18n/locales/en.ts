@@ -523,6 +523,92 @@ export const en: Catalog = {
     "{key} is unused on version {version} and will be ignored.",
   "find.parse.unknown_version":
     "Version {version} is unknown to this build.",
+
+  /* ── Находки движка XRay ────────────────────────────────────────────── */
+  "find.xray.address_missing":
+    "The server address is missing.",
+  "find.xray.port_range":
+    "Port {port} is outside the 1–65535 range.",
+  "find.xray.vision_needs_tls":
+    "xtls-rprx-vision works only over TLS or REALITY: “XTLS only supports TLS and REALITY directly for now”.",
+  "find.xray.vision_no_udp":
+    "xtls-rprx-vision does not support UDP and requires TLS 1.3 on the outer layer.",
+  "find.xray.flow_mismatch":
+    "The flow value must match on client and server: an empty flow against a vision account is rejected.",
+  "find.xray.reality_transport":
+    "REALITY does not work over the {transport} transport: only RAW, XHTTP and gRPC are supported.",
+  "find.xray.transport_deprecated":
+    "The {transport} transport is deprecated — the core recommends XHTTP instead.",
+  "find.xray.reality_missing":
+    "REALITY is selected but its parameter block is missing.",
+  "find.xray.server_names_empty":
+    "serverNames cannot be empty on the server side.",
+  "find.xray.server_name_risky":
+    "{name}: the core warns that this target raises the chance of the IP being blocked.",
+  "find.xray.dest_missing":
+    "The target is missing — the site the handshake is dressed as.",
+  "find.xray.xver_range":
+    "xver = {xver}: only 0, 1 and 2 are allowed.",
+  "find.xray.key_length":
+    "The key must be 32 bytes in unpadded base64 RawURL.",
+  "find.xray.short_ids_empty":
+    "shortIds cannot be empty on the server side.",
+  "find.xray.short_id_long":
+    "shortId “{id}” is longer than 16 characters.",
+  "find.xray.short_id_odd":
+    "shortId “{id}” has an odd length and will not decode as hex.",
+  "find.xray.short_id_hex":
+    "shortId “{id}” contains characters outside hex.",
+  "find.xray.spider_x_slash":
+    "spiderX must start with a slash.",
+  "find.xray.fingerprint_refused":
+    "The {fingerprint} fingerprint is refused by REALITY.",
+  "find.xray.mldsa_unsupported":
+    "ML-DSA-65 arrived in v25.7.23 and is unavailable on version {version}.",
+  "find.xray.mldsa_seed_length":
+    "mldsa65Seed must be 32 bytes in base64 RawURL.",
+  "find.xray.mldsa_seed_equals_key":
+    "mldsa65Seed cannot equal privateKey — the core rejects that.",
+  "find.xray.mldsa_verify_pending":
+    "mldsa65Verify is derived by ML-DSA-65 itself: obtain it with xray mldsa65 from this seed.",
+  "find.xray.mldsa_verify_length":
+    "mldsa65Verify must be exactly 1952 bytes.",
+  "find.xray.vless_enc_unsupported":
+    "VLESS Encryption arrived in v25.8.29 and is unavailable on version {version}.",
+  "find.xray.vless_enc_format":
+    "The encryption string must start with mlkem768x25519plus and carry at least four elements.",
+  "find.xray.vless_enc_mode":
+    "Mode “{mode}” is unknown: native, xorpub and random are allowed.",
+  "find.xray.xhttp_path_slash":
+    "The XHTTP path must start with a slash.",
+  "find.xray.xhttp_split_mode":
+    "Split download is on, but the mode resolved to {mode} rather than stream-up.",
+  "find.xray.xhttp_session_names":
+    "On version {version} the session keys are session* rather than sessionID* — the config uses the older spelling.",
+  "find.xray.parse.not_vless":
+    "The link must start with vless://.",
+  "find.xray.parse.malformed_uri":
+    "The link could not be parsed.",
+  "find.xray.parse.no_uuid":
+    "The link carries no client identifier.",
+  "find.xray.parse.unknown_transport":
+    "Unknown transport “{transport}”.",
+  "find.xray.parse.version_assumed":
+    "The config does not state a core version — {version} was assumed.",
+  "find.xray.parse.no_public_key":
+    "The link carries no public key (pbk).",
+  "find.xray.parse.client_half_only":
+    "This is the client half: the private key and the target are not part of a link.",
+  "find.xray.parse.server_half_only":
+    "This is the server half: the public key is derived from the private one and is not stored in the config.",
+  "find.xray.parse.bad_json":
+    "The JSON could not be parsed.",
+  "find.xray.parse.not_vless_inbound":
+    "Expected an inbound with protocol = vless, got “{protocol}”.",
+  "find.xray.parse.no_clients":
+    "The config carries no clients.",
+  "find.xray.parse.unrecognised":
+    "This looks like neither a vless:// link nor a JSON config.",
 };
 
 export default en;

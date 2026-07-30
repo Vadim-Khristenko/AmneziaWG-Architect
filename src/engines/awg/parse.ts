@@ -20,8 +20,9 @@ import type {
   AWGVersion,
   AWG3Params,
 } from "@/utils/generator/types";
-import type { EngineFinding, ParseResult } from "./types";
-import { parseFailed } from "./types";
+import type { EngineFinding, ParseResult } from "@/types/engine";
+import { parseFailed } from "@/types/engine";
+import { error, warn } from "@/shared/findings";
 
 /**
  * Case-insensitive lookup across every section.
@@ -75,24 +76,15 @@ function num(
   const hit = lookup(conf, raw, key);
   if (!hit) {
     if (required) {
-      findings.push({
-        field: key,
-        level: "error",
-        msg: `Параметр ${key} отсутствует`,
-        code: "parse.missing",
-      });
+      findings.push(error(key, "parse.missing", { key }));
     }
     return 0;
   }
   const value = Number(hit.value);
   if (!Number.isFinite(value) || value < 0) {
-    findings.push({
-      field: key,
-      level: "error",
-      msg: `${key} должен быть неотрицательным числом, получено «${hit.value}»`,
-      code: "parse.not_a_number",
-      line: hit.line,
-    });
+    findings.push(
+      error(key, "parse.not_a_number", { key, value: hit.value }, hit.line),
+    );
     return 0;
   }
   return value;
@@ -125,7 +117,7 @@ function readAwg3(conf: ParsedConf, raw: string[]): AWG3Params {
 export function parseAwgConf(input: string): ParseResult<AWGConfig> {
   const source = input.trim();
   if (!source) {
-    return parseFailed("config", "Пустой конфиг", "parse.empty");
+    return parseFailed("config", "parse.empty");
   }
 
   // Kept beside the parsed form purely so a finding can name a line number.
@@ -133,21 +125,13 @@ export function parseAwgConf(input: string): ParseResult<AWGConfig> {
   const conf = parseConf(source);
   const hasAny = conf.sections.some((s) => s.entries.length > 0);
   if (!hasAny) {
-    return parseFailed(
-      "config",
-      "Не похоже на конфигурацию AmneziaWG: не найдено ни одного параметра",
-      "parse.not_awg",
-    );
+    return parseFailed("config", "parse.not_awg");
   }
 
   // Jc is the one parameter every version carries, so its absence is the
   // cheapest way to tell an AmneziaWG config from a plain WireGuard one.
   if (!lookup(conf, raw, "Jc")) {
-    return parseFailed(
-      "Jc",
-      "Не найден Jc — это конфигурация WireGuard без обфускации AmneziaWG",
-      "parse.plain_wireguard",
-    );
+    return parseFailed("Jc", "parse.plain_wireguard");
   }
 
   const findings: EngineFinding[] = [];
@@ -194,20 +178,11 @@ export function parseAwgConf(input: string): ParseResult<AWGConfig> {
     for (const key of ["H1", "H2", "H3", "H4"] as const) {
       const hit = lookup(conf, raw, key);
       if (!hit) {
-        findings.push({
-          field: key,
-          level: "error",
-          msg: `Параметр ${key} отсутствует`,
-          code: "parse.missing",
-        });
+        findings.push(error(key, "parse.missing", { key }));
       } else if (!RANGE.test(hit.value)) {
-        findings.push({
-          field: key,
-          level: "error",
-          msg: `${key} должен быть диапазоном «начало-конец» в AWG ${version}`,
-          code: "parse.not_a_range",
-          line: hit.line,
-        });
+        findings.push(
+          error(key, "parse.not_a_range", { key, version }, hit.line),
+        );
       }
     }
   }
@@ -223,24 +198,15 @@ export function parseAwgConf(input: string): ParseResult<AWGConfig> {
   ] as const) {
     const hit = lookup(conf, raw, key);
     if (hit && !supported) {
-      findings.push({
-        field: key,
-        level: "warn",
-        msg: `${key} не используется в AWG ${version} и будет проигнорирован`,
-        code: "parse.unsupported_for_version",
-        line: hit.line,
-      });
+      findings.push(
+        warn(key, "parse.unsupported_for_version", { key, version }, hit.line),
+      );
     }
   }
 
   const known = AWG_VERSIONS.some((v) => v.id === version);
   if (!known) {
-    findings.push({
-      field: "version",
-      level: "warn",
-      msg: `Версия ${version} неизвестна этой сборке`,
-      code: "parse.unknown_version",
-    });
+    findings.push(warn("version", "parse.unknown_version", { version }));
   }
 
   return { ok: true, config, findings };

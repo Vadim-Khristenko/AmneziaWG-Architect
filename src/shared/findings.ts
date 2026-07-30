@@ -62,7 +62,10 @@ export const info = make("info");
 export function resolveFinding(finding: Finding): string {
   const key = keyFor(finding.code);
   const text = translate(key as MessageKey, finding.values);
-  return text === key ? finding.code : text;
+  if (text !== key) return text;
+  // No catalogue entry: fall back to the sentence a not-yet-ported validator
+  // supplied, and only then to the bare code.
+  return finding.msg ?? finding.code;
 }
 
 /** Every finding as text, worst first. */
