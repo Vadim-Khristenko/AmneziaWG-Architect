@@ -15,7 +15,7 @@ import {
     Check,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
-import { useI18n } from "@/i18n";
+import { useI18n, pick } from "@/i18n";
 import {
     FAQ_CATEGORIES,
     FAQ_ENTRIES,
@@ -60,12 +60,12 @@ const filtered = computed(() => {
         // searching for an English parameter name, and vice versa.
         const haystack = normalize(
             [
-                entry.question.ru,
-                entry.question.en,
+                pick(entry.question, "ru"),
+                pick(entry.question, "en"),
                 // Stripped, so a search for HeaderProtectionKey still matches
                 // where the answer writes it in backticks.
-                stripRich(entry.answer.ru),
-                stripRich(entry.answer.en),
+                stripRich(pick(entry.answer, "ru")),
+                stripRich(pick(entry.answer, "en")),
                 ...(entry.keywords ?? []),
             ].join(" "),
         );
@@ -148,12 +148,12 @@ function syncJsonLd(): void {
         "@type": "FAQPage",
         mainEntity: FAQ_ENTRIES.map((entry) => ({
             "@type": "Question",
-            name: entry.question[loc],
+            name: pick(entry.question, loc),
             acceptedAnswer: {
                 "@type": "Answer",
                 // Structured data must not carry markup, so the marks come
                 // out here rather than the source being kept flat.
-                text: stripRich(entry.answer[loc]),
+                text: stripRich(pick(entry.answer, loc)),
             },
         })),
     };
@@ -277,7 +277,7 @@ onBeforeUnmount(() => {
                             :aria-controls="`${entry.id}-answer`"
                             @click="toggle(entry.id)"
                         >
-                            <span>{{ entry.question[locale] }}</span>
+                            <span>{{ pick(entry.question, locale) }}</span>
                             <ChevronDown :size="17" class="faq-chevron" />
                         </button>
                     </h2>
@@ -288,7 +288,7 @@ onBeforeUnmount(() => {
                             :id="`${entry.id}-answer`"
                             class="faq-a"
                         >
-                            <RichText :text="entry.answer[locale]" />
+                            <RichText :text="pick(entry.answer, locale)" />
                             <button
                                 class="faq-link"
                                 @click="copyLink(entry.id)"

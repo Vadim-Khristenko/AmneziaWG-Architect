@@ -22,7 +22,7 @@ import {
     ShieldCheck,
     TriangleAlert,
 } from "lucide-vue-next";
-import { useI18n } from "@/i18n";
+import { useI18n, pick } from "@/i18n";
 
 const { locale } = useI18n();
 
@@ -165,15 +165,15 @@ const features: Feature[] = [
             <section class="vx-grid">
                 <article
                     v-for="(f, i) in features"
-                    :key="f[locale].title"
+                    :key="pick(f, locale).title"
                     class="vx-card"
                     :style="{ animationDelay: `${i * 70}ms` }"
                 >
                     <div class="vx-card-icon">
                         <component :is="f.icon" :size="20" />
                     </div>
-                    <h2 class="vx-card-title">{{ f[locale].title }}</h2>
-                    <p class="vx-card-desc">{{ f[locale].desc }}</p>
+                    <h2 class="vx-card-title">{{ pick(f, locale).title }}</h2>
+                    <p class="vx-card-desc">{{ pick(f, locale).desc }}</p>
                 </article>
             </section>
 

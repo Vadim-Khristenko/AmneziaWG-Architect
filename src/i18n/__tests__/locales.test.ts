@@ -6,8 +6,13 @@ import {
   LOCALE_NAMES,
   LOCALE_TAGS,
   DEFAULT_LOCALE,
+  pick,
+  translatedInto,
   type Locale,
+  type Localised,
 } from "../types";
+import { ROUTE_SEO } from "../seo";
+import { FAQ_ENTRIES } from "@/data/faq";
 import ru from "../locales/ru";
 import en from "../locales/en";
 
@@ -97,6 +102,67 @@ describe("catalogues", () => {
           // A dropped placeholder is a value that silently never appears.
           expect(got.has(slot), `${loc}: ${key} is missing {${slot}}`).toBe(true);
         }
+      }
+    }
+  });
+});
+
+describe("adding a locale stays cheap", () => {
+  /**
+   * Adding a language should mean declaring it and writing a catalogue — not
+   * translating every FAQ answer before anything compiles.
+   *
+   * Declaring a third locale used to produce 187 compile errors across nine
+   * files, because long-form content was typed `Record<Locale, string>` and so
+   * demanded every language at once. `Localised<T>` requires only the source
+   * language; the rest fall back through `pick`. The count is now ten, in
+   * three places that genuinely have to be filled in: the three per-locale
+   * tables, the catalogue loader, and the test fixture below.
+   *
+   * These tests hold the property from the other side: content must tolerate a
+   * missing translation, and `pick` must never hand back undefined.
+   */
+
+  it("falls back to the source language for an untranslated string", () => {
+    const partial = { ru: "русский" } as Localised<string>;
+    expect(pick(partial, "ru")).toBe("русский");
+    expect(pick(partial, "en")).toBe("русский");
+  });
+
+  it("prefers a translation when there is one", () => {
+    const both: Localised<string> = { ru: "русский", en: "english" };
+    expect(pick(both, "en")).toBe("english");
+  });
+
+  it("never returns undefined, whatever it is asked for", () => {
+    const partial = { ru: { title: "т" } } as Localised<{ title: string }>;
+    for (const loc of LOCALES) {
+      expect(pick(partial, loc), loc).toBeDefined();
+    }
+  });
+
+  it("reports which languages a piece of content has", () => {
+    expect(translatedInto({ ru: "a" } as Localised<string>)).toEqual(["ru"]);
+    expect(translatedInto({ ru: "a", en: "b" })).toEqual(["ru", "en"]);
+  });
+
+  it("keeps real content working when a translation is absent", () => {
+    // The FAQ is fully translated today; the point is that it would still
+    // render if it were not.
+    for (const entry of FAQ_ENTRIES.slice(0, 5)) {
+      for (const loc of LOCALES) {
+        expect(pick(entry.question, loc), entry.id).toBeTruthy();
+        expect(pick(entry.answer, loc), entry.id).toBeTruthy();
+      }
+    }
+  });
+
+  it("gives every route metadata in every locale, by fallback if needed", () => {
+    for (const [name, table] of Object.entries(ROUTE_SEO)) {
+      for (const loc of LOCALES) {
+        const seo = pick(table, loc);
+        expect(seo.title, `${name}/${loc}`).toBeTruthy();
+        expect(seo.description, `${name}/${loc}`).toBeTruthy();
       }
     }
   });

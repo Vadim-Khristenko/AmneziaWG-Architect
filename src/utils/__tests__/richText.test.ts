@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseRich, stripRich } from "../richText";
+import { pick } from "@/i18n";
 import { FAQ_ENTRIES } from "@/data/faq";
 import { TIMELINE } from "@/data/changelog";
 
@@ -57,7 +58,7 @@ describe("parseRich", () => {
   it("only links safe schemes wherever they appear", () => {
     for (const e of FAQ_ENTRIES) {
       for (const loc of ["ru", "en"] as const) {
-        for (const url of e.answer[loc].matchAll(/\]\(([^)\s]+)\)/g)) {
+        for (const url of pick(e.answer, loc).matchAll(/\]\(([^)\s]+)\)/g)) {
           expect(url[1], `${e.id}/${loc}`).toMatch(/^https:\/\//);
         }
       }
@@ -94,7 +95,7 @@ describe("stripRich", () => {
   it("leaves no markup for the structured data to carry", () => {
     for (const e of FAQ_ENTRIES) {
       for (const loc of ["ru", "en"] as const) {
-        const flat = stripRich(e.answer[loc]);
+        const flat = stripRich(pick(e.answer, loc));
         expect(flat, `${e.id}/${loc}`).not.toMatch(/\*\*|`|\n|\]\(|^#/);
       }
     }
@@ -105,7 +106,7 @@ describe("editorial content", () => {
   it("has balanced marks in every FAQ answer", () => {
     for (const e of FAQ_ENTRIES) {
       for (const loc of ["ru", "en"] as const) {
-        const text = e.answer[loc];
+        const text = pick(e.answer, loc);
         expect((text.match(/\*\*/g) ?? []).length % 2, `${e.id}/${loc} bold`).toBe(0);
         expect((text.match(/`/g) ?? []).length % 2, `${e.id}/${loc} code`).toBe(0);
       }
@@ -115,7 +116,7 @@ describe("editorial content", () => {
   it("has balanced marks in every changelog entry", () => {
     for (const e of TIMELINE) {
       for (const loc of ["ru", "en"] as const) {
-        const text = e.desc[loc];
+        const text = pick(e.desc, loc);
         expect((text.match(/\*\*/g) ?? []).length % 2, `${e.version}/${loc}`).toBe(0);
         expect((text.match(/`/g) ?? []).length % 2, `${e.version}/${loc}`).toBe(0);
       }
@@ -129,8 +130,8 @@ describe("editorial content", () => {
       (["ru", "en"] as const)
         .filter(
           (loc) =>
-            stripRich(e.answer[loc]).length > 700 &&
-            parseRich(e.answer[loc]).length < 2,
+            stripRich(pick(e.answer, loc)).length > 700 &&
+            parseRich(pick(e.answer, loc)).length < 2,
         )
         .map((loc) => `${e.id}/${loc}`),
     );

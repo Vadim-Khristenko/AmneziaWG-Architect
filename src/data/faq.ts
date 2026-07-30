@@ -10,7 +10,7 @@
  * FAQPage JSON-LD, and structured data must not carry markup.
  */
 
-import type { Locale } from "@/i18n";
+import type { Locale, Localised } from "@/i18n";
 
 export type FaqCategoryId =
   | "basics"
@@ -25,14 +25,14 @@ export type FaqCategoryId =
 
 export interface FaqCategory {
   id: FaqCategoryId;
-  label: Record<Locale, string>;
+  label: Localised<string>;
 }
 
 export interface FaqEntry {
   id: string;
   category: FaqCategoryId;
-  question: Record<Locale, string>;
-  answer: Record<Locale, string>;
+  question: Localised<string>;
+  answer: Localised<string>;
   /** Extra search terms that do not appear verbatim in the text. */
   keywords?: string[];
 }

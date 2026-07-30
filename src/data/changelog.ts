@@ -9,15 +9,15 @@
  * text: "AWG 2.0" for the protocol, "v2.0" for a release of this tool.
  */
 
-import type { Locale } from "@/i18n";
+import type { Locale, Localised } from "@/i18n";
 
 export type TimelineColor = "amber" | "green" | "red";
 
 export interface TimelineEntry {
   version: string;
-  date: Record<Locale, string>;
-  title: Record<Locale, string>;
-  desc: Record<Locale, string>;
+  date: Localised<string>;
+  title: Localised<string>;
+  desc: Localised<string>;
   /** Lucide icon name, resolved by the view. */
   icon: string;
   color: TimelineColor;

@@ -14,7 +14,7 @@
  */
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
-import { useI18n } from "@/i18n";
+import { useI18n, pick } from "@/i18n";
 import type { AWGConfig } from "@/utils/generator";
 import { capsFor } from "@/utils/generator/versions";
 
@@ -266,7 +266,7 @@ async function copyValue(key: string, value: string) {
 
         <div class="cfg-groups">
             <div v-for="g in groups" :key="g.title.en" class="cfg-group">
-                <h3 class="cfg-group-title">{{ g.title[locale] }}</h3>
+                <h3 class="cfg-group-title">{{ pick(g.title, locale) }}</h3>
 
                 <div class="cfg-fields">
                     <!-- One card per client field, mirroring the app's layout -->
@@ -283,7 +283,7 @@ async function copyValue(key: string, value: string) {
                     >
                         <span class="cfg-field-label">
                             {{ f.label }}
-                            <em v-if="f.hint[locale]">— {{ f.hint[locale] }}</em>
+                            <em v-if="pick(f.hint, locale)">— {{ pick(f.hint, locale) }}</em>
                         </span>
                         <span class="cfg-field-value">{{ f.value() }}</span>
                         <span class="cfg-field-copy" aria-hidden="true">

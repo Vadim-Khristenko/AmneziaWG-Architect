@@ -36,7 +36,7 @@
 
 import type { AWG3Params, GeneratorInput, Intensity } from "./types";
 import { rnd } from "./utils";
-import { cryptoB64 } from "../rng";
+import { cryptoB64 } from "@/shared/rng";
 
 /* ── Protocol constants (verified against the Go implementation) ─────────── */
 

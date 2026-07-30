@@ -38,7 +38,7 @@ import {
     TriangleAlert,
 } from "lucide-vue-next";
 import SupportSection from "@/components/SupportSection.vue";
-import { localizePath, useI18n } from "@/i18n";
+import { localizePath, useI18n, pick } from "@/i18n";
 import { TIMELINE } from "@/data/changelog";
 import RichText from "@/components/RichText";
 
@@ -62,9 +62,9 @@ const TIMELINE_ICONS: Record<string, Component> = {
 const timelineEvents = computed(() =>
     TIMELINE.map((e) => ({
         version: e.version,
-        date: e.date[locale.value],
-        title: e.title[locale.value],
-        desc: e.desc[locale.value],
+        date: pick(e.date, locale.value),
+        title: pick(e.title, locale.value),
+        desc: pick(e.desc, locale.value),
         icon: TIMELINE_ICONS[e.icon] ?? Sparkles,
         color: e.color,
     })),

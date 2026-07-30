@@ -6,7 +6,7 @@
  * rendered verbatim.
  */
 
-import type { Locale } from "@/i18n";
+import type { Locale, Localised } from "@/i18n";
 
 /* ── Crypto ──────────────────────────────────────────────────────────────── */
 
@@ -17,7 +17,7 @@ export interface CryptoWallet {
   /** Ticker shown next to the name. */
   ticker: string;
   /** Network, spelled out — sending on the wrong one is unrecoverable. */
-  network: Record<Locale, string>;
+  network: Localised<string>;
   address: string;
 }
 
@@ -71,7 +71,7 @@ export const CRYPTO_WALLETS: CryptoWallet[] = [
 export interface FiatMethod {
   id: string;
   label: string;
-  note: Record<Locale, string>;
+  note: Localised<string>;
   url: string;
 }
 
@@ -100,8 +100,8 @@ export const FIAT_METHODS: FiatMethod[] = [
 
 export interface PortfolioLink {
   id: string;
-  title: Record<Locale, string>;
-  desc: Record<Locale, string>;
+  title: Localised<string>;
+  desc: Localised<string>;
   url: string;
 }
 

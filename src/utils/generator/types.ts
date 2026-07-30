@@ -27,7 +27,8 @@ export type BrowserProfile =
   | "yandex_mobile"
   | "";
 
-export type BfpSlot = "qi" | "q0" | "h3" | "tls" | "nx" | "dtls";
+// Lives in shared/fingerprints, beside the data it describes.
+export type { BfpSlot } from "@/shared/fingerprints";
 
 /** Input parameters for the generator. */
 export interface GeneratorInput {

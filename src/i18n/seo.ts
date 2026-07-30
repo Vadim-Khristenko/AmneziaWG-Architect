@@ -6,7 +6,7 @@
  * because search engines read them — they are prose, not labels.
  */
 
-import type { Locale } from "./types";
+import type { Locale , Localised } from "./types";
 
 export interface RouteSeo {
   title: string;
@@ -20,7 +20,7 @@ export interface RouteSeo {
 }
 
 /** Route name → locale → metadata. */
-export type SeoTable = Record<string, Record<Locale, RouteSeo>>;
+export type SeoTable = Record<string, Localised<RouteSeo>>;
 
 export const ROUTE_SEO: SeoTable = {
   home: {

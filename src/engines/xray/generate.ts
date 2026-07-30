@@ -7,7 +7,7 @@
  * for XHTTP. Where the core would reject a value, this refuses to emit it.
  */
 
-import { cryptoBytes, cryptoRnd, cryptoPick } from "@/utils/rng";
+import { cryptoBytes, cryptoRnd, cryptoPick } from "@/shared/rng";
 import { generateX25519Pair, toBase64Url } from "@/shared/x25519";
 import { fingerprintById } from "@/shared/fingerprints";
 import { xrayCaps } from "./versions";

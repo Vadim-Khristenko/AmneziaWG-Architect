@@ -17,7 +17,7 @@
  * on their own machine, with nothing to time against.
  */
 
-import { cryptoBytes } from "@/utils/rng";
+import { cryptoBytes } from "@/shared/rng";
 
 const P = (1n << 255n) - 19n;
 const A24 = 121665n;

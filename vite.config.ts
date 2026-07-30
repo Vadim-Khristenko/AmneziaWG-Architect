@@ -3,6 +3,7 @@
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import { ROUTE_SEO } from "./src/i18n/seo";
+import { DEFAULT_LOCALE } from "./src/i18n/types";
 import path from "node:path";
 import fs from "node:fs";
 import type { Plugin } from "vite";
@@ -45,7 +46,11 @@ const ROUTE_STUBS: RouteStub[] = STUB_LOCALES.flatMap((loc) =>
     // The site root is index.html itself, not a stub directory.
     (r) => !(loc === "ru" && r.path === ""),
   ).map((r) => {
-    const seo = ROUTE_SEO[r.name][loc];
+    // Metadata falls back to the source locale, same as the runtime does:
+    // a locale that is only half translated still gets complete <head> tags
+    // rather than failing the build.
+    const table = ROUTE_SEO[r.name];
+    const seo = table[loc] ?? table[DEFAULT_LOCALE];
     const prefix = loc === "ru" ? "" : "en";
     return {
       slug: [prefix, r.path].filter(Boolean).join("/"),

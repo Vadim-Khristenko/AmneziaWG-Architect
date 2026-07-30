@@ -4,7 +4,7 @@
  * All randomness is backed by crypto.getRandomValues() via ../rng.
  */
 
-import { cryptoRnd, cryptoRh, cryptoPick } from "../rng";
+import { cryptoRnd, cryptoRh, cryptoPick } from "@/shared/rng";
 import type { GeneratorInput, BfpSlot } from "./types";
 import { hostPools, BFP } from "./constants";
 

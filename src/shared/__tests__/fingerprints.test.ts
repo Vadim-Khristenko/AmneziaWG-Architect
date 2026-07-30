@@ -63,6 +63,46 @@ describe("the registry", () => {
       expect(b.utls!.modern).toMatch(/^hello[a-z0-9]+_[0-9_]+$/);
     }
   });
+
+  it("pins only what uTLS itself considers current and working", () => {
+    /**
+     * The ground truth is what each `Hello*_Auto` alias resolves to in
+     * refraction-networking/utls — that is the version the maintainers stand
+     * behind, and the one a client sends when it is given the plain preset.
+     *
+     * Two of these do not follow the obvious guess, and both were wrong here
+     * before this test existed. uTLS says in a comment beside each alias that
+     * `HelloEdge_106` and `Hello360_11_0` "seem to be incompatible with this
+     * library", so it points Edge at 85 and 360 at 7.5 — even though Xray
+     * lists the newer pair in its Modern pool, which is where `random` draws
+     * from. Pinning the newer ones shipped a hello that does not work.
+     */
+    const AUTO_RESOLVES_TO: Record<string, string> = {
+      chrome: "hellochrome_133",
+      firefox: "hellofirefox_148",
+      safari: "hellosafari_26_3",
+      ios: "helloios_14",
+      qq: "helloqq_11_1",
+      edge: "helloedge_85",
+      "360": "hello360_7_5",
+    };
+
+    for (const b of UTLS_FINGERPRINTS) {
+      const expected = AUTO_RESOLVES_TO[b.utls!.preset];
+      if (!expected) continue;
+      if (!b.utls!.modern) continue;
+      expect(b.utls!.modern, `${b.id} pins the wrong uTLS profile`).toBe(
+        expected,
+      );
+    }
+  });
+
+  it("never pins a profile uTLS calls incompatible", () => {
+    const INCOMPATIBLE = ["helloedge_106", "hello360_11_0"];
+    for (const b of UTLS_FINGERPRINTS) {
+      expect(INCOMPATIBLE, b.id).not.toContain(b.utls!.modern);
+    }
+  });
 });
 
 describe("detecting the visitor's browser", () => {

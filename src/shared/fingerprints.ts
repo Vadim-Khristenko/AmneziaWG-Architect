@@ -18,7 +18,14 @@
  * here at all.
  */
 
-import type { BfpSlot } from "@/utils/generator/types";
+/**
+ * Message slots a browser fingerprint carries sizes for.
+ *
+ * Defined here rather than imported from the AmneziaWG generator: a shared
+ * module that depends on one engine is not shared. The generator re-exports
+ * this name so its own code keeps reading naturally.
+ */
+export type BfpSlot = "qi" | "q0" | "h3" | "tls" | "nx" | "dtls";
 
 /** Rendering engine, which is what actually shapes the traffic. */
 export type BrowserFamily = "chromium" | "gecko" | "webkit" | "other";
@@ -85,7 +92,10 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
       nx: [1200, 1250],
       dtls: [1100, 1200],
     },
-    utls: { preset: "edge", modern: "helloedge_106" },
+    // helloedge_106 is in Xray's Modern pool, but uTLS itself says
+    // "HelloEdge_106 seems to be incompatible with this library" and points
+    // HelloEdge_Auto at 85. Pinning 106 would ship a broken hello.
+    utls: { preset: "edge", modern: "helloedge_85" },
   },
   {
     id: "firefox",
@@ -137,7 +147,9 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
     id: "360",
     label: "360 Browser",
     family: "chromium",
-    utls: { preset: "360", modern: "hello360_11_0" },
+    // Same story as Edge: uTLS points Hello360_Auto at 7.5 and calls 11.0
+    // incompatible, despite Xray listing 11.0 as Modern.
+    utls: { preset: "360", modern: "hello360_7_5" },
   },
   {
     id: "qq",
