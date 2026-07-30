@@ -585,6 +585,8 @@ export const en: Catalog = {
     "The {fingerprint} fingerprint is refused by REALITY.",
   "find.xray.mldsa_unsupported":
     "ML-DSA-65 arrived in v25.7.23 and is unavailable on version {version}.",
+  "find.xray.mldsa_required":
+    "On v{version} a REALITY inbound will not start without mldsa65Seed — on that core the field is required, not optional.",
   "find.xray.mldsa_seed_length":
     "mldsa65Seed must be 32 bytes in base64 RawURL.",
   "find.xray.mldsa_seed_equals_key":

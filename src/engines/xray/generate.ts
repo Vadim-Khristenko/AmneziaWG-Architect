@@ -11,7 +11,7 @@ import { cryptoBytes, cryptoRnd, cryptoPick } from "@/shared/rng";
 import { generateX25519Pair, toBase64Url } from "@/shared/x25519";
 import { bytesToHex } from "@/shared/hex";
 import { fingerprintById } from "@/shared/fingerprints";
-import { xrayCaps } from "./versions";
+import { xrayCaps, type XhttpModeSupport } from "./versions";
 import { REALITY_TRANSPORTS } from "./types";
 import type {
   XrayConfig,
@@ -82,11 +82,35 @@ export function resolveXhttpMode(
   mode: XhttpMode,
   isReality: boolean,
   splitDownload: boolean,
+  supported: XhttpModeSupport = ALL_XHTTP_MODES,
+): Exclude<XhttpMode, "auto"> {
+  const wanted = pickXhttpMode(mode, isReality, splitDownload);
+  if (supported.includes(wanted)) return wanted;
+
+  // v24.11.11 has no `stream-one`, and a config naming it does not load at
+  // all. `stream-up` is the closest thing that core has: still a streamed
+  // upload, just with the download on its own request.
+  if (wanted === "stream-one" && supported.includes("stream-up")) {
+    return "stream-up";
+  }
+  return supported[0] ?? "packet-up";
+}
+
+function pickXhttpMode(
+  mode: XhttpMode,
+  isReality: boolean,
+  splitDownload: boolean,
 ): Exclude<XhttpMode, "auto"> {
   if (mode !== "auto") return mode;
   if (!isReality) return "packet-up";
   return splitDownload ? "stream-up" : "stream-one";
 }
+
+const ALL_XHTTP_MODES: XhttpModeSupport = [
+  "packet-up",
+  "stream-up",
+  "stream-one",
+];
 
 /* ── Defaults ─────────────────────────────────────────────────────────────── */
 
@@ -213,7 +237,11 @@ export function generateXray(input: XrayInput): XrayConfig {
       fingerprint,
       // The core defaults spiderX to "/" and requires a leading slash.
       spiderX: "/",
-      ...(input.useMldsa65 && caps.mldsa65
+      // v25.7.23 rejects a REALITY inbound that has no seed, so on that core
+      // the seed is not a choice — asking for it off produces a config the
+      // core will not load.
+      ...(caps.mldsa65 === "required" ||
+      (input.useMldsa65 && caps.mldsa65 === "optional")
         ? {
             mldsa65: {
               seed: toBase64Url(cryptoBytes(32)),
@@ -236,6 +264,7 @@ export function generateXray(input: XrayInput): XrayConfig {
         input.xhttp.mode,
         security === "reality",
         input.xhttp.splitDownload,
+        caps.xhttpModes,
       ),
     };
   }

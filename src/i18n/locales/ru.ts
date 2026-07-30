@@ -586,6 +586,8 @@ export const ru = {
     "Отпечаток {fingerprint} отклоняется REALITY.",
   "find.xray.mldsa_unsupported":
     "ML-DSA-65 появился в v25.7.23 и недоступен в версии {version}.",
+  "find.xray.mldsa_required":
+    "В v{version} REALITY не запускается без mldsa65Seed — на этом ядре поле обязательное, а не опциональное.",
   "find.xray.mldsa_seed_length":
     "mldsa65Seed должен быть 32 байта в base64 RawURL.",
   "find.xray.mldsa_seed_equals_key":

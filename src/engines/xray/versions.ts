@@ -14,11 +14,37 @@
 
 import type { VersionDescriptor } from "@/types/protocol";
 
+/**
+ * How a core treats REALITY's ML-DSA-65 seed.
+ *
+ * A boolean was wrong in both directions. v25.7.23 introduced the field and
+ * *requires* it: a REALITY inbound without `mldsa65Seed` is rejected with
+ * `invalid "mldsa65Seed": ""`. From v25.8.29 it is optional again. Verified
+ * against the released cores, not read off a changelog.
+ */
+export type Mldsa65Support = "none" | "required" | "optional";
+
+/** XHTTP modes a core understands. `auto` is resolved before it is emitted. */
+export type XhttpModeSupport = readonly ("packet-up" | "stream-up" | "stream-one")[];
+
 export interface XrayVersion extends VersionDescriptor {
   /** ML-DSA-65 post-quantum verification for REALITY. Since v25.7.23. */
-  mldsa65: boolean;
-  /** VLESS Encryption, the ML-KEM-768 + X25519 layer. Since v25.8.29. */
+  mldsa65: Mldsa65Support;
+  /**
+   * VLESS Encryption, the ML-KEM-768 + X25519 layer.
+   *
+   * v25.8.29 does not have it — the core has no `vlessenc` command and
+   * rejects an `mlkem768x25519plus…` decryption string outright. It lands in
+   * v26.1.13.
+   */
   vlessEncryption: boolean;
+  /**
+   * XHTTP modes this core accepts.
+   *
+   * v24.11.11 has no `stream-one`; asking for it fails the config with
+   * `unsupported mode: stream-one`, which is how it was found.
+   */
+  xhttpModes: XhttpModeSupport;
   /** Hysteria as a transport. Since v26.1.13. */
   hysteria: boolean;
   /**
@@ -49,8 +75,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     id: "26.7.11",
     label: "v26.7.11+",
     isNewest: true,
-    mldsa65: true,
+    mldsa65: "optional",
     vlessEncryption: true,
+    xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     sessionIdNames: true,
     methodName: true,
@@ -59,8 +86,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
   {
     id: "26.6.22",
     label: "v26.6.22",
-    mldsa65: true,
+    mldsa65: "optional",
     vlessEncryption: true,
+    xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     sessionIdNames: true,
     methodName: false,
@@ -69,8 +97,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
   {
     id: "26.1.13",
     label: "v26.1.13",
-    mldsa65: true,
+    mldsa65: "optional",
     vlessEncryption: true,
+    xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     sessionIdNames: false,
     methodName: false,
@@ -79,8 +108,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
   {
     id: "25.8.29",
     label: "v25.8.29",
-    mldsa65: true,
-    vlessEncryption: true,
+    mldsa65: "optional",
+    vlessEncryption: false,
+    xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
     sessionIdNames: false,
     methodName: false,
@@ -89,8 +119,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
   {
     id: "25.7.23",
     label: "v25.7.23",
-    mldsa65: true,
+    mldsa65: "required",
     vlessEncryption: false,
+    xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
     sessionIdNames: false,
     methodName: false,
@@ -101,8 +132,9 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     label: "v24.11.11",
     isLegacy: true,
     isFloor: true,
-    mldsa65: false,
+    mldsa65: "none",
     vlessEncryption: false,
+    xhttpModes: ["packet-up", "stream-up"],
     hysteria: false,
     sessionIdNames: false,
     methodName: false,

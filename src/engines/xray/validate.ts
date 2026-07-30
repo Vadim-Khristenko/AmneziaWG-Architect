@@ -144,8 +144,15 @@ export function validateXray(cfg: XrayConfig): Finding[] {
       }
 
       const mldsa = reality.mldsa65;
+      if (!mldsa && caps.mldsa65 === "required") {
+        // v25.7.23 refuses a REALITY inbound with no seed. A config without
+        // one does not start, so this is an error and not a note.
+        findings.push(
+          error("mldsa65Seed", "xray.mldsa_required", { version: cfg.version }),
+        );
+      }
       if (mldsa) {
-        if (!caps.mldsa65) {
+        if (caps.mldsa65 === "none") {
           findings.push(
             error("mldsa65Seed", "xray.mldsa_unsupported", {
               version: cfg.version,

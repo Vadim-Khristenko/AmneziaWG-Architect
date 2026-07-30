@@ -6,20 +6,21 @@
 #   ┌─────────────┐
 #   │  preflight  │  ← reads [skip ci] / [skip test] / [skip deploy]
 #   └──────┬──────┘
-#          ├──────────────┬───────────────────────────┐
-#   ┌──────┴──────┐  ┌────┴────────┐        ┌─────────┴─────────┐
-#   │ lint, types │  │    build    │        │    serve-binary   │
-#   │ and tests   │  │  + bundle   │        │  (tags only, one  │
-#   └──────┬──────┘  └────┬────────┘        │  runner per OS)   │
-#          │              │                 └─────────┬─────────┘
-#          │              ├──► deploy to gh-pages     │
-#          │              │    (branch pushes)        │
-#          └──────────────┴───────────┬───────────────┘
-#                                     ▼
-#                            ┌─────────────────┐
-#                            │     release     │  (tags only)
-#                            │  archive + bin  │
-#                            └─────────────────┘
+#          ├──────────────┬──────────────┬────────────┐
+#   ┌──────┴──────┐ ┌─────┴──────┐ ┌─────┴───────┐ ┌──┴────────────────┐
+#   │ lint, types │ │ xray-core  │ │    build    │ │   serve-binary    │
+#   │ and tests   │ │ configs on │ │  + bundle   │ │  (tags only, one  │
+#   │             │ │ real cores │ │             │ │  runner per OS)   │
+#   └──────┬──────┘ └─────┬──────┘ └─────┬───────┘ └──┬────────────────┘
+#          │              │              │            │
+#          │              │              ├──► deploy to gh-pages
+#          │              │              │    (branch pushes)
+#          └──────────────┴──────────────┴────────────┤
+#                                                     ▼
+#                                            ┌─────────────────┐
+#                                            │     release     │  (tags only)
+#                                            │  archive + bin  │
+#                                            └─────────────────┘
 #
 # Release notes are built from the annotated tag message first, then the
 # commit log since the previous version tag. The tag message is Markdown and
@@ -202,6 +203,56 @@ jobs:
           fi
 
   # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1.5 — Ask the real Xray cores whether they would load what we generate
+  #
+  #   Unit tests can only check the generator against our own idea of what
+  #   each release supports, and that idea was wrong three times: VLESS
+  #   Encryption offered on v25.8.29, which has none; ML-DSA-65 treated as
+  #   optional on v25.7.23, which requires it; and an XHTTP mode v24.11.11
+  #   does not have. Each was found by handing the config to the core.
+  #
+  #   Every version's configs run against that version's core. One core for
+  #   all of them proves nothing — unknown keys are ignored, so a config
+  #   naming a feature the core lacks passes anyway.
+  # ───────────────────────────────────────────────────────────────────────────
+  xray-core:
+    name: 🛰️ Xray configs against real cores
+    needs: [preflight]
+    if: needs.preflight.outputs.skip_test != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: 🧬 Generate the config matrix
+        run: bun scripts/xray-fixtures.ts "${RUNNER_TEMP}/xray-cfg"
+
+      - name: 🛰️ Load every config on its own core
+        run: bash scripts/xray-core-check.sh "${RUNNER_TEMP}/xray-cfg"
+
+      - name: 📋 Summary
+        if: always()
+        run: |
+          COUNT=$(find "${RUNNER_TEMP}/xray-cfg" -name '*.json' \
+            -not -name '_index.json' | wc -l)
+          {
+            echo "### 🛰️ Xray core acceptance"
+            echo ""
+            echo "${COUNT} generated configs, each offered to the core of the"
+            echo "version it was generated for."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — Build (runs in parallel with test)
   # ───────────────────────────────────────────────────────────────────────────
   build:
@@ -316,7 +367,7 @@ jobs:
       needs.preflight.outputs.is_pr != 'true' &&
       needs.preflight.outputs.skip_deploy != 'true' &&
       github.ref_type == 'branch'
-    needs: [preflight, test, build]
+    needs: [preflight, test, xray-core, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -420,7 +471,7 @@ jobs:
       needs.serve-binary.result == 'success' &&
       (needs.test.result == 'success' || needs.test.result == 'skipped') &&
       github.ref_type == 'tag'
-    needs: [preflight, test, build, serve-binary]
+    needs: [preflight, test, xray-core, build, serve-binary]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
