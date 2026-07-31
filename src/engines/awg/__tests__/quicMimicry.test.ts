@@ -186,3 +186,75 @@ describe("the QUIC Initial the generator emits", () => {
     }
   });
 });
+
+describe("the other QUIC packets the generator emits", () => {
+  /** Long-header packets share everything up to the token, which varies. */
+  function parseLongHeader(header: Uint8Array, hasToken: boolean) {
+    let at = 0;
+    const first = header[at++]!;
+    at += 4; // version
+
+    const dcidLen = header[at++]!;
+    at += dcidLen;
+    const scidLen = header[at++]!;
+    at += scidLen;
+
+    if (hasToken) {
+      const token = readVarint(header, at);
+      at += token.size + token.value;
+    }
+
+    const length = readVarint(header, at);
+    at += length.size;
+
+    const pnLen = (first & 0x03) + 1;
+    at += pnLen;
+
+    return {
+      packetType: (first >> 4) & 0x03,
+      fixedBit: (first >> 6) & 1,
+      pnLen,
+      length: length.value,
+      consumed: at,
+    };
+  }
+
+  it("writes 0-RTT with no token field, and a Length that adds up", () => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const { header, padding } = readChain(
+        genCfg(seeded({ profile: "quic_0rtt" })).i1,
+      );
+      // 0-RTT is type 01, and RFC 9000 gives only Initial a token.
+      const packet = parseLongHeader(header, false);
+
+      expect(packet.fixedBit, "fixed bit").toBe(1);
+      expect(packet.packetType, "0-RTT").toBe(1);
+      expect(packet.length).toBe(packet.pnLen + padding);
+      expect(packet.consumed).toBe(header.length);
+    }
+  });
+
+  it("writes HTTP/3 packets whose structure matches their own type", () => {
+    let sawInitial = false;
+    let sawHandshake = false;
+
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const { header, padding } = readChain(genCfg(seeded({ profile: "http3" })).i1);
+      const type = (header[0]! >> 4) & 0x03;
+
+      // Initial is 00 and Handshake is 10; only the first has a token, which
+      // is what the old code got wrong by writing one structure for both.
+      expect([0, 2], "packet type").toContain(type);
+      const packet = parseLongHeader(header, type === 0);
+
+      expect(packet.length).toBe(packet.pnLen + padding);
+      expect(packet.consumed).toBe(header.length);
+
+      if (type === 0) sawInitial = true;
+      if (type === 2) sawHandshake = true;
+    }
+
+    // Both kinds should turn up, or the branch is dead code.
+    expect(sawInitial && sawHandshake).toBe(true);
+  });
+});
