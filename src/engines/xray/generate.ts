@@ -229,8 +229,13 @@ export function createDefaults(): XrayInput {
     transport: "raw",
     security: "reality",
     flow: "xtls-rprx-vision",
-    dest: "www.cloudflare.com:443",
-    serverNames: ["www.cloudflare.com"],
+    // Probed rather than assumed: HTTP/2 and TLS 1.3, 200 OK with no
+    // redirect, certificate chain 4466 bytes, and — the part that matters —
+    // not behind Cloudflare. The old default was www.cloudflare.com, which
+    // is, and a donor sharing a CDN with the server pretending to be it is
+    // the classic way a REALITY setup gives itself away.
+    dest: "www.bing.com:443",
+    serverNames: ["www.bing.com"],
     xver: 0,
     shortIdCount: 3,
     shortIdLength: 8,
