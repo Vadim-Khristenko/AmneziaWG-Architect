@@ -199,3 +199,93 @@ describe("the DNS query the generator emits", () => {
     expect(() => parseDns(readChain(chain).bytes)).not.toThrow();
   });
 });
+
+/* ── DTLS ─────────────────────────────────────────────────────────────────── */
+
+describe("the DTLS ClientHello the generator emits", () => {
+  it("uses epoch zero, as a first flight must", () => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const { bytes } = readChain(genCfg(seeded({ profile: "dtls" })).i1);
+
+      expect(bytes[0], "content type").toBe(0x16);
+      expect(u16(bytes, 1), "DTLS 1.2").toBe(0xfefd);
+      // A ClientHello precedes any cipher change, so nothing but 0 is
+      // possible here — a random epoch was variety that cannot exist.
+      expect(u16(bytes, 3), "epoch").toBe(0);
+    }
+  });
+
+  it("writes the eleven-byte handshake header DTLS adds to TLS's four", () => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const { bytes, padding, rc, counters, stamps } = readChain(
+        genCfg(seeded({ profile: "dtls", useTagRC: true })).i1,
+      );
+
+      const recordLen = u16(bytes, 11);
+      expect(bytes[13], "handshake type").toBe(0x01);
+
+      const bodyLen = u24(bytes, 14);
+      const messageSeq = u16(bytes, 17);
+      const fragmentOffset = u24(bytes, 19);
+      const fragmentLen = u24(bytes, 22);
+
+      // type 1 + length 3 + message seq 2 + fragment offset 3 + fragment
+      // length 3 = 12 bytes, on top of the 13-byte record header.
+      expect(recordLen, "record covers header plus body").toBe(12 + bodyLen);
+      expect(messageSeq, "first message of the flight").toBe(0);
+      // Unfragmented: the fragment is the whole message.
+      expect(fragmentOffset, "fragment offset").toBe(0);
+      expect(fragmentLen, "fragment length").toBe(bodyLen);
+
+      const carried = bytes.length - 13 - 12 + padding + rc + counters + stamps;
+      expect(bodyLen, "body matches what is sent").toBe(carried);
+    }
+  });
+});
+
+/* ── SIP ──────────────────────────────────────────────────────────────────── */
+
+/** The blob back as text: SIP is a text protocol. */
+const asText = (bytes: Uint8Array) =>
+  Array.from(bytes, (b) => String.fromCharCode(b)).join("");
+
+describe("the SIP REGISTER the generator emits", () => {
+  it("has a request line a parser accepts", () => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const { bytes } = readChain(genCfg(seeded({ profile: "sip" })).i1);
+      const [line] = asText(bytes).split("\r\n");
+
+      // The version used to be four random bytes, which fails on line one.
+      expect(line, `attempt ${attempt}`).toMatch(/^REGISTER sip:\S+ SIP\/2\.0$/);
+    }
+  });
+
+  it("carries the headers a REGISTER is required to have", () => {
+    const { bytes } = readChain(genCfg(seeded({ profile: "sip" })).i1);
+    const text = asText(bytes);
+
+    for (const header of ["Via:", "From:", "To:", "Call-ID:", "CSeq:", "Max-Forwards:"]) {
+      expect(text, header).toContain(header);
+    }
+    // Without the magic cookie the branch is not an RFC 3261 branch.
+    expect(text).toContain("branch=z9hG4bK");
+    expect(text).toMatch(/CSeq: \d+ REGISTER/);
+  });
+
+  it("declares a Content-Length equal to the body it sends", () => {
+    for (const tags of [{}, { useTagC: true, useTagT: true }, { useTagRC: true }]) {
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const chain = genCfg(seeded({ profile: "sip", ...tags })).i1;
+        const { bytes, padding, rc, counters, stamps } = readChain(chain);
+        const text = asText(bytes);
+
+        const declared = Number(/Content-Length: (\d+)/.exec(text)![1]);
+        expect(declared, `${JSON.stringify(tags)}`).toBe(
+          padding + rc + counters + stamps,
+        );
+        // Headers end with a blank line; everything after it is the body.
+        expect(text.endsWith("\r\n\r\n")).toBe(true);
+      }
+    }
+  });
+});
