@@ -17,6 +17,8 @@ import type {
   XrayConfig,
   XrayInput,
   XrayClient,
+  XrayFlow,
+  XraySecurity,
   XhttpMode,
   XhttpSettings,
 } from "./types";
@@ -176,100 +178,143 @@ export function createDefaults(): XrayInput {
  * a transport it does not support. Validation still reports the correction, so
  * the user is told rather than silently overridden.
  */
-export function generateXray(input: XrayInput): XrayConfig {
-  const caps = xrayCaps(input.version);
+/* ── The pieces a config is made of ───────────────────────────────────────── */
 
-  // "XTLS only supports TLS and REALITY directly for now" — vision over a
-  // bare transport is refused by the core, so it is not produced here.
+/**
+ * What the core will actually accept, given what was asked for.
+ *
+ * Two corrections, both from `transport_internet.go`: Vision needs a TLS or
+ * REALITY layer to hide inside, and REALITY only runs over RAW, XHTTP and
+ * gRPC. Making them here rather than emitting the request verbatim means the
+ * config loads; the validator still reports the correction, so the user is
+ * told rather than silently overridden.
+ */
+function resolveLayers(input: XrayInput): {
+  flow: XrayFlow;
+  security: XraySecurity;
+} {
   const canVision = input.security === "reality" || input.security === "tls";
-  const flow = canVision ? input.flow : "";
-
-  // "REALITY only supports RAW, XHTTP and gRPC for now."
   const security =
     input.security === "reality" &&
     !REALITY_TRANSPORTS.includes(input.transport)
       ? "tls"
       : input.security;
 
-  const clients: XrayClient[] = [];
-  const encryption = input.useVlessEncryption && caps.vlessEncryption
-    ? makeVlessEncryption(input.vlessEncryptionMode, input.vlessEncryptionSeconds)
-    : undefined;
+  return { flow: canVision ? input.flow : "", security };
+}
 
-  for (let i = 0; i < Math.max(1, input.clientCount); i++) {
-    clients.push({
-      id: uuidV4(),
-      flow,
-      ...(encryption ? { encryption: encryption.encryption } : {}),
-    });
-  }
+/** One account per client, all sharing the flow and the encryption ticket. */
+function buildClients(
+  count: number,
+  flow: XrayFlow,
+  encryption?: { encryption: string },
+): XrayClient[] {
+  return Array.from({ length: Math.max(1, count) }, () => ({
+    id: uuidV4(),
+    flow,
+    ...(encryption ? { encryption: encryption.encryption } : {}),
+  }));
+}
 
-  const config: XrayConfig = {
+/**
+ * The REALITY block.
+ *
+ * The ML-DSA-65 seed is not simply the user's choice: v25.7.23 rejects a
+ * REALITY inbound that has no seed, so on that core it is emitted whether or
+ * not it was asked for.
+ */
+function buildReality(
+  input: XrayInput,
+  caps: ReturnType<typeof xrayCaps>,
+): NonNullable<XrayConfig["reality"]> {
+  const fp = fingerprintById(input.fingerprint);
+  const utls = fp?.utls;
+  const fingerprint =
+    input.pinFingerprint && utls?.modern ? utls.modern : (utls?.preset ?? "chrome");
+
+  const seedNeeded =
+    caps.mldsa65 === "required" ||
+    (input.useMldsa65 && caps.mldsa65 === "optional");
+
+  return {
+    dest: input.dest,
+    serverNames: [...input.serverNames],
+    xver: input.xver,
+    keys: generateX25519Pair(),
+    shortIds: Array.from({ length: Math.max(1, input.shortIdCount) }, () =>
+      makeShortId(input.shortIdLength),
+    ),
+    fingerprint,
+    // The core defaults spiderX to "/" and requires a leading slash.
+    spiderX: "/",
+    ...(seedNeeded
+      ? {
+          mldsa65: {
+            seed: toBase64Url(cryptoBytes(32)),
+            // The 1952-byte verification key is derived by ML-DSA-65 itself.
+            // Deriving it needs the algorithm, which this page does not carry,
+            // so the field is left for the core's own tool to fill and the
+            // validator says so rather than emitting something wrong.
+            verify: "",
+          },
+        }
+      : {}),
+    ...(caps.defaultMinClientVer ? {} : { minClientVer: "24.11.11" }),
+  };
+}
+
+/** The XHTTP block, with `auto` resolved to what this core actually has. */
+function buildXhttp(
+  input: XrayInput,
+  caps: ReturnType<typeof xrayCaps>,
+  security: XraySecurity,
+): NonNullable<XrayConfig["xhttp"]> {
+  return {
+    ...input.xhttp,
+    resolvedMode: resolveXhttpMode(
+      input.xhttp.mode,
+      security === "reality",
+      input.xhttp.splitDownload,
+      caps.xhttpModes,
+    ),
+  };
+}
+
+/**
+ * Build a configuration.
+ *
+ * Assembly only: each block is built by the function that understands it, so
+ * "what goes in the REALITY block" has one answer and adding a block does not
+ * mean growing this function. It used to be one 70-line body where the flow
+ * correction, the client loop, the REALITY keys and the XHTTP mode were all
+ * interleaved.
+ */
+export function generateXray(input: XrayInput): XrayConfig {
+  const caps = xrayCaps(input.version);
+  const { flow, security } = resolveLayers(input);
+
+  const encryption =
+    input.useVlessEncryption && caps.vlessEncryption
+      ? makeVlessEncryption(
+          input.vlessEncryptionMode,
+          input.vlessEncryptionSeconds,
+        )
+      : undefined;
+
+  return {
     version: input.version,
     address: input.address,
     port: input.port,
     transport: input.transport,
     security,
     flow,
-    clients,
+    clients: buildClients(input.clientCount, flow, encryption),
     ...(encryption ? { vlessEncryption: encryption } : {}),
+    ...(security === "reality" ? { reality: buildReality(input, caps) } : {}),
+    ...(input.transport === "xhttp"
+      ? { xhttp: buildXhttp(input, caps, security) }
+      : {}),
   };
-
-  if (security === "reality") {
-    const fp = fingerprintById(input.fingerprint);
-    const utls = fp?.utls;
-    const fingerprint =
-      input.pinFingerprint && utls?.modern
-        ? utls.modern
-        : (utls?.preset ?? "chrome");
-
-    const shortIds = Array.from(
-      { length: Math.max(1, input.shortIdCount) },
-      () => makeShortId(input.shortIdLength),
-    );
-
-    config.reality = {
-      dest: input.dest,
-      serverNames: [...input.serverNames],
-      xver: input.xver,
-      keys: generateX25519Pair(),
-      shortIds,
-      fingerprint,
-      // The core defaults spiderX to "/" and requires a leading slash.
-      spiderX: "/",
-      // v25.7.23 rejects a REALITY inbound that has no seed, so on that core
-      // the seed is not a choice — asking for it off produces a config the
-      // core will not load.
-      ...(caps.mldsa65 === "required" ||
-      (input.useMldsa65 && caps.mldsa65 === "optional")
-        ? {
-            mldsa65: {
-              seed: toBase64Url(cryptoBytes(32)),
-              // The 1952-byte verification key is derived by ML-DSA-65 itself.
-              // Deriving it needs the algorithm, which this page does not
-              // carry, so the field is left for `xray mldsa65` to fill and the
-              // validator says so rather than emitting something wrong.
-              verify: "",
-            },
-          }
-        : {}),
-      ...(caps.defaultMinClientVer ? {} : { minClientVer: "24.11.11" }),
-    };
-  }
-
-  if (input.transport === "xhttp") {
-    config.xhttp = {
-      ...input.xhttp,
-      resolvedMode: resolveXhttpMode(
-        input.xhttp.mode,
-        security === "reality",
-        input.xhttp.splitDownload,
-        caps.xhttpModes,
-      ),
-    };
-  }
-
-  return config;
 }
 
 /** Several independent configurations, for provisioning more than one server. */

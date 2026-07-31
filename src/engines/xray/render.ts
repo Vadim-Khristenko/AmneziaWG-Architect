@@ -101,48 +101,76 @@ function xhttpSettings(cfg: XrayConfig): Record<string, unknown> | undefined {
   };
 }
 
-/** The server's inbound, as Xray-core expects it. */
-export function buildServerInbound(cfg: XrayConfig): Record<string, unknown> {
-  const caps = xrayCaps(cfg.version);
-  const transportKey = caps.methodName ? "method" : "network";
+/**
+ * The `realitySettings` block.
+ *
+ * Only the server half: `privateKey` rather than `password`, `serverNames`
+ * rather than `serverName`. The core decides which half it is reading by
+ * whether `target` is present, and rejects a client config that carries
+ * `serverNames` — so the two halves are built by different code on purpose.
+ */
+function realitySettings(cfg: XrayConfig): Record<string, unknown> | undefined {
+  const reality = cfg.reality;
+  if (!reality) return undefined;
 
-  const streamSettings: Record<string, unknown> = {
+  return {
+    show: false,
+    target: reality.dest,
+    xver: reality.xver,
+    serverNames: reality.serverNames,
+    privateKey: reality.keys.privateKey,
+    shortIds: reality.shortIds,
+    ...(reality.minClientVer ? { minClientVer: reality.minClientVer } : {}),
+    ...(reality.mldsa65?.seed ? { mldsa65Seed: reality.mldsa65.seed } : {}),
+  };
+}
+
+/**
+ * `streamSettings`: the transport and whatever wraps it.
+ *
+ * The transport's own key changed name — `network` before v26.7.11, `method`
+ * from it — and the older spelling is still accepted, so the version decides
+ * which one is written.
+ */
+function streamSettings(cfg: XrayConfig): Record<string, unknown> {
+  const transportKey = xrayCaps(cfg.version).methodName ? "method" : "network";
+
+  const reality = realitySettings(cfg);
+  const xhttp = xhttpSettings(cfg);
+
+  return {
     [transportKey]: cfg.transport,
     security: cfg.security,
+    ...(reality ? { realitySettings: reality } : {}),
+    ...(xhttp ? { xhttpSettings: xhttp } : {}),
   };
+}
 
-  if (cfg.reality) {
-    streamSettings.realitySettings = {
-      show: false,
-      target: cfg.reality.dest,
-      xver: cfg.reality.xver,
-      serverNames: cfg.reality.serverNames,
-      privateKey: cfg.reality.keys.privateKey,
-      shortIds: cfg.reality.shortIds,
-      ...(cfg.reality.minClientVer
-        ? { minClientVer: cfg.reality.minClientVer }
-        : {}),
-      ...(cfg.reality.mldsa65?.seed
-        ? { mldsa65Seed: cfg.reality.mldsa65.seed }
-        : {}),
-    };
-  }
+/** The VLESS accounts and how the inbound decrypts them. */
+function inboundSettings(cfg: XrayConfig): Record<string, unknown> {
+  return {
+    clients: cfg.clients.map((client) => ({
+      id: client.id,
+      ...(client.flow ? { flow: client.flow } : {}),
+    })),
+    // "none" is a value, not an absence: the core requires the field.
+    decryption: cfg.vlessEncryption?.decryption ?? "none",
+  };
+}
 
-  const xhttp = xhttpSettings(cfg);
-  if (xhttp) streamSettings.xhttpSettings = xhttp;
-
+/**
+ * The server's inbound, as Xray-core expects it.
+ *
+ * Assembly only. Each block is built by the function that understands it, so
+ * a change to REALITY does not mean reading past the client loop to find it.
+ */
+export function buildServerInbound(cfg: XrayConfig): Record<string, unknown> {
   return {
     listen: "0.0.0.0",
     port: cfg.port,
     protocol: "vless",
-    settings: {
-      clients: cfg.clients.map((c) => ({
-        id: c.id,
-        ...(c.flow ? { flow: c.flow } : {}),
-      })),
-      decryption: cfg.vlessEncryption?.decryption ?? "none",
-    },
-    streamSettings,
+    settings: inboundSettings(cfg),
+    streamSettings: streamSettings(cfg),
   };
 }
 
