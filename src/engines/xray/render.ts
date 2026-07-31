@@ -200,7 +200,15 @@ function realitySettings(cfg: XrayConfig): Record<string, unknown> | undefined {
     privateKey: reality.keys.privateKey,
     shortIds: reality.shortIds,
     ...(reality.minClientVer ? { minClientVer: reality.minClientVer } : {}),
+    ...(reality.maxClientVer ? { maxClientVer: reality.maxClientVer } : {}),
+    ...(reality.maxTimeDiff ? { maxTimeDiff: reality.maxTimeDiff } : {}),
     ...(reality.mldsa65?.seed ? { mldsa65Seed: reality.mldsa65.seed } : {}),
+    ...(reality.limitFallbackUpload
+      ? { limitFallbackUpload: reality.limitFallbackUpload }
+      : {}),
+    ...(reality.limitFallbackDownload
+      ? { limitFallbackDownload: reality.limitFallbackDownload }
+      : {}),
   };
 }
 

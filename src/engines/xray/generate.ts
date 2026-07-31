@@ -15,6 +15,7 @@ import { xrayCaps, type XhttpModeSupport } from "./versions";
 import { buildFinalMask, defaultFinalMask } from "./finalmask";
 import { REALITY_TRANSPORTS } from "./types";
 import type {
+  LimitFallback,
   XrayConfig,
   XrayInput,
   XrayClient,
@@ -228,6 +229,13 @@ export function createDefaults(): XrayInput {
     shortIdCount: 3,
     shortIdLength: 8,
     useMldsa65: false,
+    maxClientVer: "",
+    maxTimeDiff: 0,
+    limitFallbackUpload: "",
+    limitFallbackDownload: "",
+    // On by default: an untuned spider crawls the donor site the same way for
+    // everyone, which is a shape in itself.
+    spiderTuning: true,
     useVlessEncryption: false,
     vlessEncryptionMode: "native",
     vlessEncryptionSeconds: "0-600",
@@ -237,6 +245,49 @@ export function createDefaults(): XrayInput {
     finalMask: defaultFinalMask(),
     clientCount: 1,
   };
+}
+
+/**
+ * A spiderX with the crawl tuned.
+ *
+ * The core parses five parameters out of the query — `p` padding, `c`
+ * concurrency, `t` times, `i` interval, `r` return — each a single number or
+ * a range, into the ten integers it calls spiderY. An untuned spider crawls
+ * the donor site identically for everyone, which is a shape of its own.
+ */
+export function spiderX(): string {
+  const span = (lo: number, hi: number) => {
+    const from = cryptoRnd(lo, hi);
+    return `${from}-${cryptoRnd(from, hi)}`;
+  };
+  const query = new URLSearchParams({
+    p: span(1, 6),
+    c: span(1, 4),
+    t: span(1, 4),
+    i: span(20, 120),
+    r: span(1, 3),
+  });
+  return `/?${query.toString()}`;
+}
+
+/**
+ * Read "afterBytes/bytesPerSec/burstBytesPerSec" into the block the core
+ * wants, or null when the user left it alone.
+ */
+export function parseLimitFallback(text: string): LimitFallback | null {
+  const parts = text.split("/").map((p) => Number(p.trim()));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n) || n < 0)) {
+    return null;
+  }
+  const [afterBytes, bytesPerSec, burstBytesPerSec] = parts as [
+    number,
+    number,
+    number,
+  ];
+  // All zeroes is the same as not setting it, and writing it would only add
+  // noise to the config.
+  if (!afterBytes && !bytesPerSec && !burstBytesPerSec) return null;
+  return { afterBytes, bytesPerSec, burstBytesPerSec };
 }
 
 /* ── Generation ───────────────────────────────────────────────────────────── */
@@ -316,8 +367,24 @@ function buildReality(
       makeShortId(input.shortIdLength),
     ),
     fingerprint,
-    // The core defaults spiderX to "/" and requires a leading slash.
-    spiderX: "/",
+    // The core defaults spiderX to "/" and requires a leading slash. The
+    // query, when tuned, is what it reads into spiderY.
+    spiderX: input.spiderTuning ? spiderX() : "/",
+    ...(input.maxClientVer ? { maxClientVer: input.maxClientVer } : {}),
+    ...(input.maxTimeDiff > 0 ? { maxTimeDiff: input.maxTimeDiff } : {}),
+    // v24.11.11 has no such field, so writing it there would be a knob the
+    // user set and the core never reads.
+    ...(caps.realityLimitFallback && parseLimitFallback(input.limitFallbackUpload)
+      ? { limitFallbackUpload: parseLimitFallback(input.limitFallbackUpload)! }
+      : {}),
+    ...(caps.realityLimitFallback &&
+    parseLimitFallback(input.limitFallbackDownload)
+      ? {
+          limitFallbackDownload: parseLimitFallback(
+            input.limitFallbackDownload,
+          )!,
+        }
+      : {}),
     ...(seedNeeded
       ? {
           mldsa65: {

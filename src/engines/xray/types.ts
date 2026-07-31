@@ -70,6 +70,19 @@ export type XhttpPaddingMethod = "repeat-x" | "tokenish";
  */
 export type XhttpUplinkPlacement = "auto" | "body" | "cookie" | "header";
 
+/**
+ * Rate limit for traffic handed to the donor site.
+ *
+ * `afterBytes` is the grace: the first N bytes go at full speed and the
+ * throttle applies past it. That keeps a genuine visitor's page load fast
+ * while a prober pulling gigabytes gets nothing.
+ */
+export interface LimitFallback {
+  afterBytes: number;
+  bytesPerSec: number;
+  burstBytesPerSec: number;
+}
+
 /** VLESS Encryption mode, the middle element of the decryption string. */
 export type VlessEncryptionMode = "native" | "xorpub" | "random";
 
@@ -176,6 +189,43 @@ export interface XrayInput {
   /** Post-quantum verification, where the version supports it. */
   useMldsa65: boolean;
 
+  /**
+   * Newest client version the server will accept. Empty means no ceiling.
+   *
+   * The mirror of `minClientVer`: useful when a newer client changes
+   * something the deployment is not ready for.
+   */
+  maxClientVer: string;
+
+  /**
+   * How far the two clocks may differ, in milliseconds. Zero is the core's
+   * own default.
+   *
+   * REALITY authenticates with a timestamp, so a client whose clock has
+   * drifted past this is refused — which is a real support case, and the
+   * reason the knob is worth exposing rather than hiding.
+   */
+  maxTimeDiff: number;
+
+  /**
+   * Throttle applied to traffic that failed authentication and was passed to
+   * the donor site, as "afterBytes/bytesPerSec/burstBytesPerSec".
+   *
+   * Without it, anyone probing the port gets the donor site at full speed on
+   * the server's bandwidth.
+   */
+  limitFallbackUpload: string;
+  limitFallbackDownload: string;
+
+  /**
+   * Tune the client-side crawl of the donor site.
+   *
+   * The core reads `p`, `c`, `t`, `i` and `r` out of spiderX's query —
+   * padding, concurrency, times, interval and return — into the ten numbers
+   * it calls spiderY. Leaving them unset makes every client crawl alike.
+   */
+  spiderTuning: boolean;
+
   /** VLESS Encryption instead of, or beside, the TLS layer. */
   useVlessEncryption: boolean;
   vlessEncryptionMode: VlessEncryptionMode;
@@ -251,9 +301,14 @@ export interface XrayConfig {
     shortIds: string[];
     mldsa65?: Mldsa65Keys;
     fingerprint: string;
+    /** Path plus, when tuned, the p/c/t/i/r query the core reads into spiderY. */
     spiderX: string;
     /** Only set when the version supplies no default of its own. */
     minClientVer?: string;
+    maxClientVer?: string;
+    maxTimeDiff?: number;
+    limitFallbackUpload?: LimitFallback;
+    limitFallbackDownload?: LimitFallback;
   };
 
   /** VLESS Encryption strings: `decryption` for the server, `encryption` per client. */

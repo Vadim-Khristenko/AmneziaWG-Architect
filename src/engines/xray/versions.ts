@@ -72,6 +72,15 @@ export interface XrayVersion extends VersionDescriptor {
 
   /** Extra request headers on XHTTP. Since v25.7.23. */
   xhttpHeaders: boolean;
+
+  /**
+   * Throttling the traffic handed to the REALITY donor site. Since v25.7.23.
+   *
+   * Established by probe rather than by reading: a string where the core
+   * expects a struct is rejected if it knows the field and ignored if it does
+   * not. v24.11.11 ignores it.
+   */
+  realityLimitFallback: boolean;
   /**
    * Stream settings call the transport `method`. Before v26.7.11 the only
    * name was `network`, which is still accepted — so `network` is always
@@ -102,6 +111,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: true,
     xhttpAdvanced: true,
     xhttpHeaders: true,
+    realityLimitFallback: true,
     methodName: true,
     defaultMinClientVer: true,
   },
@@ -115,6 +125,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: true,
     xhttpAdvanced: true,
     xhttpHeaders: true,
+    realityLimitFallback: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -128,6 +139,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: false,
     xhttpAdvanced: false,
     xhttpHeaders: true,
+    realityLimitFallback: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -141,6 +153,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: false,
     xhttpAdvanced: false,
     xhttpHeaders: true,
+    realityLimitFallback: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -154,6 +167,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: false,
     xhttpAdvanced: false,
     xhttpHeaders: true,
+    realityLimitFallback: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -169,6 +183,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     finalMask: false,
     xhttpAdvanced: false,
     xhttpHeaders: false,
+    realityLimitFallback: false,
     methodName: false,
     defaultMinClientVer: false,
   },

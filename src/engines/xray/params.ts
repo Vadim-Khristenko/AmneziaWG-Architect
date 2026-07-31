@@ -232,6 +232,8 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     group: "reality",
     kind: "text",
     scope: "local",
+    // Established by probe: v24.11.11 ignores the field entirely.
+    since: "25.7.23",
     field: "reality.limitFallbackUpload",
     generated: false,
     source: "transport_security.go: LimitFallback",
@@ -242,6 +244,8 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     group: "reality",
     kind: "text",
     scope: "local",
+    // Established by probe: v24.11.11 ignores the field entirely.
+    since: "25.7.23",
     field: "reality.limitFallbackDownload",
     generated: false,
     source: "transport_security.go: LimitFallback",
@@ -274,8 +278,10 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     group: "reality",
     kind: "text",
     scope: "local",
-    field: "reality.spiderY",
-    generated: false,
+    // Not a field of its own: the core parses p/c/t/i/r out of spiderX's
+    // query into the ten integers it calls spiderY, so the value lives there.
+    field: "reality.spiderX",
+    generated: true,
     source: "transport_security.go: parse(p|c|t|i|r) into ten int64s",
     note: "Тонкая настройка обхода: паддинг, конкурентность, повторы, интервал, возврат.",
   }),
