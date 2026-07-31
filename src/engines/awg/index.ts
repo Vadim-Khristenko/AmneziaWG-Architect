@@ -113,19 +113,12 @@ export const awgEngine = defineEngine<GeneratorInput, AWGConfig>({
   validate(config): EngineFinding[] {
     // The generator splits validation by concern; the shell only ever wants
     // the union. `defineEngine` handles the ordering.
-    const legacy = [...validateGeneratedConfig(config), ...validateAwg3(config)];
-
-    // The older validators carry a ready-made sentence and, in some cases, no
-    // code. Both are kept: the code selects a catalogue message where there is
-    // one, and `msg` remains as the fallback until each rule is ported. A
-    // finding without either would be a rule that silently stopped reporting,
-    // so the field name stands in as a last resort.
-    return legacy.map((f) => ({
-      field: f.field,
-      level: f.level,
-      code: f.code ?? `awg.legacy.${f.field.toLowerCase()}`,
-      msg: f.msg,
-    }));
+    //
+    // These used to be adapted on the way out — the validators carried a
+    // ready-made sentence and, for some rules, no code at all, so the field
+    // name stood in as one. Every rule carries its own code now, and the
+    // findings come through unchanged.
+    return [...validateGeneratedConfig(config), ...validateAwg3(config)];
   },
 
   toClientPayload(config) {

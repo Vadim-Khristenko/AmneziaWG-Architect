@@ -1,3 +1,4 @@
+import type { Finding } from "@/types/findings";
 /**
  * AmneziaWG Architect — Generator public types.
  */
@@ -147,16 +148,16 @@ export interface AWGConfig {
 }
 
 /** Validation result for a single AWG parameter. */
-export interface ValidationFinding {
-  field: string;
-  level: "error" | "warn";
-  msg: string;
-  /**
-   * Stable machine-readable identifier for the rule that fired. `msg` stays the
-   * human-readable Russian fallback; the UI translates by `code` when it can.
-   */
-  code?: string;
-}
+/**
+ * A validator finding.
+ *
+ * The shared type, not one of its own. This used to carry a required Russian
+ * `msg` with an optional `code` beside it — the sentence was the real payload
+ * and the code was the aspiration. It is the other way round now: the code and
+ * its values are the finding, and the sentence is produced from the catalogue
+ * in whatever language the reader is using.
+ */
+export type ValidationFinding = Finding;
 
 /** Compatibility descriptor for a concrete AWG client implementation. */
 export interface ClientCapability {

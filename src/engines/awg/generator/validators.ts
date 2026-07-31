@@ -64,7 +64,8 @@ export function validateHeaderRanges(
         out.push({
           field: `${hs[i][0]}/${hs[j][0]}`,
           level: "error",
-          msg: `Диапазоны ${hs[i][0]} и ${hs[j][0]} пересекаются.`,
+          code: "awg.h_overlap",
+          values: { a: hs[i][0], b: hs[j][0] },
         });
       }
     }
@@ -75,7 +76,8 @@ export function validateHeaderRanges(
       out.push({
         field: name,
         level: "warn",
-        msg: `${name} в зоне 1–4 (зарезервировано WireGuard).`,
+        code: "awg.h_reserved",
+        values: { key: name },
       });
     }
   }
@@ -90,35 +92,39 @@ export function validateSizes(cfg: AWGConfig): ValidationFinding[] {
     out.push({
       field: "S2",
       level: "warn",
-      msg: "S1 + 56 = S2 — размеры init/response совпадут (DPI-фингерпринт).",
+      code: "awg.size_collision",
+      values: { a: "S1", b: "S2" },
     });
   }
   if (cfg.s3 === cfg.s1 + 56) {
     out.push({
       field: "S3",
       level: "warn",
-      msg: "S3 = S1 + 56 — размеры init/cookie совпадут.",
+      code: "awg.size_collision",
+      values: { a: "S1", b: "S3" },
     });
   }
   if (cfg.s3 === cfg.s2 + 92) {
     out.push({
       field: "S3",
       level: "warn",
-      msg: "S3 = S2 + 92 — размеры response/cookie совпадут.",
+      code: "awg.size_collision",
+      values: { a: "S2", b: "S3" },
     });
   }
   if (cfg.s4 > 32) {
     out.push({
       field: "S4",
       level: "error",
-      msg: `S4=${cfg.s4} превышает максимальное значение 32.`,
+      code: "awg.s4_max",
+      values: { s4: cfg.s4, max: 32 },
     });
   }
   if (cfg.s4 === 0) {
     out.push({
       field: "S4",
       level: "warn",
-      msg: "S4 = 0 — обфускация транспортных пакетов отключена.",
+      code: "awg.s4_zero",
     });
   }
   return out;
@@ -144,7 +150,8 @@ export function validateConfigForClient(
     out.push({
       field: "S4",
       level: "error",
-      msg: `S4=${cfg.s4} превышает максимум ${client.maxS4} для ${client.name}.`,
+      code: "awg.s4_over_client",
+      values: { s4: cfg.s4, max: client.maxS4, client: client.name },
     });
   }
 
@@ -153,21 +160,24 @@ export function validateConfigForClient(
     out.push({
       field: "I1-I5",
       level: "error",
-      msg: `Тег <c> не поддерживается клиентом ${client.name}.`,
+      code: "awg.cps_tag_unsupported",
+      values: { tag: "<c>", client: client.name },
     });
   }
   if (/<rc\s+\d+>/.test(cps) && !client.supportsCpsTagRC) {
     out.push({
       field: "I1-I5",
       level: "error",
-      msg: `Тег <rc N> не поддерживается клиентом ${client.name}.`,
+      code: "awg.cps_tag_unsupported",
+      values: { tag: "<rc N>", client: client.name },
     });
   }
   if (/<rd\s+\d+>/.test(cps) && !client.supportsCpsTagRD) {
     out.push({
       field: "I1-I5",
       level: "error",
-      msg: `Тег <rd N> не поддерживается клиентом ${client.name}.`,
+      code: "awg.cps_tag_unsupported",
+      values: { tag: "<rd N>", client: client.name },
     });
   }
 
@@ -182,7 +192,8 @@ export function validateConfigForClient(
       out.push({
         field: key,
         level: "error",
-        msg: `${key} диапазон превышает ${client.maxHValue} для ${client.name}.`,
+        code: "awg.h_over_client",
+        values: { key, max: client.maxHValue, client: client.name },
       });
     }
   }
@@ -191,7 +202,8 @@ export function validateConfigForClient(
     out.push({
       field: "Jc",
       level: "warn",
-      msg: `Jc=${cfg.jc} превышает рекомендуемый максимум ${client.maxJc} для ${client.name}.`,
+      code: "awg.jc_over_client",
+      values: { jc: cfg.jc, max: client.maxJc, client: client.name },
     });
   }
 
@@ -221,7 +233,7 @@ export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
         field: "AWG3",
         level: "error",
         code: "awg3.version_mismatch",
-        msg: `Параметры AWG 3.0 заданы, но версия конфига — ${cfg.version}.`,
+        values: { version: cfg.version },
       });
     }
     return out;
@@ -234,7 +246,7 @@ export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
         field: "HeaderProtectionKey",
         level: "error",
         code: "awg3.hpk_format",
-        msg: `HeaderProtectionKey должен быть ${HEADER_PROTECTION_KEY_BYTES} байт в base64 (44 символа).`,
+        values: { bytes: HEADER_PROTECTION_KEY_BYTES, chars: 44 },
       });
     }
 
@@ -254,7 +266,7 @@ export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
           field: name,
           level: "error",
           code: "awg3.s_below_nonce",
-          msg: `${name}=${value} < ${MIN_S_WITH_HEADER_PROTECTION}: при HeaderProtectionKey из паддинга берётся nonce шифра, короткий паддинг ослабляет защиту.`,
+          values: { name, value, min: MIN_S_WITH_HEADER_PROTECTION },
         });
       }
     }
@@ -268,14 +280,12 @@ export function validateAwg3(cfg: AWGConfig): ValidationFinding[] {
         field: "ContentPaddingAddition",
         level: "error",
         code: "awg3.cpa_format",
-        msg: "ContentPaddingAddition должен быть числом или диапазоном «мин-макс».",
       });
     } else if (r[1] < 1) {
       out.push({
         field: "ContentPaddingAddition",
         level: "warn",
         code: "awg3.cpa_zero",
-        msg: "ContentPaddingAddition = 0 — дополнительный паддинг отключён.",
       });
     }
   }
@@ -305,7 +315,7 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
         field: name,
         level: "error",
         code: "awg3.timing_format",
-        msg: `${name} должен быть числом или диапазоном «мин-макс».`,
+        values: { name },
       });
       continue;
     }
@@ -314,7 +324,7 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
         field: name,
         level: "error",
         code: "awg3.timing_inverted",
-        msg: `${name}: нижняя граница больше верхней.`,
+        values: { name },
       });
       continue;
     }
@@ -339,7 +349,7 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
         field: "RejectAfterTime",
         level: "error",
         code: "awg3.reject_too_low",
-        msg: `RejectAfterTime (${reject[0]}с) должен быть больше KeepaliveTimeout + RekeyTimeout (${floor}с), иначе обновление ключей на приёме не сработает.`,
+        values: { reject: reject[0], floor },
       });
     }
   }
@@ -350,7 +360,7 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
       field: "RekeyAfterTime",
       level: "error",
       code: "awg3.rekey_after_reject",
-      msg: `RekeyAfterTime (до ${rekeyAfter[1]}с) должен быть меньше RejectAfterTime (от ${reject[0]}с).`,
+      values: { rekey: rekeyAfter[1], reject: reject[0] },
     });
   }
 
@@ -360,7 +370,6 @@ function validateTimings(p: AWG3Params): ValidationFinding[] {
       field: "MaxHandshakeAttempts",
       level: "error",
       code: "awg3.attempts_zero",
-      msg: "MaxHandshakeAttempts должен быть не меньше 1.",
     });
   }
 
