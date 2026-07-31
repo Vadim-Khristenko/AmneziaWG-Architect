@@ -49,6 +49,14 @@ const TRANSPORTS: XrayTransport[] = [
 const SECURITIES: XraySecurity[] = ["reality", "tls", "none"];
 const FLOWS: XrayFlow[] = ["", "xtls-rprx-vision"];
 
+/**
+ * FinalMask kinds, including none.
+ *
+ * Every one is offered to every version: the generator drops the block on a
+ * core that predates it, and the check is that the core agrees.
+ */
+const MASKS = ["none", "noise", "fragment", "sudoku", "salamander", "mkcp-legacy"] as const;
+
 const cases: { name: string; input: XrayInput }[] = [];
 
 for (const version of XRAY_VERSIONS) {
@@ -57,8 +65,13 @@ for (const version of XRAY_VERSIONS) {
       for (const flow of FLOWS) {
         for (const useVlessEncryption of [false, true]) {
           for (const useMldsa65 of [false, true]) {
+            // One mask per point of the matrix rather than a sixth nesting
+            // level: 720 configs already take six image pulls to check, and
+            // rotating covers every kind against every version anyway.
+            const mask = MASKS[cases.length % MASKS.length]!;
+            const defaults = createDefaults();
             const input: XrayInput = {
-              ...createDefaults(),
+              ...defaults,
               version: version.id,
               // Documentation range, so nothing here resolves to a real host.
               address: "203.0.113.10",
@@ -67,6 +80,7 @@ for (const version of XRAY_VERSIONS) {
               flow,
               useVlessEncryption,
               useMldsa65,
+              finalMask: { ...defaults.finalMask, kind: mask },
               clientCount: 2,
             };
             const name = [
@@ -115,6 +129,7 @@ for (const { name, input } of cases) {
       encryption: cfg.vlessEncryption?.decryption ?? "none",
       mldsa65: Boolean(cfg.reality?.mldsa65?.seed),
       xhttpMode: cfg.xhttp?.resolvedMode ?? "",
+      finalMask: cfg.finalMask?.kind ?? "none",
     },
     uris: buildClientUris(cfg),
   });

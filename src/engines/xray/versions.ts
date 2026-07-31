@@ -48,6 +48,13 @@ export interface XrayVersion extends VersionDescriptor {
   /** Hysteria as a transport. Since v26.1.13. */
   hysteria: boolean;
   /**
+   * FinalMask: XRay's own obfuscation below the transport. Since v26.6.22.
+   *
+   * The closest thing the core has to what AmneziaWG does — junk packets and
+   * fragmentation rather than hiding inside another protocol.
+   */
+  finalMask: boolean;
+  /**
    * XHTTP spells the session knobs `sessionID*`. Before v26.6.22 they were
    * `session*`, so a config for an older core has to use the old names.
    */
@@ -79,6 +86,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: true,
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
+    finalMask: true,
     sessionIdNames: true,
     methodName: true,
     defaultMinClientVer: true,
@@ -90,6 +98,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: true,
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
+    finalMask: true,
     sessionIdNames: true,
     methodName: false,
     defaultMinClientVer: false,
@@ -101,6 +110,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: true,
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
+    finalMask: false,
     sessionIdNames: false,
     methodName: false,
     defaultMinClientVer: false,
@@ -112,6 +122,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: false,
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
+    finalMask: false,
     sessionIdNames: false,
     methodName: false,
     defaultMinClientVer: false,
@@ -123,6 +134,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: false,
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
+    finalMask: false,
     sessionIdNames: false,
     methodName: false,
     defaultMinClientVer: false,
@@ -136,6 +148,7 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     vlessEncryption: false,
     xhttpModes: ["packet-up", "stream-up"],
     hysteria: false,
+    finalMask: false,
     sessionIdNames: false,
     methodName: false,
     defaultMinClientVer: false,

@@ -35,6 +35,13 @@ const cfg = (version = "26.7.11") =>
     // Host defaults to empty, meaning "use the address". Set here so the
     // parameter is exercised rather than skipped as blank.
     xhttp: { ...xrayEngine.createDefaults().xhttp, host: "cdn.example.com" },
+    // Likewise the mask: no mask is the default, and the block is only
+    // written when one is chosen.
+    finalMask: {
+      ...xrayEngine.createDefaults().finalMask,
+      kind: "noise" as const,
+      quicCongestion: "bbr" as const,
+    },
   });
 
 /** A field written but left blank is a placeholder, not a generated value. */

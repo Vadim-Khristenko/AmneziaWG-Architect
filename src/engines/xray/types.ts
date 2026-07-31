@@ -56,6 +56,8 @@ export type XhttpPlacement =
 /** VLESS Encryption mode, the middle element of the decryption string. */
 export type VlessEncryptionMode = "native" | "xorpub" | "random";
 
+import type { FinalMaskConfig, FinalMaskInput } from "./finalmask";
+
 /* ── Input ────────────────────────────────────────────────────────────────── */
 
 /** XHTTP knobs, grouped the way the panels group them. */
@@ -126,6 +128,14 @@ export interface XrayInput {
 
   xhttp: XhttpSettings;
 
+  /**
+   * FinalMask: XRay's own obfuscation, below the transport.
+   *
+   * The closest thing the core has to what AmneziaWG does — junk packets and
+   * fragmentation, rather than hiding inside another protocol.
+   */
+  finalMask: FinalMaskInput;
+
   /** How many client UUIDs to issue. */
   clientCount: number;
 }
@@ -193,4 +203,13 @@ export interface XrayConfig {
 
   /** XHTTP block. Absent for other transports. */
   xhttp?: XhttpSettings & { resolvedMode: Exclude<XhttpMode, "auto"> };
+
+  /**
+   * FinalMask: XRay obfuscating its own traffic, below the transport.
+   *
+   * Absent when no mask is chosen. This is the closest XRay comes to what
+   * AmneziaWG does — changing the shape of the bytes rather than hiding them
+   * inside another protocol.
+   */
+  finalMask?: FinalMaskConfig;
 }

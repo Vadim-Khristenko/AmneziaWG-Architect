@@ -12,6 +12,7 @@ import { generateX25519Pair, toBase64Url } from "@/shared/x25519";
 import { bytesToHex } from "@/shared/hex";
 import { fingerprintById } from "@/shared/fingerprints";
 import { xrayCaps, type XhttpModeSupport } from "./versions";
+import { buildFinalMask, defaultFinalMask } from "./finalmask";
 import { REALITY_TRANSPORTS } from "./types";
 import type {
   XrayConfig,
@@ -164,6 +165,7 @@ export function createDefaults(): XrayInput {
     fingerprint: "chrome",
     pinFingerprint: false,
     xhttp: defaultXhttp(),
+    finalMask: defaultFinalMask(),
     clientCount: 1,
   };
 }
@@ -313,6 +315,15 @@ export function generateXray(input: XrayInput): XrayConfig {
     ...(security === "reality" ? { reality: buildReality(input, caps) } : {}),
     ...(input.transport === "xhttp"
       ? { xhttp: buildXhttp(input, caps, security) }
+      : {}),
+    // FinalMask arrived in v26.6.22; older cores do not know the key and a
+    // config carrying it would be one they refuse.
+    //
+    // Congestion control lives in the same block and is worth setting on its
+    // own, so a mask of "none" with a congestion choice still produces one.
+    ...(caps.finalMask &&
+    (input.finalMask.kind !== "none" || input.finalMask.quicCongestion)
+      ? { finalMask: buildFinalMask(input.finalMask) }
       : {}),
   };
 }
