@@ -48,7 +48,17 @@ describe("healthCheckConf", () => {
       makeConf("I1 = <b 0x00><c>"),
       "awg-go-legacy",
     );
-    expect(f.some((x) => x.level === "error" && x.msg.includes("<c>"))).toBe(true);
+    // Findings carry a code and its values now, rather than a ready-made
+    // sentence — the sentence is produced from the catalogue at read time,
+    // in whatever language the reader is using.
+    expect(
+      f.some(
+        (x) =>
+          x.level === "error" &&
+          x.code === "awg.cps_tag_unsupported" &&
+          x.values?.tag === "<c>",
+      ),
+    ).toBe(true);
   });
 
   it("flags S4 over client limit for amneziawg-windows", () => {

@@ -1,178 +1,31 @@
 /**
- * AmneziaWG Architect — parameter validation (awgValidate.ts)
+ * AmneziaWG parameter validation — now a thin adapter.
  *
- * Limits verified against canonical sources:
- *   - amneziawg-linux-kernel-module: src/device.c, src/messages.h
- *   - amneziawg-go: device/uapi.go, device/magic-header.go, device/obf.go
+ * The rules moved to `rules.ts`, where they are shared with the generator's
+ * validators instead of being a second copy that drifted: this file used to
+ * cap S1 at 1132 and S3 at 1132 while the other capped S3 differently, and
+ * both spelled the same finding in different words.
  *
- * Pure module — returns findings, never throws.
+ * What is left here is the entry point the config editor calls, kept because
+ * a flat field map is a genuinely different input from a generated config —
+ * the editor has whatever the user has typed so far, not a config object.
  */
 
-export type FindingLevel = "error" | "warn";
+import { checkAwgParams, type AwgParamInput } from "./rules";
+import type { Finding } from "@/types/findings";
 
-export interface Finding {
-  field: string;
-  level: FindingLevel;
-  msg: string;
-}
-
-export interface AwgParamInput {
-  [k: string]: string | number | undefined;
-}
-
-const num = (v: string | number | undefined): number | null => {
-  if (v === undefined || v === "") return null;
-  const n = typeof v === "number" ? v : parseInt(v, 10);
-  return Number.isFinite(n) ? n : null;
-};
-
-// Range parsing lives with the generator's other validators; this file used
-// to carry a near-identical copy that differed only in accepting undefined.
-import { parseRange } from "./generator/validators";
-
-/** A CPS chain is one or more well-formed tags concatenated. */
-const VALID_TAG = /^(<(b 0x[0-9a-fA-F]*|t|c|r \d+|rc \d+|rd \d+|d|ds|dz)>)+$/;
+export type { AwgParamInput } from "./rules";
+export type { Finding, FindingLevel } from "@/types/findings";
 
 /**
  * Validate AmneziaWG obfuscation parameters.
- * @param p   field map (string or number values; missing fields are skipped)
- * @param opts.mtu  interface MTU for the Jmax fragmentation check (default 1280)
+ *
+ * @param p    field map; missing fields are skipped rather than reported
+ * @param opts.mtu  interface MTU for the Jmax fragmentation check
  */
 export function validateAwgParams(
   p: AwgParamInput,
   opts: { mtu?: number } = {},
 ): Finding[] {
-  const out: Finding[] = [];
-  const mtu = opts.mtu ?? 1280;
-
-  // ── Jc ──────────────────────────────────────────────────────────────────
-  const jc = num(p.Jc);
-  if (jc !== null && (jc < 1 || jc > 128)) {
-    out.push({
-      field: "Jc",
-      level: "error",
-      msg: "Jc должно быть 1–128 (лимит ядра).",
-    });
-  } else if (jc !== null && jc > 64) {
-    out.push({
-      field: "Jc",
-      level: "warn",
-      msg: "Высокий Jc увеличивает задержку хендшейка.",
-    });
-  }
-
-  // ── Jmin / Jmax ───────────────────────────────────────────────────────────
-  const jmin = num(p.Jmin);
-  const jmax = num(p.Jmax);
-  if (jmin !== null && jmax !== null && jmin >= jmax) {
-    out.push({
-      field: "Jmin",
-      level: "error",
-      msg: "Должно быть Jmin < Jmax.",
-    });
-  }
-  if (jmax !== null && jmax >= mtu) {
-    out.push({
-      field: "Jmax",
-      level: "warn",
-      msg: `Jmax ≥ MTU (${mtu}) — риск фрагментации мусорных пакетов.`,
-    });
-  }
-
-  // ── S1 / S2 / S3 / S4 ─────────────────────────────────────────────────────
-  const s1 = num(p.S1);
-  const s2 = num(p.S2);
-  const s3 = num(p.S3);
-  const s4 = num(p.S4);
-  if (s1 !== null && s2 !== null && s1 + 56 === s2) {
-    out.push({
-      field: "S2",
-      level: "warn",
-      msg: "S1 + 56 = S2 — размеры init/response совпадут (DPI-фингерпринт).",
-    });
-  }
-  if (s1 !== null && s1 > 1132) {
-    out.push({
-      field: "S1",
-      level: "error",
-      msg: "S1 максимум 1132 (65535 − 148).",
-    });
-  }
-  if (s2 !== null && s2 > 1188) {
-    out.push({
-      field: "S2",
-      level: "error",
-      msg: "S2 максимум 1188 (65535 − 92).",
-    });
-  }
-  if (s3 !== null && s3 > 1132) {
-    out.push({
-      field: "S3",
-      level: "error",
-      msg: "S3 максимум 1132 (65535 − 148).",
-    });
-  }
-  if (s4 !== null && s4 > 32) {
-    out.push({
-      field: "S4",
-      level: "error",
-      msg: "S4 максимум 32 — официальные клиенты отклоняют большее значение.",
-    });
-  }
-  if (s4 !== null && s4 === 0) {
-    out.push({
-      field: "S4",
-      level: "warn",
-      msg: "S4 = 0 — обфускация транспортных пакетов отключена.",
-    });
-  }
-
-  // ── H1–H4 (ranges must not overlap; avoid reserved 1–4) ─────────────────────
-  const hs: Array<[string, [number, number] | null]> = [
-    ["H1", parseRange(p.H1)],
-    ["H2", parseRange(p.H2)],
-    ["H3", parseRange(p.H3)],
-    ["H4", parseRange(p.H4)],
-  ];
-  for (let i = 0; i < hs.length; i++) {
-    for (let j = i + 1; j < hs.length; j++) {
-      const a = hs[i][1];
-      const b = hs[j][1];
-      if (a && b && !(a[1] < b[0] || b[1] < a[0])) {
-        out.push({
-          field: `${hs[i][0]}/${hs[j][0]}`,
-          level: "error",
-          msg: `Диапазоны ${hs[i][0]} и ${hs[j][0]} пересекаются.`,
-        });
-      }
-    }
-  }
-  for (const [name, r] of hs) {
-    if (r && r[0] >= 1 && r[0] <= 4) {
-      out.push({
-        field: name,
-        level: "warn",
-        msg: `${name} в зоне 1–4 (зарезервировано WireGuard).`,
-      });
-    }
-  }
-
-  // ── I1–I5 (CPS tag syntax) ──────────────────────────────────────────────────
-  for (const f of ["I1", "I2", "I3", "I4", "I5"]) {
-    const v = p[f];
-    if (
-      v !== undefined &&
-      v !== "" &&
-      v !== "0" &&
-      !VALID_TAG.test(String(v).trim())
-    ) {
-      out.push({
-        field: f,
-        level: "error",
-        msg: `${f}: неверный синтаксис CPS-тега.`,
-      });
-    }
-  }
-
-  return out;
+  return checkAwgParams(p, { mtu: opts.mtu });
 }

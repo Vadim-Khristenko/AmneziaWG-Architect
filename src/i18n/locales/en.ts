@@ -592,6 +592,39 @@ export const en: Catalog = {
     "spiderX must start with a slash.",
   /* Checks derived from a parameter's description rather than written per parameter. */
   /* .conf structure — what is about the file rather than the obfuscation. */
+  /* Obfuscation parameter rules — engines/awg/rules.ts. */
+  "find.awg.jc_range":
+    "Jc must be between {min} and {max} — that is the kernel's limit.",
+  "find.awg.jc_slow":
+    "Jc = {jc}: every junk packet goes out before the handshake, so it will be noticeably slower.",
+  "find.awg.jc_over_client":
+    "Jc = {jc} is above the recommended maximum of {max} for {client}.",
+  "find.awg.jmin_not_below_jmax":
+    "Jmin must be strictly below Jmax.",
+  "find.awg.jmax_over_mtu":
+    "Jmax = {jmax} is at or above the MTU ({mtu}) — junk packets will fragment, and fragmentation is itself conspicuous.",
+  "find.awg.size_max":
+    "{key} = {value}: the maximum is {max}, above which the packet no longer fits in a UDP datagram.",
+  "find.awg.s4_max":
+    "S4 = {s4}: the protocol caps transport padding at {max} bytes.",
+  "find.awg.s4_zero":
+    "S4 = 0 — transport packet obfuscation is off.",
+  "find.awg.s4_over_client":
+    "S4 = {s4} is above the maximum of {max} for {client}.",
+  "find.awg.size_collision":
+    "{a} and {b} produce the same packet length — two message types become indistinguishable by size, which is exactly what the padding is there to prevent.",
+  "find.awg.h_overlap":
+    "The {a} and {b} ranges overlap: the receiver cannot tell one message type from the other.",
+  "find.awg.h_reserved":
+    "{key} falls in the 1–4 range, reserved for WireGuard's own message types.",
+  "find.awg.h_over_client":
+    "{key} goes above the maximum of {max} for {client}.",
+  "find.awg.cps_syntax":
+    "{key}: the CPS chain syntax is not valid.",
+  "find.awg.cps_tag_unsupported":
+    "The {tag} tag is not supported by {client}.",
+  "find.awg.conf.not_obfuscated":
+    "No AmneziaWG parameters (H/S/J/I) in this config — it looks like plain WireGuard.",
   "find.awg.conf.template":
     "This is a template: PrivateKey and Address are left commented out — fill in your own before using it.",
   "find.awg.conf.unparsable": "The .conf could not be parsed: {reason}",

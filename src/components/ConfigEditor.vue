@@ -33,6 +33,7 @@ import {
 import { parseConf, vpnToConf } from "@/engines/awg/awgFormat";
 import { pluralRu } from "@/utils/plural";
 import { useI18n } from "@/i18n";
+import { resolveFinding } from "@/shared/findings";
 import type { GeneratedParams, AwgVersion } from "@/engines/awg/mergekeys";
 
 const { locale, t } = useI18n();
@@ -646,7 +647,7 @@ function onJcSlider(ev: Event) {
                         :key="i"
                         :class="f.level"
                     >
-                        {{ f.field }}: {{ f.msg }}
+                        {{ f.field }}: {{ resolveFinding(f) }}
                     </li>
                 </ul>
                 <div
@@ -661,7 +662,7 @@ function onJcSlider(ev: Event) {
             <!-- ── Findings list ──────────────────────────────────────────────── -->
             <ul v-if="findings.length > 0" class="mk-ed-findings">
                 <li v-for="(f, i) in findings" :key="i" :class="f.level">
-                    {{ f.field }}: {{ f.msg }}
+                    {{ f.field }}: {{ resolveFinding(f) }}
                 </li>
             </ul>
 

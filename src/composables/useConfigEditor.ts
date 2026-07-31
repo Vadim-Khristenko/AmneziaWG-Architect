@@ -35,7 +35,8 @@ import {
   vpnToConf,
   type AwgFormat,
 } from "@/engines/awg/awgFormat";
-import { validateAwgParams, type Finding } from "@/engines/awg/awgValidate";
+import { validateAwgParams } from "@/engines/awg/awgValidate";
+import type { Finding } from "@/types/findings";
 import { healthCheckConf } from "@/engines/awg/healthCheck";
 import { highlight } from "@/engines/awg/awgHighlight";
 import { CLIENTS, CLIENT_IDS, DEFAULT_CLIENT_ID } from "@/engines/awg/generator/clients";
