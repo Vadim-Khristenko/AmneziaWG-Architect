@@ -15,6 +15,8 @@ import type { Finding } from "@/types/findings";
 import type { ParseResult } from "@/types/engine";
 import { xrayCaps, isSupportedVersion, XRAY_VERSIONS } from "./versions";
 import { defaultXhttp } from "./generate";
+import { buildTransport, defaultTransport } from "./transports";
+import type { TransportConfig, TransportInput } from "./transports";
 import type {
   XrayConfig,
   XrayClient,
@@ -113,6 +115,7 @@ export function parseVlessUri(input: string): ParseResult<XrayConfig> {
     security,
     flow,
     clients: [client],
+    transportSettings: buildTransport(defaultTransport()),
   };
   findings.push(warn("version", "xray.parse.version_assumed", { version: NEWEST }));
 
@@ -228,6 +231,7 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
     security,
     flow: clients[0]?.flow ?? "",
     clients,
+    transportSettings: readTransport(stream),
   };
 
   const decryption = settings.decryption;
@@ -313,4 +317,57 @@ export function parseXray(input: string): ParseResult<XrayConfig> {
   if (text.toLowerCase().startsWith("vless://")) return parseVlessUri(text);
   if (text.startsWith("{")) return parseXrayJson(text);
   return fail("config", "xray.parse.unrecognised");
+}
+
+
+/**
+ * Read the per-transport block back out of a stream.
+ *
+ * Only what the renderer writes: the HTTP masquerade, the PROXY protocol
+ * flag, the WebSocket heartbeat, the gRPC service name and mode, and the
+ * Hysteria auth. Anything the config does not carry keeps its default, which
+ * is what makes the round trip stable rather than merely lossless.
+ */
+function readTransport(stream: Record<string, unknown>): TransportConfig {
+  const raw = asObject(stream.rawSettings) ?? asObject(stream.tcpSettings);
+  const ws = asObject(stream.wsSettings);
+  const upgrade = asObject(stream.httpupgradeSettings);
+  const grpc = asObject(stream.grpcSettings);
+  const hysteria = asObject(stream.hysteriaSettings);
+
+  const header = raw ? asObject(raw.header) : undefined;
+  const request = header ? asObject(header.request) : undefined;
+  const headers = request ? asObject(request.headers) : undefined;
+  const hosts = Array.isArray(headers?.Host)
+    ? (headers.Host as unknown[]).map(String)
+    : [];
+
+  const masquerade = hysteria ? asObject(hysteria.masquerade) : undefined;
+
+  const requestPath = Array.isArray(request?.path)
+    ? String((request!.path as unknown[])[0] ?? "/")
+    : "/";
+
+  return {
+    ...buildTransport({
+    ...defaultTransport(),
+    rawHttpHeader: header?.type === "http",
+    rawHttpHosts: hosts,
+    acceptProxyProtocol: Boolean(
+      raw?.acceptProxyProtocol ??
+        ws?.acceptProxyProtocol ??
+        upgrade?.acceptProxyProtocol,
+    ),
+    wsHeartbeatPeriod: Number(ws?.heartbeatPeriod ?? 0),
+    grpcServiceName: String(grpc?.serviceName ?? ""),
+    grpcMultiMode: Boolean(grpc?.multiMode),
+    hysteriaAuth: String(hysteria?.auth ?? ""),
+    hysteriaMasquerade: (masquerade?.type ??
+      "none") as TransportInput["hysteriaMasquerade"],
+    hysteriaMasqueradeValue: String(
+      masquerade?.url ?? masquerade?.dir ?? masquerade?.content ?? "",
+    ),
+    }),
+    resolvedPath: requestPath,
+  };
 }

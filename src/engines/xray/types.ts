@@ -18,7 +18,14 @@ import type { XrayVersionId } from "./versions";
  * WebSocket and HTTPUpgrade still work but the core prints a deprecation
  * notice pointing at XHTTP, so they are offered only for existing servers.
  */
-export type XrayTransport = "raw" | "xhttp" | "grpc" | "ws" | "httpupgrade";
+export type XrayTransport =
+  | "raw"
+  | "xhttp"
+  | "grpc"
+  | "ws"
+  | "httpupgrade"
+  /** QUIC-based, with its own masquerade. Since v26.1.13. */
+  | "hysteria";
 
 /** Transports REALITY can sit on: "REALITY only supports RAW, XHTTP and gRPC". */
 export const REALITY_TRANSPORTS: readonly XrayTransport[] = [
@@ -87,6 +94,7 @@ export interface LimitFallback {
 export type VlessEncryptionMode = "native" | "xorpub" | "random";
 
 import type { FinalMaskConfig, FinalMaskInput } from "./finalmask";
+import type { TransportConfig, TransportInput } from "./transports";
 
 /* ── Input ────────────────────────────────────────────────────────────────── */
 
@@ -240,6 +248,15 @@ export interface XrayInput {
   xhttp: XhttpSettings;
 
   /**
+   * Per-transport settings.
+   *
+   * Every one of these blocks used to be left out, so a generated config ran
+   * on the core's defaults for whichever transport it chose — including RAW,
+   * where the default is no HTTP masquerade at all.
+   */
+  transportSettings: TransportInput;
+
+  /**
    * FinalMask: XRay's own obfuscation, below the transport.
    *
    * The closest thing the core has to what AmneziaWG does — junk packets and
@@ -319,6 +336,9 @@ export interface XrayConfig {
 
   /** XHTTP block. Absent for other transports. */
   xhttp?: XhttpSettings & { resolvedMode: Exclude<XhttpMode, "auto"> };
+
+  /** Settings for whichever transport was chosen. */
+  transportSettings: TransportConfig;
 
   /**
    * FinalMask: XRay obfuscating its own traffic, below the transport.

@@ -13,12 +13,14 @@ import { bytesToHex } from "@/shared/hex";
 import { fingerprintById } from "@/shared/fingerprints";
 import { xrayCaps, type XhttpModeSupport } from "./versions";
 import { buildFinalMask, defaultFinalMask } from "./finalmask";
+import { buildTransport, defaultTransport } from "./transports";
 import { REALITY_TRANSPORTS } from "./types";
 import type {
   LimitFallback,
   XrayConfig,
   XrayInput,
   XrayClient,
+  XrayTransport,
   XrayFlow,
   XraySecurity,
   XhttpMode,
@@ -162,7 +164,9 @@ export function defaultXhttp(): XhttpSettings {
     host: "",
 
     paddingBytes: "100-1000",
-    paddingObfsMode: false,
+    // Obfuscated padding is the whole point of a tool like this; the core
+    // leaves it off, which is why leaving it off is what most traffic does.
+    paddingObfsMode: true,
     // The slot the padding rides in is a shape of its own; queryInHeader is
     // what the core picks unless told, so everyone leaving it looks alike.
     paddingPlacement: cryptoPick(PADDING_PLACEMENTS),
@@ -192,8 +196,10 @@ export function defaultXhttp(): XhttpSettings {
     // other unset knobs use, so "not chosen" reads the same everywhere.
     uplinkHttpMethod: "",
 
-    noGrpcHeader: false,
-    noSseHeader: false,
+    // These headers are what make an XHTTP stream read as gRPC or as SSE.
+    // Dropping them is the point of a tool like this; the core keeps them.
+    noGrpcHeader: true,
+    noSseHeader: true,
     headers: {},
 
     scMaxEachPostBytes: "",
@@ -242,6 +248,7 @@ export function createDefaults(): XrayInput {
     fingerprint: "chrome",
     pinFingerprint: false,
     xhttp: defaultXhttp(),
+    transportSettings: defaultTransport(),
     finalMask: defaultFinalMask(),
     clientCount: 1,
   };
@@ -314,15 +321,24 @@ export function parseLimitFallback(text: string): LimitFallback | null {
 function resolveLayers(input: XrayInput): {
   flow: XrayFlow;
   security: XraySecurity;
+  transport: XrayTransport;
 } {
+  // Hysteria arrived in v26.1.13. An older core answers "unknown transport
+  // protocol: hysteria" and refuses the config outright, so it falls back to
+  // the transport nearest in spirit — XHTTP, which is what the core itself
+  // points people at.
+  const transport =
+    input.transport === "hysteria" && !xrayCaps(input.version).hysteria
+      ? "xhttp"
+      : input.transport;
+
   const canVision = input.security === "reality" || input.security === "tls";
   const security =
-    input.security === "reality" &&
-    !REALITY_TRANSPORTS.includes(input.transport)
+    input.security === "reality" && !REALITY_TRANSPORTS.includes(transport)
       ? "tls"
       : input.security;
 
-  return { flow: canVision ? input.flow : "", security };
+  return { flow: canVision ? input.flow : "", security, transport };
 }
 
 /** One account per client, all sharing the flow and the encryption ticket. */
@@ -429,7 +445,7 @@ function buildXhttp(
  */
 export function generateXray(input: XrayInput): XrayConfig {
   const caps = xrayCaps(input.version);
-  const { flow, security } = resolveLayers(input);
+  const { flow, security, transport } = resolveLayers(input);
 
   const encryption =
     input.useVlessEncryption && caps.vlessEncryption
@@ -443,13 +459,14 @@ export function generateXray(input: XrayInput): XrayConfig {
     version: input.version,
     address: input.address,
     port: input.port,
-    transport: input.transport,
+    transport,
     security,
     flow,
     clients: buildClients(input.clientCount, flow, encryption),
+    transportSettings: buildTransport(input.transportSettings),
     ...(encryption ? { vlessEncryption: encryption } : {}),
     ...(security === "reality" ? { reality: buildReality(input, caps) } : {}),
-    ...(input.transport === "xhttp"
+    ...(transport === "xhttp"
       ? { xhttp: buildXhttp(input, caps, security) }
       : {}),
     // FinalMask arrived in v26.6.22; older cores do not know the key and a

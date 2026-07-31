@@ -45,6 +45,9 @@ const TRANSPORTS: XrayTransport[] = [
   "grpc",
   "ws",
   "httpupgrade",
+  // Hysteria is QUIC-based and arrived in v26.1.13; the generator drops it on
+  // a core that predates it, and the check is that the core agrees.
+  "hysteria",
 ];
 const SECURITIES: XraySecurity[] = ["reality", "tls", "none"];
 const FLOWS: XrayFlow[] = ["", "xtls-rprx-vision"];

@@ -14,6 +14,13 @@
 import type { EngineLine } from "@/types/engine";
 import { xrayCaps } from "./versions";
 import { renderFinalMask } from "./finalmask";
+import {
+  grpcSettings,
+  httpUpgradeSettings,
+  hysteriaSettings,
+  rawSettings,
+  wsSettings,
+} from "./transports";
 import type { XrayConfig } from "./types";
 
 /* ── JSON as lines ────────────────────────────────────────────────────────── */
@@ -231,8 +238,38 @@ function streamSettings(cfg: XrayConfig): Record<string, unknown> {
     security: cfg.security,
     ...(reality ? { realitySettings: reality } : {}),
     ...(xhttp ? { xhttpSettings: xhttp } : {}),
+    ...transportBlock(cfg),
     ...(finalmask ? { finalmask } : {}),
   };
+}
+
+/**
+ * The settings block belonging to the chosen transport.
+ *
+ * One per transport and only the one in use: writing `wsSettings` beside a
+ * RAW stream is a key the core reads and applies to nothing.
+ */
+function transportBlock(cfg: XrayConfig): Record<string, unknown> {
+  const t = cfg.transportSettings;
+  // XHTTP already has its own block, built above.
+  const path = cfg.xhttp?.path ?? "/";
+
+  switch (cfg.transport) {
+    case "raw": {
+      const raw = rawSettings(t);
+      return raw ? { rawSettings: raw } : {};
+    }
+    case "ws":
+      return { wsSettings: wsSettings(t, path) };
+    case "httpupgrade":
+      return { httpupgradeSettings: httpUpgradeSettings(t, path) };
+    case "grpc":
+      return { grpcSettings: grpcSettings(t) };
+    case "hysteria":
+      return { hysteriaSettings: hysteriaSettings(t) };
+    default:
+      return {};
+  }
 }
 
 /** The VLESS accounts and how the inbound decrypts them. */

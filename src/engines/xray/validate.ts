@@ -83,6 +83,12 @@ export function validateXray(cfg: XrayConfig): Finding[] {
     );
   }
 
+  if (cfg.transport === "hysteria" && !caps.hysteria) {
+    findings.push(
+      error("transport", "xray.hysteria_unsupported", { version: cfg.version }),
+    );
+  }
+
   if (cfg.transport === "ws" || cfg.transport === "httpupgrade") {
     findings.push(warn("transport", "xray.transport_deprecated", {
       transport: cfg.transport,

@@ -567,6 +567,8 @@ export const ru = {
     "Значение flow должно совпадать у клиента и сервера: пустой flow против vision-аккаунта отклоняется.",
   "find.xray.reality_transport":
     "REALITY не работает поверх транспорта {transport}: поддерживаются только RAW, XHTTP и gRPC.",
+  "find.xray.hysteria_unsupported":
+    "Транспорт Hysteria появился в v26.1.13 — на версии {version} ядро отвечает «unknown transport protocol» и не запускается. Генератор заменяет его на XHTTP.",
   "find.xray.transport_deprecated":
     "Транспорт {transport} объявлен устаревшим — ядро рекомендует XHTTP.",
   "find.xray.reality_missing":

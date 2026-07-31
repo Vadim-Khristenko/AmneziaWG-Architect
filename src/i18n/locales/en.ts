@@ -566,6 +566,8 @@ export const en: Catalog = {
     "The flow value must match on client and server: an empty flow against a vision account is rejected.",
   "find.xray.reality_transport":
     "REALITY does not work over the {transport} transport: only RAW, XHTTP and gRPC are supported.",
+  "find.xray.hysteria_unsupported":
+    "The Hysteria transport arrived in v26.1.13 — on {version} the core answers \"unknown transport protocol\" and refuses to start. The generator substitutes XHTTP.",
   "find.xray.transport_deprecated":
     "The {transport} transport is deprecated — the core recommends XHTTP instead.",
   "find.xray.reality_missing":

@@ -56,6 +56,10 @@ const filled = (value: unknown): boolean => {
   // "auto" is how the settings object spells "leave it to the core", the same
   // as an empty string elsewhere — the renderer writes neither.
   if (value === "auto") return false;
+  // A switch left off is not a generated value: the renderer writes nothing
+  // for it, and calling it generated would count a default as a feature.
+  // Zero is not covered by this — xver 0 is a value the renderer does write.
+  if (value === false) return false;
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "object") return Object.keys(value).length > 0;
   return true;
