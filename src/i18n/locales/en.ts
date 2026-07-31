@@ -671,6 +671,8 @@ export const en: Catalog = {
     "The XHTTP path must start with a slash.",
   "find.xray.xhttp_split_mode":
     "Split download is on, but the mode resolved to {mode} rather than stream-up.",
+  "find.xray.xhttp_basic_only":
+    "On v{version} XHTTP has only the basic knobs: the padding names, the session id, the sequence counter and the uplink placement all arrived in v26.6.22. They are not renamed there, they are absent — so the config is generated without them rather than with keys no core reads.",
   "find.xray.xhttp_session_names":
     "On version {version} the session keys are session* rather than sessionID* — the config uses the older spelling.",
   "find.xray.parse.not_vless":

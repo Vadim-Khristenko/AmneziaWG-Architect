@@ -53,6 +53,23 @@ export type XhttpPlacement =
   | "path"
   | "body";
 
+/**
+ * How XHTTP fills its padding.
+ *
+ * `repeat-x` is a run of the letter x, which is what the core does unless
+ * told otherwise and therefore what a middlebox learns to look for.
+ * `tokenish` produces something that reads like an opaque token instead.
+ */
+export type XhttpPaddingMethod = "repeat-x" | "tokenish";
+
+/**
+ * Where the uplink data itself travels.
+ *
+ * `cookie` and `header` are only legal in `packet-up` mode — the core refuses
+ * the config outright anywhere else.
+ */
+export type XhttpUplinkPlacement = "auto" | "body" | "cookie" | "header";
+
 /** VLESS Encryption mode, the middle element of the decryption string. */
 export type VlessEncryptionMode = "native" | "xorpub" | "random";
 
@@ -72,18 +89,62 @@ export interface XhttpSettings {
   paddingBytes: string;
   paddingObfsMode: boolean;
   paddingPlacement: XhttpPlacement;
+  /**
+   * What the padding parameter is called.
+   *
+   * The core defaults to `x_padding` and `X-Padding`, which is exactly what
+   * makes a padded XHTTP request recognisable as one. Naming them something
+   * else is the cheapest thing this generator can do about that.
+   */
+  paddingKey: string;
+  paddingHeader: string;
+  /** `repeat-x` fills with the letter x; `tokenish` looks like a token. */
+  paddingMethod: XhttpPaddingMethod;
 
   /** Session identity. */
   sessionIdPlacement: XhttpPlacement;
   sessionIdLength: string;
+  /** Parameter name, when the session id is not in the path. */
+  sessionIdKey: string;
+  /** Alphabet the session id is drawn from. Empty means the core's own. */
+  sessionIdTable: string;
+
+  /** The chunk counter: where it rides and what it is called. */
+  seqPlacement: XhttpPlacement;
+  seqKey: string;
+
+  /** Where the uplink data itself goes, and under what name. */
+  uplinkDataPlacement: XhttpUplinkPlacement;
+  uplinkDataKey: string;
+  /** Bytes per uplink chunk. */
+  uplinkChunkSize: string;
+  /** `POST` normally; `GET` is only legal in packet-up. */
+  uplinkHttpMethod: string;
 
   /** Mimicry: dropping these headers makes the stream look less like gRPC/SSE. */
   noGrpcHeader: boolean;
   noSseHeader: boolean;
 
+  /** Extra request headers. `host` is refused by the core; use `host` above. */
+  headers: Record<string, string>;
+
+  /** Upload pacing: how much per POST, how often, how much may queue. */
+  scMaxEachPostBytes: string;
+  scMinPostsIntervalMs: string;
+  scMaxBufferedPosts: string;
+  /** How long the server holds a stream-up request open. */
+  scStreamUpServerSecs: string;
+
+  /** Server-side cap on request header size. Zero means the core's default. */
+  serverMaxHeaderBytes: string;
+
   /** Multiplexing. */
   xmuxMaxConcurrency: string;
   xmuxMaxConnections: string;
+  xmuxCMaxReuseTimes: string;
+  xmuxHMaxRequestTimes: string;
+  xmuxHMaxReusableSecs: string;
+  xmuxHKeepAlivePeriod: string;
 
   /** Send the downlink over its own transport. Turns `auto` into `stream-up`. */
   splitDownload: boolean;

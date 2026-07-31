@@ -44,9 +44,22 @@ const cfg = (version = "26.7.11") =>
     },
   });
 
-/** A field written but left blank is a placeholder, not a generated value. */
-const filled = (value: unknown): boolean =>
-  value !== undefined && value !== null && value !== "";
+/**
+ * A field written but left blank is a placeholder, not a generated value.
+ *
+ * An empty object or array counts as blank too: `headers: {}` means the
+ * generator has the field and produces no headers, which is not the same as
+ * generating them.
+ */
+const filled = (value: unknown): boolean => {
+  if (value === undefined || value === null || value === "") return false;
+  // "auto" is how the settings object spells "leave it to the core", the same
+  // as an empty string elsewhere — the renderer writes neither.
+  if (value === "auto") return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+};
 
 describe("the catalogue itself", () => {
   it("has no duplicate key within one group", () => {

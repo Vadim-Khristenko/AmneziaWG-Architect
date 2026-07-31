@@ -213,15 +213,50 @@ describe("the session keys follow the version", () => {
     expect(xhttp.sessionLength).toBeUndefined();
   });
 
-  it("uses session* before it", () => {
-    const stream = (
-      buildServerInbound(
-        xrayEngine.generate(input({ version: "26.1.13", transport: "xhttp" })),
-      ) as { streamSettings: Record<string, unknown> }
-    ).streamSettings;
-    const xhttp = stream.xhttpSettings as Record<string, unknown>;
-    expect(xhttp.sessionLength).toBeDefined();
-    expect(xhttp.sessionIDLength).toBeUndefined();
+  it("writes neither spelling before it", () => {
+    // This used to assert `session*` on older cores, on the assumption that
+    // v26.6.22 renamed the keys. Probing every released core with a
+    // deliberately invalid value settled it: `sessionPlacement` is read by no
+    // version at all. The knobs did not exist before v26.6.22, so writing
+    // either spelling produces a config that loads and ignores them — which
+    // looks like it worked, and is the worst way to be wrong.
+    for (const version of ["26.1.13", "25.8.29", "25.7.23", "24.11.11"]) {
+      const stream = (
+        buildServerInbound(
+          xrayEngine.generate(
+            input({ version: version as never, transport: "xhttp" }),
+          ),
+        ) as { streamSettings: Record<string, unknown> }
+      ).streamSettings;
+      const xhttp = stream.xhttpSettings as Record<string, unknown>;
+
+      expect(xhttp.sessionLength, version).toBeUndefined();
+      expect(xhttp.sessionIDLength, version).toBeUndefined();
+      expect(xhttp.sessionIDPlacement, version).toBeUndefined();
+      expect(xhttp.seqPlacement, version).toBeUndefined();
+      expect(xhttp.xPaddingKey, version).toBeUndefined();
+      expect(xhttp.uplinkDataPlacement, version).toBeUndefined();
+    }
+  });
+
+  it("writes the whole advanced set from v26.6.22", () => {
+    for (const version of ["26.6.22", "26.7.11"]) {
+      const stream = (
+        buildServerInbound(
+          xrayEngine.generate(
+            input({ version: version as never, transport: "xhttp" }),
+          ),
+        ) as { streamSettings: Record<string, unknown> }
+      ).streamSettings;
+      const xhttp = stream.xhttpSettings as Record<string, unknown>;
+
+      // The padding names are the point: the core's own defaults are the
+      // same for every deployment, which is what makes them a fingerprint.
+      expect(xhttp.xPaddingKey, version).toBeDefined();
+      expect(xhttp.xPaddingHeader, version).toBeDefined();
+      expect(xhttp.xPaddingMethod, version).toBeDefined();
+      expect(xhttp.sessionIDLength, version).toBeDefined();
+    }
   });
 });
 

@@ -126,20 +126,89 @@ const PLAUSIBLE_PATHS = [
   "/cdn/asset",
 ];
 
+/**
+ * Parameter names that read like something a real site would use.
+ *
+ * The core's own defaults — `x_padding`, `X-Padding`, `x_session` — are what
+ * make a padded XHTTP request identifiable as one, and they are the same for
+ * every deployment on earth. Drawing from a pool of plausible alternatives is
+ * the cheapest anti-fingerprinting this generator can do.
+ */
+const QUERY_NAMES = ["cb", "v", "_t", "rev", "sid", "nonce", "ts", "tk"];
+
+/**
+ * Slots the session id and the sequence counter can ride in.
+ *
+ * `auto` is excluded on purpose: it resolves to `path` in the core, and a
+ * path-borne id is what every default deployment produces.
+ */
+const ID_PLACEMENTS = ["path", "query", "cookie", "header"] as const;
+
+/** Slots the padding can ride in. `queryInHeader` is the core default. */
+const PADDING_PLACEMENTS = ["queryInHeader", "query", "cookie", "header"] as const;
+const HEADER_NAMES = [
+  "X-Request-Id",
+  "X-Correlation-Id",
+  "X-Trace-Id",
+  "X-Client-Token",
+  "X-Cache-Key",
+];
+
 export function defaultXhttp(): XhttpSettings {
   return {
     mode: "auto",
     path: cryptoPick(PLAUSIBLE_PATHS),
     host: "",
+
     paddingBytes: "100-1000",
     paddingObfsMode: false,
-    paddingPlacement: "auto",
-    sessionIdPlacement: "auto",
+    // The slot the padding rides in is a shape of its own; queryInHeader is
+    // what the core picks unless told, so everyone leaving it looks alike.
+    paddingPlacement: cryptoPick(PADDING_PLACEMENTS),
+    paddingKey: cryptoPick(QUERY_NAMES),
+    paddingHeader: cryptoPick(HEADER_NAMES),
+    // A run of the letter x is the giveaway the core produces by default.
+    paddingMethod: "tokenish",
+
+    // Where the session id rides is itself a shape: everyone leaving it in
+    // the path looks the same, and the core has three other slots for it.
+    sessionIdPlacement: cryptoPick(ID_PLACEMENTS),
     sessionIdLength: "8-16",
+    sessionIdKey: cryptoPick(QUERY_NAMES),
+    // Empty means the core's own alphabet: a custom one has to be large
+    // enough that the id space still exceeds 2^31, and the core checks.
+    sessionIdTable: "",
+
+    seqPlacement: cryptoPick(ID_PLACEMENTS),
+    seqKey: cryptoPick(QUERY_NAMES),
+
+    uplinkDataPlacement: "auto",
+    // Only meaningful once a placement is chosen, and the default leaves
+    // that to the core — so this stays unset with it.
+    uplinkDataKey: "",
+    uplinkChunkSize: "",
+    // Empty means the core's own default, POST — the same convention the
+    // other unset knobs use, so "not chosen" reads the same everywhere.
+    uplinkHttpMethod: "",
+
     noGrpcHeader: false,
     noSseHeader: false,
+    headers: {},
+
+    scMaxEachPostBytes: "",
+    scMinPostsIntervalMs: "",
+    scMaxBufferedPosts: "",
+    scStreamUpServerSecs: "",
+
+    serverMaxHeaderBytes: "",
+
     xmuxMaxConcurrency: "16-32",
     xmuxMaxConnections: "0",
+    xmuxCMaxReuseTimes: "",
+    xmuxHMaxRequestTimes: "",
+    xmuxHMaxReusableSecs: "",
+    xmuxHKeepAlivePeriod: "",
+
     splitDownload: false,
   };
 }

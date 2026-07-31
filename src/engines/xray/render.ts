@@ -77,29 +77,107 @@ function xhttpSettings(cfg: XrayConfig): Record<string, unknown> | undefined {
   if (!x) return undefined;
   const caps = xrayCaps(cfg.version);
 
-  // Before v26.6.22 the session knobs were `session*`.
-  const sessionKey = caps.sessionIdNames ? "sessionID" : "session";
+  /** Only write a knob the user actually set: empty means the core's default. */
+  const set = <T>(key: string, value: T | "" | undefined) =>
+    value === "" || value === undefined ? {} : { [key]: value };
+
+  /**
+   * Knobs that arrived in v26.6.22, written only where they are read.
+   *
+   * A core ignores keys it does not know, so writing these to an older one
+   * produces a config that loads and quietly drops half of what the user
+   * chose — the worst outcome, because it looks like it worked.
+   */
+  const advanced = caps.xhttpAdvanced
+    ? {
+        // The core's defaults here — x_padding and X-Padding — are identical
+        // for every deployment on earth, so naming them otherwise is the
+        // whole point of setting them.
+        ...set("xPaddingKey", x.paddingKey),
+        ...set("xPaddingHeader", x.paddingHeader),
+        ...set("xPaddingMethod", x.paddingMethod),
+        ...(x.paddingPlacement !== "auto"
+          ? { xPaddingPlacement: x.paddingPlacement }
+          : {}),
+
+        ...(x.sessionIdPlacement !== "auto"
+          ? { sessionIDPlacement: x.sessionIdPlacement }
+          : {}),
+        sessionIDLength: x.sessionIdLength,
+        // A key means nothing when the id is in the path; the core ignores it
+        // and writing it anyway is noise in the config.
+        ...(x.sessionIdPlacement !== "auto" && x.sessionIdPlacement !== "path"
+          ? set("sessionIDKey", x.sessionIdKey)
+          : {}),
+        ...set("sessionIDTable", x.sessionIdTable),
+
+        ...(x.seqPlacement !== "auto" ? { seqPlacement: x.seqPlacement } : {}),
+        ...(x.seqPlacement !== "auto" && x.seqPlacement !== "path"
+          ? set("seqKey", x.seqKey)
+          : {}),
+
+        ...(x.uplinkDataPlacement !== "auto"
+          ? { uplinkDataPlacement: x.uplinkDataPlacement }
+          : {}),
+        ...(x.uplinkDataPlacement !== "auto" && x.uplinkDataPlacement !== "body"
+          ? set("uplinkDataKey", x.uplinkDataKey)
+          : {}),
+        ...set("uplinkChunkSize", x.uplinkChunkSize),
+        // GET is only legal in packet-up; the core refuses it anywhere else.
+        ...(x.uplinkHttpMethod &&
+        x.uplinkHttpMethod !== "POST" &&
+        x.resolvedMode === "packet-up"
+          ? { uplinkHTTPMethod: x.uplinkHttpMethod }
+          : {}),
+
+        ...(x.noGrpcHeader ? { noGRPCHeader: true } : {}),
+        ...set("scMaxBufferedPosts", numberOr(x.scMaxBufferedPosts)),
+        ...set("scStreamUpServerSecs", x.scStreamUpServerSecs),
+        ...set("serverMaxHeaderBytes", numberOr(x.serverMaxHeaderBytes)),
+        ...set("hMaxRequestTimes", x.xmuxHMaxRequestTimes),
+        ...set("hMaxReusableSecs", x.xmuxHMaxReusableSecs),
+        ...set("hKeepAlivePeriod", numberOr(x.xmuxHKeepAlivePeriod)),
+      }
+    : {};
+
+  // The three xmux fields that predate the rest live at the top level of the
+  // xmux object either way, so they are split out from `advanced`.
+  const { hMaxRequestTimes, hMaxReusableSecs, hKeepAlivePeriod, ...topLevel } =
+    advanced as Record<string, unknown>;
 
   return {
     path: x.path,
     ...(x.host ? { host: x.host } : {}),
     mode: x.resolvedMode,
+    ...(caps.xhttpHeaders && Object.keys(x.headers).length
+      ? { headers: x.headers }
+      : {}),
+
     xPaddingBytes: x.paddingBytes,
     ...(x.paddingObfsMode ? { xPaddingObfsMode: true } : {}),
-    ...(x.paddingPlacement !== "auto"
-      ? { xPaddingPlacement: x.paddingPlacement }
-      : {}),
-    ...(x.sessionIdPlacement !== "auto"
-      ? { [`${sessionKey}Placement`]: x.sessionIdPlacement }
-      : {}),
-    [`${sessionKey}Length`]: x.sessionIdLength,
-    ...(x.noGrpcHeader ? { noGRPCHeader: true } : {}),
+
     ...(x.noSseHeader ? { noSSEHeader: true } : {}),
+    ...set("scMaxEachPostBytes", x.scMaxEachPostBytes),
+    ...set("scMinPostsIntervalMs", x.scMinPostsIntervalMs),
+
+    ...topLevel,
+
     xmux: {
       maxConcurrency: x.xmuxMaxConcurrency,
       maxConnections: x.xmuxMaxConnections,
+      ...set("cMaxReuseTimes", x.xmuxCMaxReuseTimes),
+      ...(hMaxRequestTimes !== undefined ? { hMaxRequestTimes } : {}),
+      ...(hMaxReusableSecs !== undefined ? { hMaxReusableSecs } : {}),
+      ...(hKeepAlivePeriod !== undefined ? { hKeepAlivePeriod } : {}),
     },
   };
+}
+
+/** A plain integer where the core wants one rather than a range string. */
+function numberOr(text: string): number | "" {
+  if (!text.trim()) return "";
+  const value = Number(text);
+  return Number.isFinite(value) ? value : "";
 }
 
 /**

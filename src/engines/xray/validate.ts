@@ -210,10 +210,12 @@ export function validateXray(cfg: XrayConfig): Finding[] {
         mode: cfg.xhttp.resolvedMode,
       }));
     }
-    if (!caps.sessionIdNames) {
-      // Before v26.6.22 the keys were `session*`; the renderer emits the old
-      // spelling, and this says so rather than leaving it to be discovered.
-      findings.push(info("sessionID", "xray.xhttp_session_names", {
+    if (!caps.xhttpAdvanced) {
+      // The padding names, the session id, the sequence counter and the
+      // uplink placement all arrived in v26.6.22. On an older core they are
+      // not renamed, they are absent — so the config is generated without
+      // them rather than with keys nothing reads.
+      findings.push(info("xhttp", "xray.xhttp_basic_only", {
         version: cfg.version,
       }));
     }

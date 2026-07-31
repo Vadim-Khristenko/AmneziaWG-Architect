@@ -14,6 +14,7 @@ import { error, warn } from "@/shared/findings";
 import type { Finding } from "@/types/findings";
 import type { ParseResult } from "@/types/engine";
 import { xrayCaps, isSupportedVersion, XRAY_VERSIONS } from "./versions";
+import { defaultXhttp } from "./generate";
 import type {
   XrayConfig,
   XrayClient,
@@ -136,6 +137,7 @@ export function parseVlessUri(input: string): ParseResult<XrayConfig> {
   if (transport === "xhttp") {
     const mode = (q.get("mode") ?? "auto") as XhttpMode;
     config.xhttp = {
+      ...defaultXhttp(),
       mode,
       path: q.get("path") ?? "/",
       host: q.get("host") ?? "",
@@ -269,10 +271,11 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
   const xhttpSettings =
     asObject(stream.xhttpSettings) ?? asObject(stream.splithttpSettings);
   if (transport === "xhttp" && xhttpSettings) {
-    const caps = xrayCaps(config.version);
-    const sessionKey = caps.sessionIdNames ? "sessionID" : "session";
+    // Both spellings are read: a config in the wild may carry either, even
+    // though only sessionID* is a key any core acts on.
     const mode = String(xhttpSettings.mode ?? "auto") as XhttpMode;
     config.xhttp = {
+      ...defaultXhttp(),
       mode,
       path: String(xhttpSettings.path ?? "/"),
       host: String(xhttpSettings.host ?? ""),
@@ -282,9 +285,9 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
         "auto") as XrayConfig["xhttp"] extends undefined
         ? never
         : "auto",
-      sessionIdPlacement: (xhttpSettings[`${sessionKey}Placement`] ??
+      sessionIdPlacement: ((xhttpSettings.sessionIDPlacement ?? xhttpSettings.sessionPlacement) ??
         "auto") as never,
-      sessionIdLength: String(xhttpSettings[`${sessionKey}Length`] ?? ""),
+      sessionIdLength: String((xhttpSettings.sessionIDLength ?? xhttpSettings.sessionLength) ?? ""),
       noGrpcHeader: Boolean(xhttpSettings.noGRPCHeader),
       noSseHeader: Boolean(xhttpSettings.noSSEHeader),
       xmuxMaxConcurrency: String(

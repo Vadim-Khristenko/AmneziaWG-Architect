@@ -55,10 +55,23 @@ export interface XrayVersion extends VersionDescriptor {
    */
   finalMask: boolean;
   /**
-   * XHTTP spells the session knobs `sessionID*`. Before v26.6.22 they were
-   * `session*`, so a config for an older core has to use the old names.
+   * The XHTTP knob set beyond path, mode, padding size and xmux.
+   *
+   * Padding placement, method, key and header; session id placement, length,
+   * key and table; the sequence counter; uplink data placement and method;
+   * the server header cap. All of it arrived together in v26.6.22.
+   *
+   * This was previously modelled as a rename — `session*` before v26.6.22 and
+   * `sessionID*` from it — which was wrong in a way only the core could
+   * settle: probing every release with a deliberately invalid value showed
+   * that `sessionPlacement` is read by *no* version. There was no older
+   * spelling; the knobs did not exist. Writing them to an older core produces
+   * a config that loads and quietly ignores half of what the user chose.
    */
-  sessionIdNames: boolean;
+  xhttpAdvanced: boolean;
+
+  /** Extra request headers on XHTTP. Since v25.7.23. */
+  xhttpHeaders: boolean;
   /**
    * Stream settings call the transport `method`. Before v26.7.11 the only
    * name was `network`, which is still accepted — so `network` is always
@@ -87,7 +100,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     finalMask: true,
-    sessionIdNames: true,
+    xhttpAdvanced: true,
+    xhttpHeaders: true,
     methodName: true,
     defaultMinClientVer: true,
   },
@@ -99,7 +113,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     finalMask: true,
-    sessionIdNames: true,
+    xhttpAdvanced: true,
+    xhttpHeaders: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -111,7 +126,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: true,
     finalMask: false,
-    sessionIdNames: false,
+    xhttpAdvanced: false,
+    xhttpHeaders: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -123,7 +139,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
     finalMask: false,
-    sessionIdNames: false,
+    xhttpAdvanced: false,
+    xhttpHeaders: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -135,7 +152,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up", "stream-one"],
     hysteria: false,
     finalMask: false,
-    sessionIdNames: false,
+    xhttpAdvanced: false,
+    xhttpHeaders: true,
     methodName: false,
     defaultMinClientVer: false,
   },
@@ -149,7 +167,8 @@ export const XRAY_VERSIONS: readonly XrayVersion[] = [
     xhttpModes: ["packet-up", "stream-up"],
     hysteria: false,
     finalMask: false,
-    sessionIdNames: false,
+    xhttpAdvanced: false,
+    xhttpHeaders: false,
     methodName: false,
     defaultMinClientVer: false,
   },
