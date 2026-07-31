@@ -591,6 +591,17 @@ export const ru = {
     "shortId «{id}» содержит символы вне hex.",
   "find.xray.spider_x_slash":
     "spiderX должен начинаться со слеша.",
+  /* Проверки, выведенные из описания параметра, а не написанные для каждого. */
+  "find.param.not_a_number": "{key}: ожидается число.",
+  "find.param.not_a_range": "{key}: ожидается диапазон вида «мин-макс».",
+  "find.param.range_inverted": "{key}: нижняя граница {lo} больше верхней {hi}.",
+  "find.param.below_min": "{key} = {actual}: меньше минимума {min}.",
+  "find.param.above_max": "{key} = {actual}: больше максимума {max}.",
+  "find.param.not_encoded": "{key}: значение не декодируется как {encoding}.",
+  "find.param.wrong_length": "{key}: ожидается {expected} байт после декодирования, получено {actual}.",
+  "find.param.too_long": "{key}: длина {actual} символов, максимум {max}.",
+  "find.param.not_allowed": "{key}: значение «{value}» не входит в допустимые ({allowed}).",
+  "find.validator.crashed": "Проверка «{rule}» упала: {reason}. Это баг Архитектора, а не конфига.",
   "find.xray.fingerprint_refused":
     "Отпечаток {fingerprint} отклоняется REALITY.",
   "find.xray.mldsa_unsupported":

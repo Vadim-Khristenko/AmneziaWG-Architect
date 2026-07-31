@@ -13,76 +13,33 @@
  * parses an incoming packet, and getting it wrong is what makes a tunnel fail
  * silently. See [[xray-core-constraints]] for the same treatment of XRay.
  *
- * The per-version sets below are derived from this catalogue rather than
- * written out, so a parameter cannot be added to one and forgotten in another.
- *
- * TODO: validators are still grouped by concern (sizes, client limits, the 3.0
- * block) rather than attached to the parameters they check. Binding each rule
- * to its AWGParameter is the next step — then "what is checked about S4" has
- * one answer instead of three call sites.
+ * The type is `ParamDescriptor` from `types/protocol` and the set-building is
+ * `shared/params`, both of which XRay uses too. This file had its own copy of
+ * the scope and kind unions, identical in meaning and separate in code, which
+ * is exactly the duplication the shared vocabulary exists to remove.
  */
 
+import type { ParamDescriptor, ParamSet } from "@/types/protocol";
+import {
+  hasParam as hasParamIn,
+  paramFor as paramForIn,
+  paramSetFor,
+  paramSets,
+  paramsInScope,
+  type ParamCatalogue,
+} from "@/shared/params";
 import type { AWGVersion } from "./types";
 
-/* ── What a parameter is ──────────────────────────────────────────────────── */
-
 /**
- * Who has to know the value.
+ * One AmneziaWG parameter.
  *
- * Derived from `DeterminePacketTypeAndPadding` in amneziawg-go's
- * `device/receive.go`: the receiver identifies a packet using *its own* S and
- * H values, so those must match on both ends. Junk packets and the I chain are
- * only ever sent, never parsed — landing in the Unknown branch is their whole
- * purpose — so each side may set them freely.
+ * An alias, not a type of its own: plenty of code says `AWGParameter` and
+ * there is no reason for it to stop, but there is only one description of what
+ * a parameter is.
  */
-export type AWGParamScope =
-  /** Both ends must carry the identical value or the tunnel fails silently. */
-  | "shared"
-  /** Applied by whoever sends; the other end neither knows nor cares. */
-  | "sender"
-  /** Local policy. No agreement needed, though extremes cause churn. */
-  | "local";
+export type AWGParameter = ParamDescriptor;
 
-/** The shape a value takes, which is what a validator and an input need. */
-export type AWGParamKind =
-  /** A plain count or size: Jc, S1. */
-  | "int"
-  /** Two integers as "lo-hi": H1 on 2.0+, ContentPaddingAddition. */
-  | "range"
-  /** A single large integer: H1 on 1.x. */
-  | "header"
-  /** A CPS chain of tags and hex blobs: I1–I5. */
-  | "chain"
-  /** Base64 key material: HeaderProtectionKey. */
-  | "key"
-  /** A "lo-hi" range of seconds or attempts: the 3.0 timers. */
-  | "duration";
-
-/** One AmneziaWG parameter, independent of any particular config. */
-export interface AWGParameter {
-  /** As written in the `.conf`: "Jc", "S1", "HeaderProtectionKey". */
-  key: string;
-  kind: AWGParamKind;
-  scope: AWGParamScope;
-  /** First protocol version that understands it. */
-  since: AWGVersion;
-  /**
-   * Field on AWGConfig holding the value. Named separately because H1 lives in
-   * `h1` when ranged and `h1s` when single — the wire name is one thing, the
-   * storage another.
-   */
-  field: string;
-  /** Bounds the protocol itself imposes, where there are any. */
-  min?: number;
-  max?: number;
-  /**
-   * Where the rule comes from, so a future reader can check it rather than
-   * trust it. Empty when the parameter has no constraint beyond its shape.
-   */
-  source?: string;
-  /** Short note on why the parameter exists, for tooltips and the field guide. */
-  note?: string;
-}
+export type { ParamScope as AWGParamScope, ParamKind as AWGParamKind } from "@/types/protocol";
 
 /* ── The catalogue ────────────────────────────────────────────────────────── */
 
@@ -150,7 +107,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "shared",
     since: "2.0",
     field: "s4",
-    max: 32,
+    bounds: { max: 32 },
     note: "Паддинг транспортных пакетов. Протокол ограничивает его 32 байтами.",
     source: "amneziawg-tools src/config.c",
   },
@@ -237,55 +194,40 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
 
 /* ── Per-version sets ─────────────────────────────────────────────────────── */
 
-/** Versions in order, so "everything up to X" is a prefix. */
-const ORDER: readonly AWGVersion[] = ["1.0", "1.5", "2.0", "3.0"];
-
 /**
- * Parameters a version understands.
+ * The catalogue plus its version ordering.
  *
- * Ranged headers replace single ones rather than joining them, so a version
- * never carries both spellings of H1: the later `kind` wins.
+ * The order is data: "1.5" is not less than "1.0" by any string comparison,
+ * and the sets are a prefix of it.
  */
-function setFor(version: AWGVersion): readonly AWGParameter[] {
-  const upto = ORDER.slice(0, ORDER.indexOf(version) + 1);
-  const available = AWG_PARAMETERS.filter((p) => upto.includes(p.since));
-
-  const byKey = new Map<string, AWGParameter>();
-  for (const p of available) {
-    const seen = byKey.get(p.key);
-    if (!seen || ORDER.indexOf(p.since) >= ORDER.indexOf(seen.since)) {
-      byKey.set(p.key, p);
-    }
-  }
-  // Catalogue order is meaningful, so rebuild in it rather than in Map order.
-  return AWG_PARAMETERS.filter((p) => byKey.get(p.key) === p);
-}
-
-/** AmneziaWG 1.0 — junk train, single headers, S1 and S2. */
-export const AWGParamSet1 = setFor("1.0");
-
-/** AmneziaWG 1.5 — adds the I1–I5 chain, sent by the client only. */
-export const AWGParamSet15 = setFor("1.5");
-
-/** AmneziaWG 2.0 — adds S3, S4 and turns the headers into ranges. */
-export const AWGParamSet2 = setFor("2.0");
-
-/** AmneziaWG 3.0 — adds header protection, content padding and the timers. */
-export const AWGParamSet3 = setFor("3.0");
+export const AWG_CATALOGUE: ParamCatalogue = {
+  parameters: AWG_PARAMETERS,
+  order: ["1.0", "1.5", "2.0", "3.0"],
+};
 
 /** Lookup by version, for code that has the version as a value. */
-export const AWG_PARAM_SETS: Record<AWGVersion, readonly AWGParameter[]> = {
-  "1.0": AWGParamSet1,
-  "1.5": AWGParamSet15,
-  "2.0": AWGParamSet2,
-  "3.0": AWGParamSet3,
-};
+export const AWG_PARAM_SETS = paramSets(AWG_CATALOGUE) as Record<
+  AWGVersion,
+  ParamSet
+>;
+
+/** AmneziaWG 1.0 — junk train, single headers, S1 and S2. */
+export const AWGParamSet1 = AWG_PARAM_SETS["1.0"];
+
+/** AmneziaWG 1.5 — adds the I1–I5 chain, sent by the client only. */
+export const AWGParamSet15 = AWG_PARAM_SETS["1.5"];
+
+/** AmneziaWG 2.0 — adds S3, S4 and turns the headers into ranges. */
+export const AWGParamSet2 = AWG_PARAM_SETS["2.0"];
+
+/** AmneziaWG 3.0 — adds header protection, content padding and the timers. */
+export const AWGParamSet3 = AWG_PARAM_SETS["3.0"];
 
 /* ── Questions the sets answer ────────────────────────────────────────────── */
 
 /** Does this version understand this parameter at all? */
 export function hasParam(version: AWGVersion, key: string): boolean {
-  return AWG_PARAM_SETS[version].some((p) => p.key === key);
+  return hasParamIn(AWG_CATALOGUE, version, key);
 }
 
 /** The description a version uses for a key, if any. */
@@ -293,18 +235,23 @@ export function paramFor(
   version: AWGVersion,
   key: string,
 ): AWGParameter | undefined {
-  return AWG_PARAM_SETS[version].find((p) => p.key === key);
+  return paramForIn(AWG_CATALOGUE, version, key);
+}
+
+/** Every parameter a version understands. */
+export function paramsFor(version: AWGVersion): ParamSet {
+  return paramSetFor(AWG_CATALOGUE, version);
 }
 
 /**
  * Parameters both ends must agree on. This is the list a "why does my tunnel
  * not come up" answer is built from, so it is derived rather than retyped.
  */
-export function sharedParams(version: AWGVersion): readonly AWGParameter[] {
-  return AWG_PARAM_SETS[version].filter((p) => p.scope === "shared");
+export function sharedParams(version: AWGVersion): ParamSet {
+  return paramsInScope(AWG_CATALOGUE, version, "shared");
 }
 
 /** Parameters each device may set for itself. */
-export function senderParams(version: AWGVersion): readonly AWGParameter[] {
-  return AWG_PARAM_SETS[version].filter((p) => p.scope === "sender");
+export function senderParams(version: AWGVersion): ParamSet {
+  return paramsInScope(AWG_CATALOGUE, version, "sender");
 }

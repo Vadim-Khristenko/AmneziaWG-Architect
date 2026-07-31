@@ -590,6 +590,19 @@ export const en: Catalog = {
     "shortId “{id}” contains characters outside hex.",
   "find.xray.spider_x_slash":
     "spiderX must start with a slash.",
+  /* Checks derived from a parameter's description rather than written per parameter. */
+  "find.param.not_a_number": "{key}: expected a number.",
+  "find.param.not_a_range": "{key}: expected a range written as “min-max”.",
+  "find.param.range_inverted": "{key}: the lower bound {lo} is above the upper bound {hi}.",
+  "find.param.below_min": "{key} = {actual}: below the minimum of {min}.",
+  "find.param.above_max": "{key} = {actual}: above the maximum of {max}.",
+  "find.param.not_encoded": "{key}: the value does not decode as {encoding}.",
+  "find.param.wrong_length": "{key}: expected {expected} bytes once decoded, got {actual}.",
+  "find.param.too_long": "{key}: {actual} characters, maximum {max}.",
+  "find.param.not_allowed":
+    "{key}: “{value}” is not one of the allowed values ({allowed}).",
+  "find.validator.crashed":
+    "The “{rule}” check crashed: {reason}. That is an Architect bug, not a config one.",
   "find.xray.fingerprint_refused":
     "The {fingerprint} fingerprint is refused by REALITY.",
   "find.xray.mldsa_unsupported":
