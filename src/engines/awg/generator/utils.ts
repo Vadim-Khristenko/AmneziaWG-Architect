@@ -33,6 +33,46 @@ export function hexPad(value: number, byteLen: number): string {
 }
 
 /**
+ * A QUIC variable-length integer, as hex.
+ *
+ * RFC 9000 §16: the top two bits of the first byte say how many bytes the
+ * whole thing is — 00 for one, 01 for two, 10 for four, 11 for eight — and
+ * the rest is the value, big-endian.
+ *
+ * This matters because a Length field written as four random bytes does not
+ * decode to the length of what follows, and anything that actually parses
+ * QUIC rather than glancing at it sees that immediately. The junk packet is
+ * supposed to *be* a QUIC Initial, not merely resemble one.
+ */
+export function quicVarint(value: number): string {
+  const n = Math.max(0, Math.floor(value));
+
+  // Addition rather than bitwise OR: JavaScript's `|` works on signed 32-bit
+  // integers, so `0x8000_0000 | n` goes negative and the hex comes out as the
+  // wrong number entirely. The two-byte form is small enough to be safe
+  // either way; the wider ones are not.
+  if (n < 0x40) return hexPad(n, 1);
+  if (n < 0x4000) return hexPad(0x4000 + n, 2);
+  if (n < 0x4000_0000) return hexPad(0x8000_0000 + n, 4);
+
+  // The eight-byte form needs more than 32 bits, so it is built in halves;
+  // nothing here produces a value this large, but truncating silently would
+  // be worse than handling it.
+  const high = Math.floor(n / 0x1_0000_0000);
+  const low = n % 0x1_0000_0000;
+  return hexPad(0xc000_0000 + high, 4) + hexPad(low, 4);
+}
+
+/** How many bytes `quicVarint` will produce for a value. */
+export function quicVarintLength(value: number): number {
+  const n = Math.max(0, Math.floor(value));
+  if (n < 0x40) return 1;
+  if (n < 0x4000) return 2;
+  if (n < 0x4000_0000) return 4;
+  return 8;
+}
+
+/**
  * assertEvenHex — страховка: если hex нечётный, дополняем нулём и логируем.
  */
 export function assertEvenHex(hex: string, label = "?"): string {
