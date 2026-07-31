@@ -87,6 +87,23 @@ export type ParseResult<T> =
 /** Formats an engine can read. Not every engine supports every one. */
 export type ConfigFormat = "text" | "uri" | "json";
 
+/**
+ * Everything an engine can say about one piece of text.
+ *
+ * `config` is present whenever the text could be understood, *including* when
+ * the findings contain errors — a config that parses and then breaks a rule is
+ * the interesting case, and dropping it would leave the caller with complaints
+ * about something it cannot show.
+ */
+export interface Inspection<TConfig> {
+  /** Did the text parse into a config at all? */
+  readable: boolean;
+  config: TConfig | null;
+  findings: EngineFinding[];
+  /** True when nothing at `error` level was found. */
+  ok: boolean;
+}
+
 /* ── The contract ─────────────────────────────────────────────────────────── */
 
 /**
@@ -152,6 +169,27 @@ export interface Engine<TInput = unknown, TConfig = unknown> {
    * An empty array means nothing to report, not "unchecked".
    */
   validate(config: TConfig): EngineFinding[];
+
+  /**
+   * Structural checks on the raw text, beside parsing.
+   *
+   * A missing section, a key that is not base64, an endpoint with no port —
+   * problems with the *file* rather than with the protocol. Optional because
+   * not every format has structure worth checking separately: XRay JSON
+   * either parses or it does not.
+   */
+  audit?(text: string): EngineFinding[];
+
+  /**
+   * Everything the engine can say about one piece of text, in one call.
+   *
+   * Filled in by `defineEngine` from `audit`, `parse` and `validate`, so an
+   * engine gets it for free and the shell has one door instead of three. It
+   * used to be three: generated configs went through `validate`, pasted ones
+   * through `parse`, and whole files through a health checker with a finding
+   * type of its own.
+   */
+  inspect(text: string): Inspection<TConfig>;
 }
 
 /** Convenience for the registry, where parameter types differ per entry. */
@@ -198,10 +236,15 @@ export { sortFindings } from "./findings";
  * would only add a `this` to get wrong inside a worker.
  */
 export function defineEngine<TInput, TConfig>(
-  spec: Engine<TInput, TConfig>,
+  spec: Omit<Engine<TInput, TConfig>, "inspect"> &
+    Partial<Pick<Engine<TInput, TConfig>, "inspect">>,
 ): Engine<TInput, TConfig> {
-  return {
+  const built: Engine<TInput, TConfig> = {
     ...spec,
+
+    // One door for "what is wrong with this text", built from the three
+    // halves the engine already owes. An engine may still override it.
+    inspect: spec.inspect ?? ((text: string) => inspectWith(built, text)),
 
     // Validation output is sorted for everyone, so no engine has to remember.
     validate: (config) => sortFindings(spec.validate(config)),
@@ -217,4 +260,37 @@ export function defineEngine<TInput, TConfig>(
     // needs its own detect when that is too expensive or too eager.
     detect: spec.detect ?? ((text) => spec.parse(text).ok),
   };
+
+  return built;
 }
+
+
+/**
+ * Compose an engine's three halves into one answer.
+ *
+ * Structural findings come first because they explain the parse failures that
+ * follow: "no [Interface] section" is the reason for "no PrivateKey", and the
+ * other order makes the reader chase a symptom.
+ */
+function inspectWith<TInput, TConfig>(
+  engine: Engine<TInput, TConfig>,
+  text: string,
+): Inspection<TConfig> {
+  const findings: EngineFinding[] = engine.audit ? [...engine.audit(text)] : [];
+
+  const parsed = engine.parse(text);
+  findings.push(...parsed.findings);
+
+  if (parsed.ok && parsed.config !== null) {
+    findings.push(...engine.validate(parsed.config));
+  }
+
+  const sorted = sortFindings(findings);
+  return {
+    readable: parsed.ok,
+    config: parsed.config,
+    findings: sorted,
+    ok: !sorted.some((f) => f.level === "error"),
+  };
+}
+

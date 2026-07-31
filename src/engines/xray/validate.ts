@@ -116,7 +116,10 @@ export function validateXray(cfg: XrayConfig): Finding[] {
       if (!isKeyOfLength(reality.keys.privateKey, 32)) {
         findings.push(error("privateKey", "xray.key_length"));
       }
-      if (!isKeyOfLength(reality.keys.publicKey, 32)) {
+      // A server half legitimately has no public key: it is derived from the
+      // private one and never written into the inbound. Only a value that is
+      // present and wrong is an error.
+      if (reality.keys.publicKey && !isKeyOfLength(reality.keys.publicKey, 32)) {
         findings.push(error("publicKey", "xray.key_length"));
       }
 

@@ -592,6 +592,17 @@ export const ru = {
   "find.xray.spider_x_slash":
     "spiderX должен начинаться со слеша.",
   /* Проверки, выведенные из описания параметра, а не написанные для каждого. */
+  /* Структура .conf — то, что про файл, а не про обфускацию. */
+  "find.awg.conf.template":
+    "Это шаблон: PrivateKey и Address оставлены закомментированными — подставьте свои перед использованием.",
+  "find.awg.conf.unparsable": "Не удалось разобрать .conf: {reason}",
+  "find.awg.conf.no_interface": "Отсутствует секция [Interface].",
+  "find.awg.conf.no_peer": "Нет секций [Peer] — конфиг только для сервера?",
+  "find.awg.conf.missing_field": "Отсутствует обязательное поле {key}.",
+  "find.awg.conf.bad_key": "{key} не выглядит как ключ WireGuard: ожидается 32 байта в base64 (44 символа).",
+  "find.awg.conf.peer_missing_field": "Peer #{n}: отсутствует {key}.",
+  "find.awg.conf.peer_bad_key": "Peer #{n}: {key} не выглядит как ключ WireGuard.",
+  "find.awg.conf.peer_bad_endpoint": "Peer #{n}: Endpoint имеет нестандартный формат — ожидается хост:порт.",
   "find.param.not_a_number": "{key}: ожидается число.",
   "find.param.not_a_range": "{key}: ожидается диапазон вида «мин-макс».",
   "find.param.range_inverted": "{key}: нижняя граница {lo} больше верхней {hi}.",

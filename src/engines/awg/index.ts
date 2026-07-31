@@ -19,6 +19,7 @@
  *     both shapes.
  */
 
+import { auditConf } from "./audit";
 import { Shield } from "lucide-vue-next";
 
 import {
@@ -99,6 +100,15 @@ export const awgEngine = defineEngine<GeneratorInput, AWGConfig>({
   render(config, labels: EngineLabels): EngineLine[] {
     return renderConfLines(config, { labels: labels as Partial<RenderLabels> });
   },
+
+  /**
+   * Structural checks on the `.conf` text itself.
+   *
+   * Separate from `validate`, which judges a config that has already been
+   * understood. A file with no [Interface] section never gets that far, and
+   * saying so is more useful than a parse error.
+   */
+  audit: auditConf,
 
   validate(config): EngineFinding[] {
     // The generator splits validation by concern; the shell only ever wants

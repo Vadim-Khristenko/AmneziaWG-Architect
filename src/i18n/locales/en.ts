@@ -591,6 +591,17 @@ export const en: Catalog = {
   "find.xray.spider_x_slash":
     "spiderX must start with a slash.",
   /* Checks derived from a parameter's description rather than written per parameter. */
+  /* .conf structure — what is about the file rather than the obfuscation. */
+  "find.awg.conf.template":
+    "This is a template: PrivateKey and Address are left commented out — fill in your own before using it.",
+  "find.awg.conf.unparsable": "The .conf could not be parsed: {reason}",
+  "find.awg.conf.no_interface": "No [Interface] section.",
+  "find.awg.conf.no_peer": "No [Peer] sections — is this a server-only config?",
+  "find.awg.conf.missing_field": "Required field {key} is missing.",
+  "find.awg.conf.bad_key": "{key} does not look like a WireGuard key: 32 bytes in base64 (44 characters) expected.",
+  "find.awg.conf.peer_missing_field": "Peer #{n}: {key} is missing.",
+  "find.awg.conf.peer_bad_key": "Peer #{n}: {key} does not look like a WireGuard key.",
+  "find.awg.conf.peer_bad_endpoint": "Peer #{n}: Endpoint has an unusual format — host:port expected.",
   "find.param.not_a_number": "{key}: expected a number.",
   "find.param.not_a_range": "{key}: expected a range written as “min-max”.",
   "find.param.range_inverted": "{key}: the lower bound {lo} is above the upper bound {hi}.",
