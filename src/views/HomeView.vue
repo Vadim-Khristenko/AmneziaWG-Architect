@@ -55,6 +55,7 @@ import {
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
+import { useHistory, type HistoryRecord } from "@/composables/useHistory";
 import {
     YANDEX_UNSTABLE_PROFILES,
     CLIENTS,
@@ -227,9 +228,14 @@ const openMergeKeys = (tab: "update" | "merge") => {
 
 /* ── Generation History ───────────────────────────────────────────────── */
 
-interface HistoryEntry {
-    id: number;
-    timestamp: number;
+/**
+ * One remembered generation.
+ *
+ * Everything past `id` and `timestamp` is AmneziaWG's own: the composable
+ * that stores it does not read these, which is what lets XRay keep a history
+ * of a completely different shape under its own key.
+ */
+interface HistoryEntry extends HistoryRecord {
     version: string;
     intensity: string;
     profile: string;
@@ -242,41 +248,20 @@ interface HistoryEntry {
     cfg?: AWGConfig;
 }
 
-const HISTORY_KEY = "awg-architect:history";
-const HISTORY_LIMIT = 20;
+const {
+    entries: historyEntries,
+    load: loadHistory,
+    add: addToHistory,
+    remove: removeHistoryEntry,
+    clear: clearHistory,
+} = useHistory<HistoryEntry>({
+    engineId: "awg",
+    // Entries written before the key was namespaced, moved on first load
+    // rather than dropped.
+    legacyKey: "awg-architect:history",
+});
 
-const historyEntries = ref<HistoryEntry[]>([]);
 const showHistory = ref(false);
-let historyIdCounter = 0;
-
-/** History survives a reload — regenerating a config you liked is annoying. */
-function loadHistory() {
-    try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return;
-        historyEntries.value = parsed.slice(0, HISTORY_LIMIT);
-        historyIdCounter = historyEntries.value.reduce(
-            (max, e) => Math.max(max, Number(e.id) || 0),
-            0,
-        );
-    } catch {
-        // Corrupt or unreadable storage should never take the page down.
-        historyEntries.value = [];
-    }
-}
-
-function saveHistory() {
-    try {
-        localStorage.setItem(
-            HISTORY_KEY,
-            JSON.stringify(historyEntries.value.slice(0, HISTORY_LIMIT)),
-        );
-    } catch {
-        // Quota exceeded or storage blocked — history stays in memory only.
-    }
-}
 
 /** Capabilities of the selected protocol version — see generator/versions.ts. */
 const caps = computed(() => capsFor(version.value));
@@ -345,9 +330,7 @@ function saveToHistory() {
             params.MaxHandshakeAttempts = a.maxHandshakeAttempts;
     }
 
-    const entry: HistoryEntry = {
-        id: ++historyIdCounter,
-        timestamp: Date.now(),
+    addToHistory({
         version: version.value,
         intensity: intensity.value,
         profile: config.profile,
@@ -355,12 +338,7 @@ function saveToHistory() {
         params,
         // Structured clone: `currentAwg` keeps mutating as the user generates.
         cfg: JSON.parse(JSON.stringify(awg)) as AWGConfig,
-    };
-    historyEntries.value.unshift(entry);
-    if (historyEntries.value.length > HISTORY_LIMIT) {
-        historyEntries.value = historyEntries.value.slice(0, HISTORY_LIMIT);
-    }
-    saveHistory();
+    });
 }
 
 /**
@@ -388,16 +366,6 @@ async function restoreFromHistory(entry: HistoryEntry) {
 
 async function copyHistoryEntry(entry: HistoryEntry) {
     await copy(`history:${entry.id}`, entry.text);
-}
-
-function removeHistoryEntry(id: number) {
-    historyEntries.value = historyEntries.value.filter((e) => e.id !== id);
-    saveHistory();
-}
-
-function clearHistory() {
-    historyEntries.value = [];
-    saveHistory();
 }
 
 function formatTime(ts: number): string {
