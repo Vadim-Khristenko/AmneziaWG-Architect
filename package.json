@@ -13,7 +13,9 @@
     "test:run": "bun run vitest run",
     "test:coverage": "bun run vitest run --coverage",
     "typecheck": "bun run vue-tsc --noEmit --skipLibCheck",
-    "og": "bun scripts/og/generate.mjs"
+    "og": "bun scripts/og/generate.mjs",
+    "domains": "bun scripts/domains.ts",
+    "configs": "bun scripts/configs.ts"
   },
   "engines": {
     "node": ">=18.0.0",

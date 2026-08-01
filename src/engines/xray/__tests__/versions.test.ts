@@ -17,7 +17,7 @@ import type { XrayInput } from "../types";
  *     fails with `invalid "mldsa65Seed": ""`.
  *   - v24.11.11 has no XHTTP `stream-one`: `unsupported mode: stream-one`.
  *
- * `scripts/xray-core-check.sh` re-derives all three from the cores themselves
+ * `scripts/configs.ts` re-derives all three from the cores themselves
  * in CI. These tests are the fast copy, so a regression shows up in a second
  * rather than after six image pulls.
  */
