@@ -700,6 +700,47 @@ export const ru = {
     "В конфиге нет ни одного клиента.",
   "find.xray.parse.unrecognised":
     "Не похоже ни на ссылку vless://, ни на JSON-конфиг.",
+
+  /* ── Client field guide ───────────────────────────────────────────────── */
+  "clientFields.toggle.title": "Куда вставлять параметры в клиенте",
+  "clientFields.toggle.filled": "Форма приложения Amnezia с вашими значениями",
+  "clientFields.toggle.empty": "Форма приложения Amnezia, поле за полем",
+  "clientFields.intro":
+    "Так выглядит форма параметров в приложении Amnezia. Названия полей приведены по-английски, как в самом клиенте — оно не переводит их даже при русском интерфейсе. Пояснения даны рядом, серым.",
+  "clientFields.state.filled":
+    "Показаны значения вашего последнего конфига — нажмите на поле, чтобы скопировать.",
+  "clientFields.state.empty":
+    "Сгенерируйте конфиг на главной, и здесь появятся ваши значения.",
+  "clientFields.group.junk": "Мусорные пакеты",
+  "clientFields.group.sizes": "Размеры паддинга",
+  "clientFields.group.headers": "Магические заголовки",
+  "clientFields.group.cps": "CPS-цепочки",
+  "clientFields.hint.jc": "количество мусорных пакетов",
+  "clientFields.hint.jmin": "минимальный размер мусорного пакета",
+  "clientFields.hint.jmax": "максимальный размер мусорного пакета",
+  "clientFields.hint.s1": "паддинг пакета init",
+  "clientFields.hint.s2": "паддинг пакета response",
+  "clientFields.hint.s3": "паддинг cookie reply",
+  "clientFields.hint.s4": "паддинг транспортного пакета",
+  "clientFields.hint.h1": "заголовок пакета init",
+  "clientFields.hint.h2": "заголовок пакета response",
+  "clientFields.hint.h3": "заголовок cookie reply",
+  "clientFields.hint.h4": "заголовок транспортного пакета",
+  "clientFields.hint.cps": "CPS-цепочка {n}",
+
+  /* ── MergeKeys: what the engine reports ───────────────────────────────── */
+  "mk.err.lengthMismatch":
+    "Длина после распаковки ({got}) не совпадает с заголовком ({expected}).",
+  "mk.err.decode": "Не удалось декодировать ключ: {error}",
+  "mk.err.noConfig":
+    "Конфиг не сгенерирован. Вернитесь на главную и нажмите «СГЕНЕРИРОВАТЬ».",
+  "mk.err.noAwgContainer":
+    "В ключе не найдено ни одного AWG-контейнера. Этот инструмент работает только с AmneziaWG-ключами.",
+  "mk.err.noConfField":
+    "Не удалось извлечь .conf из AWG-контейнера: в нём нет поля config.",
+  "mk.err.needTwo": "Для объединения нужно минимум 2 ключа.",
+  "mk.warn.duplicateContainer":
+    "Дубликат контейнера «{name}» из ключа #{from} пропущен — он уже есть из ключа #{seen}.",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

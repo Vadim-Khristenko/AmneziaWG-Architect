@@ -701,6 +701,48 @@ export const en: Catalog = {
     "The config carries no clients.",
   "find.xray.parse.unrecognised":
     "This looks like neither a vless:// link nor a JSON config.",
+  /* ── Client field guide ───────────────────────────────────────────────── */
+  "clientFields.toggle.title": "Where each parameter goes in the client",
+  "clientFields.toggle.filled": "The Amnezia app’s form, filled with your values",
+  "clientFields.toggle.empty": "The Amnezia app’s form, field by field",
+  "clientFields.intro":
+    "This is the parameter form as the Amnezia app lays it out, with field names exactly as the client shows them.",
+  "clientFields.state.filled":
+    "Showing your last generated config — click a field to copy it.",
+  "clientFields.state.empty":
+    "Generate a config on the home page and your own values will appear here.",
+  "clientFields.group.junk": "Junk packets",
+  "clientFields.group.sizes": "Junk sizes",
+  "clientFields.group.headers": "Magic headers",
+  "clientFields.group.cps": "Special junk",
+  "clientFields.hint.jc": "how many junk packets",
+  "clientFields.hint.jmin": "smallest junk packet",
+  "clientFields.hint.jmax": "largest junk packet",
+  "clientFields.hint.s1": "padding on the init packet",
+  "clientFields.hint.s2": "padding on the response packet",
+  "clientFields.hint.s3": "padding on the cookie reply",
+  "clientFields.hint.s4": "padding on the transport packet",
+  "clientFields.hint.h1": "header of the init packet",
+  "clientFields.hint.h2": "header of the response packet",
+  // The client calls this field "Underload"; the protocol calls the same
+  // thing the cookie reply header. Both names, so the form and the docs meet.
+  "clientFields.hint.h3": "cookie reply header",
+  "clientFields.hint.h4": "header of the transport packet",
+  "clientFields.hint.cps": "CPS chain {n}",
+
+  /* ── MergeKeys: what the engine reports ───────────────────────────────── */
+  "mk.err.lengthMismatch":
+    "Decompressed length ({got}) does not match the header ({expected}).",
+  "mk.err.decode": "The key could not be decoded: {error}",
+  "mk.err.noConfig":
+    "No config has been generated yet. Go back to the generator and press GENERATE.",
+  "mk.err.noAwgContainer":
+    "The key carries no AmneziaWG container. This tool only works with AmneziaWG keys.",
+  "mk.err.noConfField":
+    "The .conf could not be taken out of the AWG container: it has no config field.",
+  "mk.err.needTwo": "Merging needs at least two keys.",
+  "mk.warn.duplicateContainer":
+    "Container “{name}” from key #{from} was skipped — key #{seen} already carries it.",
 };
 
 export default en;

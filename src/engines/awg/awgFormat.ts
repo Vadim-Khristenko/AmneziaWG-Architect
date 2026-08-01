@@ -15,6 +15,7 @@
 
 import { vpnDecode, vpnEncode } from "@/engines/awg/mergekeys";
 import type { VpnConfig, AwgContainer } from "@/engines/awg/mergekeys";
+import { LocalisedError } from "@/shared/errors";
 
 export type AwgFormat = "vpn" | "conf" | "json" | "unknown";
 
@@ -194,8 +195,10 @@ export function vpnToConf(
     (c): c is { container?: string; awg: AwgContainer } => c.awg != null,
   );
   if (awg.length === 0) {
-    throw new Error(
-      "В ключе нет AmneziaWG-контейнера. Трансформация в .conf доступна только для AmneziaWG.",
+    throw new LocalisedError(
+      "mk.err.noAwgContainer",
+      {},
+      "the key carries no AmneziaWG container",
     );
   }
   const names = awg.map((c, i) => c.container || `awg_${i}`);
@@ -224,7 +227,9 @@ function extractConf(awg: AwgContainer): string {
       /* ignore — fall through to error */
     }
   }
-  throw new Error(
-    "Не удалось извлечь .conf из AWG-контейнера (отсутствует поле config).",
-  );
+  throw new LocalisedError(
+      "mk.err.noConfField",
+      {},
+      "the AWG container has no config field",
+    );
 }

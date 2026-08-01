@@ -11,6 +11,7 @@
 
 import { ref, computed } from "vue";
 import { translate } from "@/i18n";
+import { localiseError, type LocalisedParams } from "@/shared/errors";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import {
   downloadText as saveText,
@@ -134,6 +135,8 @@ export function useMergeKeys() {
   const mergeOutput = ref("");
   const mergeSummary = ref("");
   const mergeErrorMsg = ref("");
+  // Notes rather than sentences: the engine states what happened and this
+  // says it, so the English site no longer shows Russian warnings.
   const mergeWarnings: Ref<string[]> = ref([]);
   const mergePreviewJson = ref("");
   const mergePreviewLabel = ref(translate("mk.msg.keyContents"));
@@ -197,7 +200,9 @@ export function useMergeKeys() {
     } catch (err: unknown) {
       mergeErrorMsg.value = translate("mk.msg.slotError", {
         n: index + 1,
-        error: err instanceof Error ? err.message : String(err),
+        error: localiseError(err, (key: string, params?: LocalisedParams) =>
+          translate(key as Parameters<typeof translate>[0], params),
+        ),
       });
       mergeState.value = "error";
     }
@@ -227,7 +232,9 @@ export function useMergeKeys() {
           throw new Error(
             translate("mk.msg.slotError", {
               n: s.idx + 1,
-              error: e instanceof Error ? e.message : String(e),
+              error: localiseError(e, (key: string, params?: LocalisedParams) =>
+                translate(key as Parameters<typeof translate>[0], params),
+              ),
             })
           );
         }
@@ -273,7 +280,9 @@ export function useMergeKeys() {
       mergeSummary.value = lines.join(" ");
 
       // Warnings
-      mergeWarnings.value = mergeResult.warnings;
+      mergeWarnings.value = mergeResult.warnings.map((w) =>
+        translate(w.key as Parameters<typeof translate>[0], w.params),
+      );
 
       mergeState.value = "ok";
     } catch (err: unknown) {

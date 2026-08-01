@@ -14,13 +14,12 @@
  */
 import { ref, computed, onMounted, nextTick } from "vue";
 import { Copy, Check, Info, ChevronDown, LayoutGrid } from "lucide-vue-next";
-import { useI18n, pick } from "@/i18n";
+import { useI18n } from "@/i18n";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import type { AWGConfig } from "@/engines/awg/generator";
 import { capsFor } from "@/engines/awg/generator/versions";
 
-const { locale } = useI18n();
-const isRu = computed(() => locale.value === "ru");
+const { t } = useI18n();
 
 const cfg = ref<AWGConfig | null>(null);
 const { copied, copy } = useCopyFeedback();
@@ -62,8 +61,8 @@ interface Field {
      * reader looking for text that is not on their screen.
      */
     label: string;
-    /** Russian gloss, shown as a secondary line — never as the field name. */
-    hint: { ru: string; en: string };
+    /** Secondary gloss under the label — never the field name itself. */
+    hint: string;
     value: () => string;
 }
 
@@ -87,73 +86,76 @@ const ranged = () => {
     return !k || capsFor(k.version).rangedHeaders;
 };
 
-const groups = computed<{ title: { ru: string; en: string }; fields: Field[] }[]>(
+const groups = computed<{ key: string; title: string; fields: Field[] }[]>(
     () => [
         {
-            title: { ru: "Мусорные пакеты", en: "Junk packets" },
+            key: "junk",
+            title: t("clientFields.group.junk"),
             fields: [
                 {
                     key: "Jc",
                     label: "Jc – Junk packet count",
-                    hint: { ru: "количество мусорных пакетов", en: "" },
+                    hint: t("clientFields.hint.jc"),
                     value: v((k) => k.jc, "JC"),
                 },
                 {
                     key: "Jmin",
                     label: "Jmin – Junk packet minimum size",
-                    hint: { ru: "минимальный размер мусорного пакета", en: "" },
+                    hint: t("clientFields.hint.jmin"),
                     value: v((k) => k.jmin, "JMIN"),
                 },
                 {
                     key: "Jmax",
                     label: "Jmax – Junk packet maximum size",
-                    hint: { ru: "максимальный размер мусорного пакета", en: "" },
+                    hint: t("clientFields.hint.jmax"),
                     value: v((k) => k.jmax, "JMAX"),
                 },
             ],
         },
         {
-            title: { ru: "Размеры паддинга", en: "Junk sizes" },
+            key: "sizes",
+            title: t("clientFields.group.sizes"),
             fields: [
                 {
                     key: "S1",
                     label: "S1 – Init packet junk size",
-                    hint: { ru: "паддинг пакета init", en: "" },
+                    hint: t("clientFields.hint.s1"),
                     value: v((k) => k.s1, "S1"),
                 },
                 {
                     key: "S2",
                     label: "S2 – Response packet junk size",
-                    hint: { ru: "паддинг пакета response", en: "" },
+                    hint: t("clientFields.hint.s2"),
                     value: v((k) => k.s2, "S2"),
                 },
                 {
                     key: "S3",
                     label: "S3 – Cookie reply packet junk size",
-                    hint: { ru: "паддинг cookie reply", en: "" },
+                    hint: t("clientFields.hint.s3"),
                     value: v((k) => k.s3, "S3"),
                 },
                 {
                     key: "S4",
                     label: "S4 – Transport packet junk size",
-                    hint: { ru: "паддинг транспортного пакета", en: "" },
+                    hint: t("clientFields.hint.s4"),
                     value: v((k) => k.s4, "S4"),
                 },
             ],
         },
         {
-            title: { ru: "Магические заголовки", en: "Magic headers" },
+            key: "headers",
+            title: t("clientFields.group.headers"),
             fields: [
                 {
                     key: "H1",
                     label: "H1 – Init packet magic header",
-                    hint: { ru: "заголовок пакета init", en: "" },
+                    hint: t("clientFields.hint.h1"),
                     value: v((k) => (ranged() ? k.h1 : k.h1s), "H1"),
                 },
                 {
                     key: "H2",
                     label: "H2 – Response packet magic header",
-                    hint: { ru: "заголовок пакета response", en: "" },
+                    hint: t("clientFields.hint.h2"),
                     value: v((k) => (ranged() ? k.h2 : k.h2s), "H2"),
                 },
                 {
@@ -162,23 +164,24 @@ const groups = computed<{ title: { ru: string; en: string }; fields: Field[] }[]
                     // The client calls this "Underload"; the protocol calls the
                     // same field the cookie reply header. Both names, so the
                     // form and the docs line up.
-                    hint: { ru: "заголовок cookie reply", en: "cookie reply header" },
+                    hint: t("clientFields.hint.h3"),
                     value: v((k) => (ranged() ? k.h3 : k.h3s), "H3"),
                 },
                 {
                     key: "H4",
                     label: "H4 – Transport packet magic header",
-                    hint: { ru: "заголовок транспортного пакета", en: "" },
+                    hint: t("clientFields.hint.h4"),
                     value: v((k) => (ranged() ? k.h4 : k.h4s), "H4"),
                 },
             ],
         },
         {
-            title: { ru: "CPS-цепочки", en: "Special junk" },
+            key: "cps",
+            title: t("clientFields.group.cps"),
             fields: ([1, 2, 3, 4, 5] as const).map((n) => ({
                 key: `I${n}`,
                 label: `I${n} – Special junk ${n}`,
-                hint: { ru: `CPS-цепочка ${n}`, en: "" },
+                hint: t("clientFields.hint.cps", { n }),
                 value: v((k) => k[`i${n}` as keyof AWGConfig], `I${n}`),
             })),
         },
@@ -207,22 +210,12 @@ function copyValue(key: string, value: string) {
         >
             <span class="cfg-toggle-icon"><LayoutGrid :size="18" /></span>
             <span class="cfg-toggle-text">
-                <b>
-                    {{
-                        isRu
-                            ? "Куда вставлять параметры в клиенте"
-                            : "Where each parameter goes in the client"
-                    }}
-                </b>
+                <b>{{ t("clientFields.toggle.title") }}</b>
                 <small>
                     {{
-                        isRu
-                            ? hasConfig
-                                ? "Форма приложения Amnezia с вашими значениями"
-                                : "Форма приложения Amnezia, поле за полем"
-                            : hasConfig
-                              ? "The Amnezia app's form, filled with your values"
-                              : "The Amnezia app's form, field by field"
+                        hasConfig
+                            ? t("clientFields.toggle.filled")
+                            : t("clientFields.toggle.empty")
                     }}
                 </small>
             </span>
@@ -231,36 +224,18 @@ function copyValue(key: string, value: string) {
 
         <div v-show="open" id="client-fields-body" class="cfg-body">
         <header class="cfg-head">
-            <p>
-                {{
-                    isRu
-                        ? "Так выглядит форма параметров в приложении Amnezia. Названия полей приведены по-английски, как в самом клиенте — оно не переводит их даже при русском интерфейсе. Русские пояснения даны рядом, серым."
-                        : "This is the parameter form as the Amnezia app lays it out, with field names exactly as the client shows them."
-                }}
-            </p>
+            <p>{{ t("clientFields.intro") }}</p>
 
             <div class="cfg-state" :class="{ live: hasConfig }">
                 <Info :size="14" />
-                <span v-if="hasConfig">
-                    {{
-                        isRu
-                            ? "Показаны значения вашего последнего конфига — нажмите на поле, чтобы скопировать."
-                            : "Showing your last generated config — click a field to copy it."
-                    }}
-                </span>
-                <span v-else>
-                    {{
-                        isRu
-                            ? "Сгенерируйте конфиг на главной, и здесь появятся ваши значения."
-                            : "Generate a config on the home page and your own values will appear here."
-                    }}
-                </span>
+                <span v-if="hasConfig">{{ t("clientFields.state.filled") }}</span>
+                <span v-else>{{ t("clientFields.state.empty") }}</span>
             </div>
         </header>
 
         <div class="cfg-groups">
-            <div v-for="g in groups" :key="g.title.en" class="cfg-group">
-                <h3 class="cfg-group-title">{{ pick(g.title, locale) }}</h3>
+            <div v-for="g in groups" :key="g.key" class="cfg-group">
+                <h3 class="cfg-group-title">{{ g.title }}</h3>
 
                 <div class="cfg-fields">
                     <!-- One card per client field, mirroring the app's layout -->
@@ -277,7 +252,7 @@ function copyValue(key: string, value: string) {
                     >
                         <span class="cfg-field-label">
                             {{ f.label }}
-                            <em v-if="pick(f.hint, locale)">— {{ pick(f.hint, locale) }}</em>
+                            <em v-if="f.hint">— {{ f.hint }}</em>
                         </span>
                         <span class="cfg-field-value">{{ f.value() }}</span>
                         <span class="cfg-field-copy" aria-hidden="true">

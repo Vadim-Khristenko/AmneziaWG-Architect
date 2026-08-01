@@ -26,6 +26,7 @@
  */
 
 import pako from "pako";
+import { LocalisedError, type LocalisedNote } from "@/shared/errors";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Types
@@ -100,7 +101,7 @@ export interface PatchResult {
 /** Result of merging multiple VPN configs */
 export interface MergeResult {
   merged: VpnConfig;
-  warnings: string[];
+  warnings: LocalisedNote[];
   stats: {
     total: number;
     unique: number;
@@ -149,8 +150,10 @@ export function vpnDecode(str: string): VpnConfig {
     const decompressed = pako.inflate(compressed);
 
     if (decompressed.length !== originalLen) {
-      throw new Error(
-        `Длина после распаковки (${decompressed.length}) не совпадает с заголовком (${originalLen})`,
+      throw new LocalisedError(
+        "mk.err.lengthMismatch",
+        { got: decompressed.length, expected: originalLen },
+        `decompressed length ${decompressed.length} does not match the header (${originalLen})`,
       );
     }
 
@@ -162,8 +165,10 @@ export function vpnDecode(str: string): VpnConfig {
     try {
       return JSON.parse(new TextDecoder("utf-8").decode(bytes)) as VpnConfig;
     } catch {
-      throw new Error(
-        `Не удалось декодировать ключ: ${zlibErr instanceof Error ? zlibErr.message : String(zlibErr)}`,
+      throw new LocalisedError(
+        "mk.err.decode",
+        { error: zlibErr instanceof Error ? zlibErr.message : String(zlibErr) },
+        "the key could not be decoded",
       );
     }
   }
@@ -223,8 +228,10 @@ export function buildObfuscationPatch(
   selectedVer: AwgVersion,
 ): ObfuscationPatch {
   if (!p) {
-    throw new Error(
-      "Конфиг не сгенерирован. Вернитесь на главную и нажмите «СГЕНЕРИРОВАТЬ».",
+    throw new LocalisedError(
+      "mk.err.noConfig",
+      {},
+      "no config has been generated yet",
     );
   }
 
@@ -357,9 +364,10 @@ export function applyPatchToVpnConfig(
   );
 
   if (awgContainers.length === 0) {
-    throw new Error(
-      "В ключе не найдено ни одного AWG-контейнера. " +
-        "Этот инструмент работает только с AmneziaWG-ключами.",
+    throw new LocalisedError(
+      "mk.err.noAwgContainer",
+      {},
+      "the key carries no AmneziaWG container",
     );
   }
 
@@ -398,12 +406,16 @@ export function applyPatchToVpnConfig(
  */
 export function mergeVpnConfigs(configs: VpnConfig[]): MergeResult {
   if (!configs || configs.length < 2) {
-    throw new Error("Для объединения нужно минимум 2 ключа.");
+    throw new LocalisedError(
+      "mk.err.needTwo",
+      {},
+      "merging needs at least two keys",
+    );
   }
 
   const mergedContainers: ContainerEntry[] = [];
   const seenNames: Record<string, number> = {};
-  const warnings: string[] = [];
+  const warnings: LocalisedNote[] = [];
   let dupes = 0;
   let total = 0;
 
@@ -417,9 +429,10 @@ export function mergeVpnConfigs(configs: VpnConfig[]): MergeResult {
 
       if (seenNames[name]) {
         dupes++;
-        warnings.push(
-          `Дубликат контейнера «${name}» из ключа #${cfgIdx + 1} пропущен (уже есть из ключа #${seenNames[name]}).`,
-        );
+        warnings.push({
+          key: "mk.warn.duplicateContainer",
+          params: { name, from: cfgIdx + 1, seen: seenNames[name]! },
+        });
       } else {
         seenNames[name] = cfgIdx + 1;
         mergedContainers.push(c);
