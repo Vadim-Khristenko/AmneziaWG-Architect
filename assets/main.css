@@ -229,9 +229,6 @@ img {
 .flex {
     display: flex;
 }
-.flex-col {
-    flex-direction: column;
-}
 .flex-wrap {
     flex-wrap: wrap;
 }
@@ -267,9 +264,6 @@ img {
 }
 .w-full {
     width: 100%;
-}
-.text-center {
-    text-align: center;
 }
 
 .mt-1 {
@@ -396,11 +390,6 @@ img {
 }
 
 /* Danger */
-.btn-danger {
-    background: var(--red-bg);
-    color: var(--red);
-    border-color: transparent;
-}
 .btn-danger:hover {
     background: rgba(212, 96, 74, 0.15);
     border-color: rgba(212, 96, 74, 0.25);
@@ -446,19 +435,7 @@ img {
 }
 
 /* ── Forms / Inputs ───────────────────────────────────────────────────────── */
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
 
-.input-label {
-    font-size: 0.82rem;
-    color: var(--text2);
-    font-weight: 600;
-    font-family: var(--fw);
-    letter-spacing: 0.01em;
-}
 
 .input-field,
 .textarea-field,
@@ -568,31 +545,9 @@ input[type="number"] {
 }
 
 /* ── Cards ────────────────────────────────────────────────────────────────── */
-.card {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    position: relative;
-}
 
 /* Subtle inner glow on cards */
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-        180deg,
-        rgba(232, 168, 64, 0.02) 0%,
-        transparent 40%
-    );
-    pointer-events: none;
-}
 
-.card-elevated {
-    box-shadow: var(--shadow-md);
-}
 
 /* ── Alerts ───────────────────────────────────────────────────────────────── */
 .alert {
@@ -640,10 +595,6 @@ input[type="number"] {
     color: var(--green);
 }
 
-.alert-error {
-    border-color: var(--red);
-    background: linear-gradient(90deg, var(--red-bg) 0%, transparent 60%);
-}
 .alert-error .alert-icon {
     color: var(--red);
 }
@@ -692,16 +643,6 @@ input[type="number"] {
     background: var(--ag);
     color: var(--amber2);
     border: 1px solid rgba(232, 168, 64, 0.2);
-}
-.badge-green {
-    background: var(--green-bg);
-    color: var(--green);
-    border: 1px solid rgba(92, 184, 122, 0.2);
-}
-.badge-red {
-    background: var(--red-bg);
-    color: var(--red);
-    border: 1px solid rgba(212, 96, 74, 0.2);
 }
 
 /* ── Dividers ─────────────────────────────────────────────────────────────── */

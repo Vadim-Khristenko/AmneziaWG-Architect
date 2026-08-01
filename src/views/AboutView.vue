@@ -491,16 +491,6 @@ const statCards = computed(() => [
     line-height: 1.7;
 }
 
-.hero-outline {
-    display: block;
-    margin-top: 6px;
-    font-family: var(--fu);
-    font-weight: 900;
-    font-size: 1.1em;
-    color: transparent;
-    -webkit-text-stroke: 1.2px var(--amber);
-    letter-spacing: 0.02em;
-}
 
 /* ── Stats Strip ──────────────────────────────────────────────────────── */
 .stats-strip {
@@ -632,10 +622,6 @@ const statCards = computed(() => [
     margin-bottom: 0;
 }
 
-.hl {
-    color: var(--accent);
-    font-weight: 700;
-}
 
 .about-section code {
     background: rgba(232, 168, 64, 0.08);
@@ -755,23 +741,8 @@ const statCards = computed(() => [
     transition: all 0.3s var(--ease);
 }
 
-.tl-dot-amber {
-    background: var(--bg2);
-    border: 2px solid var(--amber);
-    color: var(--amber);
-}
 
-.tl-dot-green {
-    background: var(--bg2);
-    border: 2px solid var(--green);
-    color: var(--green);
-}
 
-.tl-dot-red {
-    background: var(--bg2);
-    border: 2px solid var(--red);
-    color: var(--red);
-}
 
 .timeline-item.open .tl-dot {
     transform: scale(1.15);
@@ -1222,116 +1193,17 @@ const statCards = computed(() => [
 }
 
 /* ── Donation Section ─────────────────────────────────────────────────── */
-.donation-section {
-    text-align: center;
-    padding: 48px 36px;
-    position: relative;
-    overflow: hidden;
-    border-color: rgba(232, 168, 64, 0.15);
-    background: linear-gradient(
-        135deg,
-        rgba(232, 168, 64, 0.03) 0%,
-        var(--bg2) 50%,
-        rgba(92, 184, 122, 0.02) 100%
-    );
-}
 
-.donation-glow {
-    position: absolute;
-    top: -60px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(
-        circle,
-        rgba(232, 168, 64, 0.06) 0%,
-        transparent 70%
-    );
-    pointer-events: none;
-    animation: glowPulse 4s ease-in-out infinite;
-}
 
-@keyframes glowPulse {
-    0%,
-    100% {
-        opacity: 0.5;
-        transform: translateX(-50%) scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: translateX(-50%) scale(1.1);
-    }
-}
 
-.donation-content {
-    position: relative;
-    z-index: 1;
-}
 
-.donation-icon {
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(232, 168, 64, 0.1);
-    border: 1px solid rgba(232, 168, 64, 0.2);
-    border-radius: 50%;
-    color: var(--amber);
-    margin: 0 auto 20px;
-    animation: iconFloat 3s ease-in-out infinite;
-}
 
-@keyframes iconFloat {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-6px);
-    }
-}
 
-.donation-section h2 {
-    text-align: center;
-}
 
-.donation-section p {
-    max-width: 520px;
-    margin-left: auto;
-    margin-right: auto;
-}
 
-.donation-actions {
-    margin-top: 24px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-}
 
-.cta-donate {
-    background: linear-gradient(135deg, #e85d75 0%, #c43a52 100%) !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 4px 20px rgba(232, 93, 117, 0.25);
-}
 
-.cta-donate:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 6px 28px rgba(232, 93, 117, 0.35);
-    transform: translateY(-2px) !important;
-}
 
-.donation-thanks {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 0.82rem !important;
-    color: var(--text3) !important;
-    margin-top: 4px;
-}
 
 .donation-thanks :deep(svg) {
     color: var(--amber);
@@ -1527,7 +1399,4 @@ const statCards = computed(() => [
 }
 
 /* ── Transition helpers (used by <transition name="expand">) ──────────── */
-.text-dim {
-    color: var(--text3);
-}
 </style>
