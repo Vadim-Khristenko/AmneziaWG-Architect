@@ -22,9 +22,9 @@ import type {
  * The order is data, not a sort: "1.5" is not less than "1.0" by any string
  * comparison, and XRay's CalVer sorts correctly only by accident.
  */
-export interface ParamCatalogue {
+export interface ParamCatalogue<P extends ParamDescriptor = ParamDescriptor> {
   /** Every parameter of the protocol, in the order a config is written. */
-  parameters: ParamSet;
+  parameters: ParamSet<P>;
   /** Version ids, oldest first. */
   order: readonly string[];
 }
@@ -36,10 +36,10 @@ export interface ParamCatalogue {
  * it — AmneziaWG's H1 is a single value on 1.x and a range on 2.0+, and a
  * version that carried both spellings would render the header twice.
  */
-export function paramSetFor(
-  catalogue: ParamCatalogue,
+export function paramSetFor<P extends ParamDescriptor>(
+  catalogue: ParamCatalogue<P>,
   version: string,
-): ParamSet {
+): ParamSet<P> {
   const index = catalogue.order.indexOf(version);
   // An unknown version gets the whole catalogue rather than nothing: a
   // parameter list that is silently empty renders a config with no parameters
@@ -63,10 +63,10 @@ export function paramSetFor(
 }
 
 /** Every version's set, built once. */
-export function paramSets(
-  catalogue: ParamCatalogue,
-): Readonly<Record<string, ParamSet>> {
-  const sets: Record<string, ParamSet> = {};
+export function paramSets<P extends ParamDescriptor>(
+  catalogue: ParamCatalogue<P>,
+): Readonly<Record<string, ParamSet<P>>> {
+  const sets: Record<string, ParamSet<P>> = {};
   for (const version of catalogue.order) {
     sets[version] = paramSetFor(catalogue, version);
   }
@@ -74,19 +74,19 @@ export function paramSets(
 }
 
 /** The description a version uses for a key, if it has one. */
-export function paramFor(
-  catalogue: ParamCatalogue,
+export function paramFor<P extends ParamDescriptor>(
+  catalogue: ParamCatalogue<P>,
   version: string,
   key: string,
-): ParamDescriptor | undefined {
+): P | undefined {
   return paramSetFor(catalogue, version).find(
     (p) => p.key === key || p.aliases?.includes(key),
   );
 }
 
 /** Does this version understand this key at all? */
-export function hasParam(
-  catalogue: ParamCatalogue,
+export function hasParam<P extends ParamDescriptor>(
+  catalogue: ParamCatalogue<P>,
   version: string,
   key: string,
 ): boolean {
@@ -99,11 +99,11 @@ export function hasParam(
  * `shared` is what a "why does my tunnel not come up" answer is built from, so
  * it is derived from the catalogue rather than retyped in the FAQ.
  */
-export function paramsInScope(
-  catalogue: ParamCatalogue,
+export function paramsInScope<P extends ParamDescriptor>(
+  catalogue: ParamCatalogue<P>,
   version: string,
   scope: ParamScope,
-): ParamSet {
+): ParamSet<P> {
   return paramSetFor(catalogue, version).filter((p) => p.scope === scope);
 }
 

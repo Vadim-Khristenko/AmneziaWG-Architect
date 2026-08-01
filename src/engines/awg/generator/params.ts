@@ -37,7 +37,20 @@ import type { AWGVersion } from "./types";
  * there is no reason for it to stop, but there is only one description of what
  * a parameter is.
  */
-export type AWGParameter = ParamDescriptor;
+export interface AWGParameter extends ParamDescriptor {
+  /**
+   * Which block of a config it belongs to.
+   *
+   * Here rather than in the view because it is a fact about the protocol, not
+   * about the layout: S1 belongs with the packet sizes wherever it is shown.
+   * Both the parameter card and the history entry used to decide this with
+   * their own copy of the same version branching.
+   */
+  group: AWGParamGroup;
+}
+
+/** The blocks a config is written in, in the order it is written. */
+export type AWGParamGroup = "headers" | "sizes" | "junk" | "cps" | "awg3";
 
 export type { ParamScope as AWGParamScope, ParamKind as AWGParamKind } from "@/types/protocol";
 
@@ -53,6 +66,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   ...(["1", "2", "3", "4"] as const).map(
     (n): AWGParameter => ({
       key: `H${n}`,
+      group: "headers",
       kind: "header",
       scope: "shared",
       since: "1.0",
@@ -64,6 +78,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   ...(["1", "2", "3", "4"] as const).map(
     (n): AWGParameter => ({
       key: `H${n}`,
+      group: "headers",
       kind: "range",
       scope: "shared",
       since: "2.0",
@@ -76,6 +91,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   // ── Packet sizes ─────────────────────────────────────────────────────────
   {
     key: "S1",
+    group: "sizes",
     kind: "int",
     scope: "shared",
     since: "1.0",
@@ -85,6 +101,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "S2",
+    group: "sizes",
     kind: "int",
     scope: "shared",
     since: "1.0",
@@ -94,6 +111,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "S3",
+    group: "sizes",
     kind: "int",
     scope: "shared",
     since: "2.0",
@@ -103,6 +121,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "S4",
+    group: "sizes",
     kind: "int",
     scope: "shared",
     since: "2.0",
@@ -115,6 +134,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   // ── Junk train ───────────────────────────────────────────────────────────
   {
     key: "Jc",
+    group: "junk",
     kind: "int",
     scope: "sender",
     since: "1.0",
@@ -124,6 +144,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "Jmin",
+    group: "junk",
     kind: "int",
     scope: "sender",
     since: "1.0",
@@ -132,6 +153,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "Jmax",
+    group: "junk",
     kind: "int",
     scope: "sender",
     since: "1.0",
@@ -143,6 +165,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   ...(["1", "2", "3", "4", "5"] as const).map(
     (n): AWGParameter => ({
       key: `I${n}`,
+      group: "cps",
       kind: "chain",
       scope: "sender",
       since: "1.5",
@@ -155,6 +178,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   // ── AWG 3.0 ──────────────────────────────────────────────────────────────
   {
     key: "HeaderProtectionKey",
+    group: "awg3",
     kind: "key",
     scope: "shared",
     since: "3.0",
@@ -164,6 +188,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   },
   {
     key: "ContentPaddingAddition",
+    group: "awg3",
     kind: "range",
     scope: "sender",
     since: "3.0",
@@ -182,6 +207,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
   ).map(
     ([key, field]): AWGParameter => ({
       key,
+      group: "awg3",
       kind: "duration",
       scope: "local",
       since: "3.0",
@@ -200,7 +226,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
  * The order is data: "1.5" is not less than "1.0" by any string comparison,
  * and the sets are a prefix of it.
  */
-export const AWG_CATALOGUE: ParamCatalogue = {
+export const AWG_CATALOGUE: ParamCatalogue<AWGParameter> = {
   parameters: AWG_PARAMETERS,
   order: ["1.0", "1.5", "2.0", "3.0"],
 };
@@ -208,7 +234,7 @@ export const AWG_CATALOGUE: ParamCatalogue = {
 /** Lookup by version, for code that has the version as a value. */
 export const AWG_PARAM_SETS = paramSets(AWG_CATALOGUE) as Record<
   AWGVersion,
-  ParamSet
+  ParamSet<AWGParameter>
 >;
 
 /** AmneziaWG 1.0 — junk train, single headers, S1 and S2. */
@@ -239,7 +265,7 @@ export function paramFor(
 }
 
 /** Every parameter a version understands. */
-export function paramsFor(version: AWGVersion): ParamSet {
+export function paramsFor(version: AWGVersion): ParamSet<AWGParameter> {
   return paramSetFor(AWG_CATALOGUE, version);
 }
 
@@ -247,11 +273,11 @@ export function paramsFor(version: AWGVersion): ParamSet {
  * Parameters both ends must agree on. This is the list a "why does my tunnel
  * not come up" answer is built from, so it is derived rather than retyped.
  */
-export function sharedParams(version: AWGVersion): ParamSet {
+export function sharedParams(version: AWGVersion): ParamSet<AWGParameter> {
   return paramsInScope(AWG_CATALOGUE, version, "shared");
 }
 
 /** Parameters each device may set for itself. */
-export function senderParams(version: AWGVersion): ParamSet {
+export function senderParams(version: AWGVersion): ParamSet<AWGParameter> {
   return paramsInScope(AWG_CATALOGUE, version, "sender");
 }

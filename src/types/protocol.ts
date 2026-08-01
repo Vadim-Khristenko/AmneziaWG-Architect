@@ -155,4 +155,4 @@ export interface ParamDescriptor {
 }
 
 /** A parameter set: what one version of one protocol understands. */
-export type ParamSet = readonly ParamDescriptor[];
+export type ParamSet<P extends ParamDescriptor = ParamDescriptor> = readonly P[];

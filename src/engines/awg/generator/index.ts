@@ -39,6 +39,7 @@ export * from "./validators";
 export * from "./clients";
 export * from "./awg3";
 export * from "./render";
+export * from "./summary";
 
 export { mkQUICi, mkQUIC0, mkHTTP3, mkTLS, mkNoise, mkDTLS, mkSIP, mkDNS, mkEntropy };
 

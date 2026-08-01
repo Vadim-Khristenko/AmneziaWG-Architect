@@ -859,13 +859,13 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
 /* ── Sets and questions ───────────────────────────────────────────────────── */
 
 /** The catalogue with XRay's version ordering — oldest first. */
-export const XRAY_CATALOGUE: ParamCatalogue = {
+export const XRAY_CATALOGUE: ParamCatalogue<XrayParam> = {
   parameters: XRAY_PARAMETERS,
   order: [...XRAY_VERSIONS].map((v) => v.id).reverse(),
 };
 
 /** Parameters a version understands. */
-export function xrayParamsFor(version: string): ParamSet {
+export function xrayParamsFor(version: string): ParamSet<XrayParam> {
   return paramSetFor(XRAY_CATALOGUE, version);
 }
 
@@ -880,7 +880,7 @@ export function xrayHasParam(version: string, key: string): boolean {
 }
 
 /** Parameters both ends must agree on. */
-export function xraySharedParams(version: string): ParamSet {
+export function xraySharedParams(version: string): ParamSet<XrayParam> {
   return paramsInScope(XRAY_CATALOGUE, version, "shared");
 }
 

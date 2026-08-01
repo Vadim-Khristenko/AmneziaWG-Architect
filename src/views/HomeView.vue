@@ -61,6 +61,8 @@ import { useGenerator } from "@/composables/useGenerator";
 import { downloadText } from "@/utils/download";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import { useHistory, type HistoryRecord } from "@/composables/useHistory";
+import { awgParamBlocks, awgParamRecord } from "@/engines/awg/generator";
+import type { AWGParamGroup } from "@/engines/awg/generator/params";
 import {
     YANDEX_UNSTABLE_PROFILES,
     CLIENTS,
@@ -349,62 +351,16 @@ const fieldsPath = computed(() => ({
 function saveToHistory() {
     if (!currentAwg.value || !plainText.value) return;
     const awg = currentAwg.value;
-    const v = version.value;
-    const params: Record<string, string | number> = {
-        Jc: awg.jc,
-        Jmin: awg.jmin,
-        Jmax: awg.jmax,
-        S1: awg.s1,
-        S2: awg.s2,
-    };
-
-    const c = capsFor(v);
-    if (c.extraSizes) {
-        params.S3 = awg.s3 ?? 0;
-        params.S4 = awg.s4 ?? 0;
-    }
-    if (c.rangedHeaders) {
-        params.H1 = awg.h1;
-        params.H2 = awg.h2;
-        params.H3 = awg.h3;
-        params.H4 = awg.h4;
-    } else {
-        params.H1 = awg.h1s;
-        params.H2 = awg.h2s;
-        params.H3 = awg.h3s;
-        params.H4 = awg.h4s;
-    }
-
-    if (c.cps) {
-        params.I1 = awg.i1;
-        params.I2 = awg.i2;
-        params.I3 = awg.i3;
-        params.I4 = awg.i4;
-        params.I5 = awg.i5;
-    }
-
-    // AWG 3.0 additions — without these a 3.0 entry looked identical to a 2.0
-    // one in the history panel.
-    if (c.headerProtection && awg.awg3) {
-        const a = awg.awg3;
-        if (a.headerProtectionKey)
-            params.HeaderProtectionKey = a.headerProtectionKey;
-        if (a.contentPaddingAddition)
-            params.ContentPaddingAddition = a.contentPaddingAddition;
-        if (a.rekeyAfterTime) params.RekeyAfterTime = a.rekeyAfterTime;
-        if (a.rekeyTimeout) params.RekeyTimeout = a.rekeyTimeout;
-        if (a.rejectAfterTime) params.RejectAfterTime = a.rejectAfterTime;
-        if (a.keepaliveTimeout) params.KeepaliveTimeout = a.keepaliveTimeout;
-        if (a.maxHandshakeAttempts)
-            params.MaxHandshakeAttempts = a.maxHandshakeAttempts;
-    }
 
     addToHistory({
         version: version.value,
         intensity: intensity.value,
         profile: config.profile,
         text: plainText.value,
-        params,
+        // Read off the catalogue, which is where the version shape is
+        // declared. This used to be forty lines of the same branching the
+        // parameter card does, kept in step by hand.
+        params: awgParamRecord(awg),
         // Structured clone: `currentAwg` keeps mutating as the user generates.
         cfg: JSON.parse(JSON.stringify(awg)) as AWGConfig,
     });
@@ -468,6 +424,13 @@ async function copySingleParam(key: string, value: string | number) {
 interface ParamItem {
     label: string;
     value: string | number;
+    /**
+     * The label split into words, worked out once.
+     *
+     * The template asked for this twice per cell on every render, and the card
+     * re-renders on every copy-feedback tick.
+     */
+    parts: string[];
     wide?: boolean;
 }
 
@@ -492,133 +455,64 @@ function labelParts(label: string): string[] {
     return label.match(/[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])|./g) ?? [label];
 }
 
+/**
+ * How each block of a config is presented.
+ *
+ * Presentation only — which icon, which heading, whether the values are long
+ * enough to want a line each. What a block *contains* is the catalogue's
+ * answer, not this file's.
+ */
+const GROUP_STYLE: Record<
+    AWGParamGroup,
+    { icon: Component; titleKey: string; wide: boolean }
+> = {
+    junk: { icon: TrainFront, titleKey: "params.group.junk", wide: false },
+    sizes: { icon: Box, titleKey: "params.group.sizes", wide: false },
+    headers: { icon: KeyRound, titleKey: "params.group.headers", wide: true },
+    cps: { icon: VenetianMask, titleKey: "params.group.cps", wide: true },
+    awg3: { icon: ShieldCheck, titleKey: "params.group.awg3", wide: true },
+};
+
+/** The order the card lays the blocks out in. */
+const GROUP_ORDER: AWGParamGroup[] = ["junk", "sizes", "headers", "cps", "awg3"];
+
 const paramGroups = computed((): ParamGroup[] => {
-    const p = currentAwg.value;
-    if (!p) return [];
-    // Read the shape off the config that is actually on screen, not off the
-    // selected version: the two disagree for one tick while a regeneration is
-    // in flight, and that tick was enough to render 3.0 with 1.x headers.
-    const v = p.version ?? version.value;
-    const c = capsFor(v);
-    const groups: ParamGroup[] = [];
+    const cfg = currentAwg.value;
+    if (!cfg) return [];
 
-    // Junk Train
-    const junkItems: ParamItem[] = [
-        { label: "Jc", value: p.jc },
-        { label: "Jmin", value: p.jmin },
-        { label: "Jmax", value: p.jmax },
-    ];
-    groups.push({
-        key: "junk",
-        title: t("params.group.junk"),
-        icon: TrainFront,
-        items: junkItems,
-        copyText: junkItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
-    });
+    const blocks = awgParamBlocks(cfg);
+    const byGroup = new Map(blocks.map((b) => [b.group, b.items]));
 
-    // Packet Sizes
-    const sizeItems: ParamItem[] = [
-        { label: "S1", value: p.s1 },
-        { label: "S2", value: p.s2 },
-    ];
-    if (c.extraSizes) {
-        sizeItems.push({ label: "S3", value: p.s3 ?? 0 });
-        sizeItems.push({ label: "S4", value: p.s4 ?? 0 });
-    }
-    groups.push({
-        key: "sizes",
-        title: t("params.group.sizes"),
-        icon: Box,
-        items: sizeItems,
-        copyText: sizeItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
-    });
+    return GROUP_ORDER.flatMap((group) => {
+        const items = byGroup.get(group);
+        if (!items?.length) return [];
 
-    // Headers — always wide so large numbers / ranges are fully visible
-    const headerItems: ParamItem[] = [];
-    if (c.rangedHeaders) {
-        headerItems.push(
-            { label: "H1", value: p.h1, wide: true },
-            { label: "H2", value: p.h2, wide: true },
-            { label: "H3", value: p.h3, wide: true },
-            { label: "H4", value: p.h4, wide: true },
-        );
-    } else {
-        headerItems.push(
-            { label: "H1", value: p.h1s, wide: true },
-            { label: "H2", value: p.h2s, wide: true },
-            { label: "H3", value: p.h3s, wide: true },
-            { label: "H4", value: p.h4s, wide: true },
-        );
-    }
-    groups.push({
-        key: "headers",
-        title: t("params.group.headers"),
-        icon: KeyRound,
-        items: headerItems,
-        copyText: headerItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
-    });
+        const style = GROUP_STYLE[group];
+        const rendered: ParamItem[] = items.map((item) => ({
+            label: item.key,
+            value: item.value,
+            parts: labelParts(item.key),
+            ...(style.wide ? { wide: true } : {}),
+        }));
 
-    // CPS Signatures
-    if (c.cps) {
-        const cpsItems: ParamItem[] = [
-            { label: "I1", value: p.i1, wide: true },
-            { label: "I2", value: p.i2, wide: true },
-            { label: "I3", value: p.i3, wide: true },
-            { label: "I4", value: p.i4, wide: true },
-            { label: "I5", value: p.i5, wide: true },
-        ];
-        groups.push({
-            key: "cps",
-            title:
-                v === "1.5"
-                    ? t("params.group.cpsClient")
-                    : t("params.group.cps"),
-            icon: VenetianMask,
-            items: cpsItems,
-            copyText: cpsItems.map((i) => `${i.label} = ${i.value}`).join("\n"),
-        });
-    }
-
-    // AWG 3.0 — only the parameters that are actually enabled
-    if (c.headerProtection && p.awg3) {
-        const a = p.awg3;
-        const awg3Items: ParamItem[] = [];
-        if (a.headerProtectionKey)
-            awg3Items.push({
-                label: "HeaderProtectionKey",
-                value: a.headerProtectionKey,
-                wide: true,
-            });
-        if (a.contentPaddingAddition)
-            awg3Items.push({
-                label: "ContentPaddingAddition",
-                value: a.contentPaddingAddition,
-                wide: true,
-            });
-        for (const [label, value] of [
-            ["RekeyAfterTime", a.rekeyAfterTime],
-            ["RekeyTimeout", a.rekeyTimeout],
-            ["RejectAfterTime", a.rejectAfterTime],
-            ["KeepaliveTimeout", a.keepaliveTimeout],
-            ["MaxHandshakeAttempts", a.maxHandshakeAttempts],
-        ] as const) {
-            if (value) awg3Items.push({ label, value, wide: true });
-        }
-
-        if (awg3Items.length) {
-            groups.push({
-                key: "awg3",
-                title: t("params.group.awg3"),
-                icon: ShieldCheck,
-                items: awg3Items,
-                copyText: awg3Items
+        return [
+            {
+                key: group,
+                title: t(
+                    // 1.5 sends the CPS chain from the client only, and the
+                    // heading says so.
+                    group === "cps" && cfg.version === "1.5"
+                        ? "params.group.cpsClient"
+                        : (style.titleKey as "params.group.junk"),
+                ),
+                icon: style.icon,
+                items: rendered,
+                copyText: rendered
                     .map((i) => `${i.label} = ${i.value}`)
                     .join("\n"),
-            });
-        }
-    }
-
-    return groups;
+            },
+        ];
+    });
 });
 </script>
 
@@ -1694,12 +1588,12 @@ const paramGroups = computed((): ParamGroup[] => {
                                                 class="param-cell-label"
                                                 :class="{
                                                     'param-cell-label-words':
-                                                        labelParts(item.label)
+                                                        item.parts
                                                             .length > 1,
                                                 }"
                                             >
                                                 <template
-                                                    v-for="(part, pi) in labelParts(item.label)"
+                                                    v-for="(part, pi) in item.parts"
                                                     :key="pi"
                                                     ><wbr v-if="pi" /><span
                                                         class="pk-seg"
