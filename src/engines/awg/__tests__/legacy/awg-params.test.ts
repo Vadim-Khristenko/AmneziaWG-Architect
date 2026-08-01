@@ -78,6 +78,7 @@ describe("the sets agree with what gets rendered", () => {
         intensity: "medium",
         profile: "quic_initial",
         customHost: "",
+        hostRegion: "any",
         mimicAll: false,
         useTagC: false,
         useTagT: true,

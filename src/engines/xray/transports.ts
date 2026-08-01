@@ -12,6 +12,7 @@
  */
 
 import { cryptoPick, cryptoRnd } from "@/shared/rng";
+import { pickHost as pickDomain } from "@/shared/domains";
 import { toBase64Url } from "@/shared/x25519";
 import { cryptoBytes } from "@/shared/rng";
 
@@ -77,16 +78,12 @@ export interface TransportConfig extends TransportInput {
  * Hosts a masqueraded RAW connection can claim.
  *
  * The core's own example list is `www.baidu.com` and `www.bing.com`, which is
- * as identifying as any other constant. These are ordinary CDN and API names
- * that a connection to an arbitrary address might plausibly carry.
+ * as identifying as any other constant. Drawn from the shared database now,
+ * which at least knows the names are real and answering.
  */
-const MASQUERADE_HOSTS = [
-  "www.cloudflare.com",
-  "cdn.jsdelivr.net",
-  "api.github.com",
-  "static.licdn.com",
-  "www.microsoft.com",
-];
+function masqueradeHost(): string {
+  return pickDomain({ role: "tls" });
+}
 
 /** Paths a masqueraded request can ask for. */
 const MASQUERADE_PATHS = ["/", "/assets/app.js", "/api/v1/ping", "/favicon.ico"];
@@ -111,7 +108,11 @@ export function defaultTransport(): TransportInput {
     // is the ordinary fix and is not itself distinctive.
     wsHeartbeatPeriod: cryptoRnd(25, 55),
     grpcServiceName: "",
-    grpcMultiMode: false,
+    // Multi-mode puts several streams down one gRPC connection. Both ends have
+    // to agree and Architect writes both, so the choice is free — and a
+    // deployment that always makes the same one is a deployment that can be
+    // recognised by which one it makes.
+    grpcMultiMode: cryptoRnd(0, 1) === 1,
     hysteriaAuth: "",
     hysteriaMasquerade: "none",
     hysteriaMasqueradeValue: "",
@@ -123,7 +124,7 @@ export function buildTransport(input: TransportInput): TransportConfig {
     ...input,
     resolvedHosts: input.rawHttpHosts.length
       ? input.rawHttpHosts
-      : [cryptoPick(MASQUERADE_HOSTS), cryptoPick(MASQUERADE_HOSTS)],
+      : [masqueradeHost(), masqueradeHost()],
     resolvedServiceName: input.grpcServiceName || cryptoPick(SERVICE_NAMES),
     // Hysteria authenticates on a shared string; an empty one would let
     // anyone in.

@@ -1,4 +1,5 @@
 import type { Finding } from "@/types/findings";
+import type { DomainRegion } from "@/types/domain";
 /**
  * AmneziaWG Architect — Generator public types.
  */
@@ -58,6 +59,15 @@ export interface GeneratorInput {
 
   /** Use extreme parameter ceilings. */
   useExtremeMax: boolean;
+
+  /**
+   * Where the mimicry hostnames should be plausible.
+   *
+   * A junk packet naming a host nobody near the client would contact is a
+   * packet that stands out rather than blends in, so the pool follows the
+   * user rather than being global by default.
+   */
+  hostRegion: DomainRegion | "any";
 
   /** Target client for compatibility filtering. */
   clientId: string;

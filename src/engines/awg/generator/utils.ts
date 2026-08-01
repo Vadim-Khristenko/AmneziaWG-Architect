@@ -6,7 +6,9 @@
 
 import { cryptoRnd, cryptoRh, cryptoPick } from "@/shared/rng";
 import type { GeneratorInput, BfpSlot } from "./types";
-import { hostPools, BFP } from "./constants";
+import { BFP } from "./constants";
+import { pickHost as pickDomain } from "@/shared/domains";
+import type { DnsQueryType, DomainRole } from "@/types/domain";
 
 /** Inclusive random integer using a cryptographically secure source. */
 export function rnd(a: number, b: number): number {
@@ -162,12 +164,70 @@ export function alignTo128(n: number): number {
   return Math.ceil(n / 128) * 128;
 }
 
-/** Pick a host from the appropriate pool. */
-export function getHost(input: GeneratorInput, poolKey: string): string {
+/**
+ * What each mimicry profile needs of the host it names.
+ *
+ * Every profile asks something different, and an earlier version of this
+ * collapsed everything that was not QUIC or TLS into `dns`. That produced SIP
+ * packets naming hosts that speak no SIP and DTLS packets naming hosts with no
+ * UDP at all — imitations that fall apart the moment anything checks.
+ */
+const PROFILE_ROLE: Record<string, DomainRole> = {
+  // A QUIC packet aimed at a host with no HTTP/3 is a packet nobody could
+  // have sent.
+  quic_initial: "quic",
+  quic_0rtt: "quic",
+  http3: "quic",
+  quic_burst: "quic",
+
+  // A ClientHello names something that terminates TLS.
+  tls_client_hello: "tls",
+  tls_to_quic: "tls",
+
+  // DTLS is TLS over datagrams: WebRTC and VPN endpoints, not web servers.
+  dtls: "dtls",
+
+  // SIP names a host that actually answers SIP, normally on 5060.
+  sip: "sip",
+
+  // STUN and TURN answer on 3478, and are a different set again.
+  stun: "stun",
+
+  // Noise is WireGuard's own handshake — a UDP endpoint, closest to DTLS.
+  wireguard_noise: "dtls",
+
+  // A DNS query carries a name and a type, and the two have to agree — see
+  // the `dnsType` argument below.
+  dns: "dns",
+  dns_query: "dns",
+};
+
+/**
+ * A hostname for a mimicry packet.
+ *
+ * Drawn from the shared database rather than a per-profile array of strings.
+ * The arrays were picked once and never re-checked, so a host that dropped
+ * HTTP/3 or moved behind a CDN stayed in the QUIC pool and quietly made the
+ * traffic less convincing, not more.
+ *
+ * The region comes from the user's own choice: a mimicry name is only
+ * plausible if a client where they are would contact it.
+ *
+ * `dnsType` is for the DNS profile, which does not merely name a host — it
+ * asks a question about it. A query for an AAAA record on a name that has only
+ * an A is a question no resolver is asked twice, so the name is drawn from
+ * those that answer the type being asked.
+ */
+export function getHost(
+  input: GeneratorInput,
+  poolKey: string,
+  dnsType?: DnsQueryType,
+): string {
   if (input.customHost.trim()) return input.customHost.trim();
-  const actualKey = poolKey === "dns_query" ? "dns" : poolKey;
-  const pool = hostPools[actualKey] ?? hostPools.tls_client_hello;
-  return pickHost(pool);
+
+  const role = PROFILE_ROLE[poolKey] ?? "tls";
+  const regions = input.hostRegion === "any" ? undefined : [input.hostRegion];
+  return pickDomain({ regions, role, dnsType });
 }
 
 /** Browser fingerprint range for a given slot, if enabled. */

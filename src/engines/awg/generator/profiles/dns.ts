@@ -64,7 +64,12 @@ const u16 = (n: number) => Math.max(0, n).toString(16).padStart(4, "0");
  * rubbish stuck to the end.
  */
 export function mkDNS(input: GeneratorInput, iv: number): string {
-  const host = getHost(input, "dns_query");
+  // A on even iterations, AAAA on odd: a resolver asks for both in practice.
+  // The type is settled before the name is drawn, because the name has to be
+  // one that answers it — a query for AAAA on a name with only an A record is
+  // a question nobody asks twice.
+  const wantsIpv6 = iv % 2 !== 0;
+  const host = getHost(input, "dns_query", wantsIpv6 ? "AAAA" : "A");
 
   const txid = rh(2);
   // Standard query, recursion desired.
@@ -74,8 +79,7 @@ export function mkDNS(input: GeneratorInput, iv: number): string {
   const nscount = "0000";
 
   const qname = encodeName(host);
-  // A on even iterations, AAAA on odd: a resolver asks for both in practice.
-  const qtype = iv % 2 === 0 ? "0001" : "001c";
+  const qtype = wantsIpv6 ? "001c" : "0001";
   const qclass = "0001";
 
   const question = qname + qtype + qclass;

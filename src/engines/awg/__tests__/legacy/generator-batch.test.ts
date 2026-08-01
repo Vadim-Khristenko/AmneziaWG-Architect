@@ -7,6 +7,7 @@ const baseInput: GeneratorInput = {
   intensity: "medium",
   profile: "quic_initial",
   customHost: "",
+  hostRegion: "any",
   mimicAll: false,
   useTagC: false,
   useTagT: true,

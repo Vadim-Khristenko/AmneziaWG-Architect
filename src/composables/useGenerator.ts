@@ -95,6 +95,7 @@ export function useGenerator() {
   const config = reactive({
     profile: "quic_initial" as MimicProfile,
     customHost: "",
+    hostRegion: "any",
     mimicAll: false,
 
     // Теги CPS
@@ -166,6 +167,7 @@ export function useGenerator() {
       intensity: intensity.value,
       profile: config.profile,
       customHost: config.customHost,
+      hostRegion: "any",
       mimicAll: config.mimicAll,
       useTagC: config.useTagC,
       useTagT: config.useTagT,
