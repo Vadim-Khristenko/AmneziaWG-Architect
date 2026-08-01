@@ -309,7 +309,7 @@ function copyValue(key: string, value: string) {
     height: 38px;
     border-radius: var(--radius);
     background: var(--bg4);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .cfg-toggle-text {
@@ -340,7 +340,7 @@ function copyValue(key: string, value: string) {
 
 .cfg-guide.open .cfg-toggle-arrow {
     transform: rotate(180deg);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .cfg-body {
@@ -398,7 +398,7 @@ function copyValue(key: string, value: string) {
     font-size: 0.78rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .cfg-fields {

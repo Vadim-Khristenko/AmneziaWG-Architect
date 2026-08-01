@@ -1,8 +1,30 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { RouterView } from "vue-router";
+import { RouterView, useRouter } from "vue-router";
 import MainHeader from "./components/MainHeader.vue";
 import MainFooter from "./components/MainFooter.vue";
+import { accentFor, applyAccent } from "./composables/useTheme";
+
+const router = useRouter();
+
+/**
+ * Recolour the app for the page that is about to appear.
+ *
+ * This used to run in the router's `afterEach`, which fires as soon as the
+ * navigation is confirmed — before the new view has rendered. The whole shell
+ * turned teal while the old page was still on screen, and the content caught
+ * up a fifth of a second later. Hooking the transition's `before-enter`
+ * instead ties the colour to the moment the new page is inserted, so they
+ * arrive together.
+ */
+function syncAccent(): void {
+    const name = router.currentRoute.value.name;
+    applyAccent(accentFor(typeof name === "string" ? name : null));
+}
+
+// The transition does not run on the first render, so the initial page needs
+// its colour applied directly once the route is known.
+void router.isReady().then(syncAccent);
 
 onMounted(() => {
     console.log(
@@ -23,16 +45,16 @@ onMounted(() => {
             <!-- Grid mesh overlay -->
             <div class="bg-grid"></div>
 
-            <!-- Primary aurora: warm amber, top-left -->
+            <!-- Primary aurora: the page's own accent, top-left -->
             <div class="bg-glow bg-glow-1"></div>
 
-            <!-- Secondary aurora: cool teal, bottom-right -->
+            <!-- Secondary aurora: the counter colour, bottom-right -->
             <div class="bg-glow bg-glow-2"></div>
 
-            <!-- Tertiary: deep amber center pulse -->
+            <!-- Tertiary: the accent again, centre, as a slow pulse -->
             <div class="bg-glow bg-glow-3"></div>
 
-            <!-- Quaternary: subtle magenta far corner -->
+            <!-- Quaternary: the counter colour once more, far corner -->
             <div class="bg-glow bg-glow-4"></div>
 
             <!-- Horizon line accent -->
@@ -47,7 +69,11 @@ onMounted(() => {
 
         <main class="main-content">
             <RouterView v-slot="{ Component, route }">
-                <transition name="page-fade" mode="out-in">
+                <transition
+                    name="page-fade"
+                    mode="out-in"
+                    @before-enter="syncAccent"
+                >
                     <component :is="Component" :key="route.path" />
                 </transition>
             </RouterView>
@@ -83,11 +109,26 @@ onMounted(() => {
 }
 
 /* ── Page Transition ──────────────────────────────────────────────────── */
-.page-fade-enter-active,
+
+/*
+ * `out-in` means the two halves add up: the old page has to finish leaving
+ * before the new one starts arriving. At 200ms each that was 400ms of nothing
+ * on every tab click, on top of fetching the route's chunk — which is most of
+ * why moving around the app felt heavy.
+ *
+ * The leave is now brief enough to read as a dismissal rather than a wait, and
+ * the arrival keeps its length because that is the half you actually watch.
+ */
 .page-fade-leave-active {
     transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
+        opacity 90ms linear,
+        transform 90ms linear;
+}
+
+.page-fade-enter-active {
+    transition:
+        opacity 180ms var(--ease-snap),
+        transform 180ms var(--ease-snap);
 }
 
 .page-fade-enter-from {
@@ -98,6 +139,19 @@ onMounted(() => {
 .page-fade-leave-to {
     opacity: 0;
     transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-fade-enter-active,
+    .page-fade-leave-active {
+        transition-duration: 1ms;
+        transform: none;
+    }
+
+    .page-fade-enter-from,
+    .page-fade-leave-to {
+        transform: none;
+    }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -118,10 +172,13 @@ onMounted(() => {
     inset: -50%;
     width: 200%;
     height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 256px 256px;
-    opacity: 0.025;
-    mix-blend-mode: overlay;
+    /* Masked rather than overlaid, so one token colours it in both schemes. */
+    background-color: var(--fx-noise);
+    --noise: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    -webkit-mask-image: var(--noise);
+    mask-image: var(--noise);
+    -webkit-mask-size: 256px 256px;
+    mask-size: 256px 256px;
     z-index: 10;
     animation: noise-drift 8s linear infinite;
 }
@@ -140,8 +197,8 @@ onMounted(() => {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(232, 168, 64, 0.018) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(232, 168, 64, 0.018) 1px, transparent 1px);
+        linear-gradient(var(--fx-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--fx-grid) 1px, transparent 1px);
     background-size: 72px 72px;
     mask-image: radial-gradient(
         ellipse 80% 60% at 50% 30%,
@@ -164,7 +221,7 @@ onMounted(() => {
     will-change: transform;
 }
 
-/* Primary warm amber — top-left */
+/* The page's own accent — top-left, the largest and the one you notice */
 .bg-glow-1 {
     top: -25vw;
     left: -15vw;
@@ -172,16 +229,16 @@ onMounted(() => {
     height: 70vw;
     background: radial-gradient(
         circle,
-        rgba(232, 168, 64, 0.1) 0%,
-        rgba(232, 168, 64, 0.04) 30%,
-        rgba(196, 133, 32, 0.01) 50%,
+        var(--fx-aurora-core) 0%,
+        var(--fx-aurora-mid) 30%,
+        var(--fx-aurora-edge) 50%,
         transparent 70%
     );
     filter: blur(80px);
     animation: aurora-1 26s ease-in-out infinite alternate;
 }
 
-/* Cool teal accent — bottom-right */
+/* The counter colour — bottom-right, so the ground is never one flat hue */
 .bg-glow-2 {
     bottom: -28vw;
     right: -18vw;
@@ -189,16 +246,15 @@ onMounted(() => {
     height: 75vw;
     background: radial-gradient(
         circle,
-        rgba(80, 200, 220, 0.06) 0%,
-        rgba(60, 160, 200, 0.03) 30%,
-        rgba(40, 120, 180, 0.01) 50%,
-        transparent 70%
+        var(--fx-counter-core) 0%,
+        var(--fx-counter-mid) 30%,
+        transparent 60%
     );
     filter: blur(100px);
     animation: aurora-2 30s ease-in-out infinite alternate-reverse;
 }
 
-/* Deep warm center pulse */
+/* The accent again, centre, as a slow pulse */
 .bg-glow-3 {
     top: 30%;
     left: 45%;
@@ -207,15 +263,15 @@ onMounted(() => {
     height: 50vw;
     background: radial-gradient(
         circle,
-        rgba(232, 168, 64, 0.05) 0%,
-        rgba(200, 140, 50, 0.02) 35%,
+        var(--fx-aurora-mid) 0%,
+        var(--fx-aurora-edge) 35%,
         transparent 65%
     );
     filter: blur(90px);
     animation: aurora-3 22s ease-in-out infinite alternate;
 }
 
-/* Subtle magenta far top-right */
+/* The counter colour once more, far corner, at half weight */
 .bg-glow-4 {
     top: -10vw;
     right: -5vw;
@@ -223,8 +279,7 @@ onMounted(() => {
     height: 40vw;
     background: radial-gradient(
         circle,
-        rgba(180, 100, 160, 0.03) 0%,
-        rgba(140, 70, 130, 0.015) 30%,
+        var(--fx-counter-mid) 0%,
         transparent 60%
     );
     filter: blur(80px);
@@ -241,9 +296,7 @@ onMounted(() => {
     background: linear-gradient(
         90deg,
         transparent 0%,
-        rgba(232, 168, 64, 0.04) 15%,
-        rgba(232, 168, 64, 0.08) 50%,
-        rgba(232, 168, 64, 0.04) 85%,
+        var(--fx-horizon) 50%,
         transparent 100%
     );
     z-index: 3;
@@ -254,11 +307,17 @@ onMounted(() => {
 .bg-vignette {
     position: absolute;
     inset: 0;
+    /*
+     * In the dark scheme this is a shadow. In the light one it cannot be —
+     * `rgb(10 8 6 / 0.7)` over a white page is what this rule used to do, and
+     * it turned the corners of every light view to soot. There it is a
+     * deepening of the accent instead.
+     */
     background: radial-gradient(
         ellipse 70% 50% at 50% 40%,
         transparent 0%,
-        rgba(10, 8, 6, 0.3) 60%,
-        rgba(10, 8, 6, 0.7) 100%
+        var(--fx-vignette) 60%,
+        var(--fx-vignette-edge) 100%
     );
     z-index: 5;
 }

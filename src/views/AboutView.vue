@@ -435,7 +435,7 @@ const statCards = computed(() => [
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+    box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.15);
     opacity: 0;
     pointer-events: none;
     animation: badgePulse 3s ease-in-out infinite;
@@ -470,17 +470,10 @@ const statCards = computed(() => [
     color: var(--text);
 }
 
+/* Solid, for the reason given on HomeView's `.hero-accent`. */
 .hero-line-2 {
     display: block;
-    background: linear-gradient(
-        135deg,
-        var(--amber2) 0%,
-        var(--amber) 50%,
-        var(--amber3) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent-ink);
 }
 
 .hero-subtitle {
@@ -518,7 +511,7 @@ const statCards = computed(() => [
 }
 
 .stat-icon {
-    color: var(--accent);
+    color: var(--accent-ink);
     opacity: 0.8;
 }
 
@@ -526,7 +519,7 @@ const statCards = computed(() => [
     font-family: var(--fm);
     font-size: 1.4rem;
     font-weight: 800;
-    color: var(--accent);
+    color: var(--accent-ink);
     line-height: 1;
 }
 
@@ -561,7 +554,7 @@ const statCards = computed(() => [
     background: linear-gradient(
         90deg,
         transparent 0%,
-        rgba(232, 168, 64, 0.08) 50%,
+        rgb(var(--accent-rgb) / 0.08) 50%,
         transparent 100%
     );
     pointer-events: none;
@@ -578,10 +571,10 @@ const statCards = computed(() => [
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(232, 168, 64, 0.08);
-    border: 1px solid rgba(232, 168, 64, 0.12);
+    background: rgb(var(--accent-rgb) / 0.08);
+    border: 1px solid rgb(var(--accent-rgb) / 0.12);
     border-radius: var(--radius);
-    color: var(--amber);
+    color: var(--accent-ink);
     margin-bottom: 18px;
     transition: transform 0.3s var(--ease);
 }
@@ -624,13 +617,13 @@ const statCards = computed(() => [
 
 
 .about-section code {
-    background: rgba(232, 168, 64, 0.08);
-    border: 1px solid rgba(232, 168, 64, 0.12);
+    background: rgb(var(--accent-rgb) / 0.08);
+    border: 1px solid rgb(var(--accent-rgb) / 0.12);
     border-radius: 6px;
     padding: 2px 7px;
     font-family: var(--fm);
     font-size: 0.85em;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
 }
 
 /* ── Feature Grid ─────────────────────────────────────────────────────── */
@@ -660,7 +653,7 @@ const statCards = computed(() => [
 }
 
 .fc-icon {
-    color: var(--accent);
+    color: var(--accent-ink);
     flex-shrink: 0;
     margin-top: 2px;
 }
@@ -705,8 +698,8 @@ const statCards = computed(() => [
     width: 2px;
     background: linear-gradient(
         180deg,
-        rgba(232, 168, 64, 0.3) 0%,
-        rgba(232, 168, 64, 0.08) 100%
+        rgb(var(--accent-rgb) / 0.3) 0%,
+        rgb(var(--accent-rgb) / 0.08) 100%
     );
     border-radius: 2px;
 }
@@ -746,7 +739,7 @@ const statCards = computed(() => [
 
 .timeline-item.open .tl-dot {
     transform: scale(1.15);
-    box-shadow: 0 0 14px rgba(232, 168, 64, 0.25);
+    box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.25);
 }
 
 .tl-content {
@@ -763,7 +756,7 @@ const statCards = computed(() => [
 }
 
 .timeline-item.open .tl-content {
-    border-color: rgba(232, 168, 64, 0.25);
+    border-color: rgb(var(--accent-rgb) / 0.25);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
@@ -779,10 +772,10 @@ const statCards = computed(() => [
     font-size: 0.7rem;
     font-weight: 800;
     padding: 2px 8px;
-    background: rgba(232, 168, 64, 0.1);
-    color: var(--amber);
+    background: rgb(var(--accent-rgb) / 0.1);
+    color: var(--accent-ink);
     border-radius: 100px;
-    border: 1px solid rgba(232, 168, 64, 0.15);
+    border: 1px solid rgb(var(--accent-rgb) / 0.15);
     flex-shrink: 0;
 }
 
@@ -854,12 +847,12 @@ const statCards = computed(() => [
     padding: 1px 5px;
     border-radius: 4px;
     background: var(--bg3);
-    color: var(--amber);
+    color: var(--accent-ink);
     white-space: nowrap;
 }
 
 .tl-body a {
-    color: var(--amber);
+    color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -968,7 +961,7 @@ const statCards = computed(() => [
     transition: all 0.4s var(--ease);
     box-shadow:
         0 0 0 3px var(--bg2),
-        0 0 0 5px rgba(232, 168, 64, 0.25);
+        0 0 0 5px rgb(var(--accent-rgb) / 0.25);
     position: relative;
 }
 
@@ -976,8 +969,8 @@ const statCards = computed(() => [
     transform: rotate(-6deg) scale(1.08);
     box-shadow:
         0 0 0 3px var(--bg2),
-        0 0 0 5px rgba(232, 168, 64, 0.4),
-        0 0 20px rgba(232, 168, 64, 0.15);
+        0 0 0 5px rgb(var(--accent-rgb) / 0.4),
+        0 0 20px rgb(var(--accent-rgb) / 0.15);
 }
 
 .dev-avatar-image {
@@ -1022,9 +1015,9 @@ const statCards = computed(() => [
     font-family: var(--fm);
     font-weight: 700;
     padding: 3px 10px;
-    background: rgba(232, 168, 64, 0.08);
-    color: var(--amber2);
-    border: 1px solid rgba(232, 168, 64, 0.12);
+    background: rgb(var(--accent-rgb) / 0.08);
+    color: var(--accent-ink-lift);
+    border: 1px solid rgb(var(--accent-rgb) / 0.12);
     border-radius: 100px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1206,7 +1199,7 @@ const statCards = computed(() => [
 
 
 .donation-thanks :deep(svg) {
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 /* ── CTA Buttons ──────────────────────────────────────────────────────── */
@@ -1239,23 +1232,23 @@ const statCards = computed(() => [
         var(--amber) 0%,
         var(--amber-deep) 100%
     );
-    color: var(--bg);
+    color: var(--on-accent);
 }
 
 .cta-primary:hover {
     filter: brightness(1.12);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(232, 168, 64, 0.25);
+    box-shadow: 0 8px 24px rgb(var(--accent-rgb) / 0.25);
 }
 
 .cta-secondary {
-    background: rgba(232, 168, 64, 0.08);
-    border: 1px solid rgba(232, 168, 64, 0.2);
-    color: var(--amber2);
+    background: rgb(var(--accent-rgb) / 0.08);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
+    color: var(--accent-ink-lift);
 }
 
 .cta-secondary:hover {
-    background: rgba(232, 168, 64, 0.14);
+    background: rgb(var(--accent-rgb) / 0.14);
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }

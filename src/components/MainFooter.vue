@@ -203,11 +203,10 @@ watch(locale, formatBuild);
 .footer {
     position: relative;
     margin-top: auto;
-    background: linear-gradient(
-        to bottom,
-        rgba(14, 11, 7, 0.6) 0%,
-        var(--bg2) 100%
-    );
+    /* A deepening of the ground, not a dark wash. The literal it replaces
+       painted `rgba(14, 11, 7, 0.6)` across the top of the footer, which on a
+       pastel page read as a grey slab under every view. */
+    background: linear-gradient(to bottom, var(--bg4) 0%, var(--bg2) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border2);
@@ -242,7 +241,7 @@ watch(locale, formatBuild);
     font-family: var(--fu);
     font-size: 1.4rem;
     font-weight: 800;
-    color: var(--accent);
+    color: var(--accent-ink);
     line-height: 1;
 }
 
@@ -269,8 +268,8 @@ watch(locale, formatBuild);
     align-items: center;
     gap: 16px;
     padding: 12px 24px 12px 14px;
-    background: rgba(232, 168, 64, 0.05);
-    border: 1px solid rgba(232, 168, 64, 0.15);
+    background: rgb(var(--accent-rgb) / 0.05);
+    border: 1px solid rgb(var(--accent-rgb) / 0.15);
     border-radius: 16px;
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
@@ -281,8 +280,8 @@ watch(locale, formatBuild);
 .donate-card:hover {
     transform: translateY(-4px);
     border-color: var(--accent);
-    background: rgba(232, 168, 64, 0.08);
-    box-shadow: 0 12px 24px rgba(232, 168, 64, 0.1);
+    background: rgb(var(--accent-rgb) / 0.08);
+    box-shadow: 0 12px 24px rgb(var(--accent-rgb) / 0.1);
 }
 
 .dc-icon {
@@ -293,8 +292,8 @@ watch(locale, formatBuild);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bg);
-    box-shadow: 0 4px 12px rgba(232, 168, 64, 0.3);
+    color: var(--on-accent);
+    box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.3);
 }
 
 .dc-content {
@@ -322,7 +321,7 @@ watch(locale, formatBuild);
 
 .donate-card:hover .dc-arrow {
     transform: translateX(4px);
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 /* ── Grid ─────────────────────────────────────────────────────────────── */
@@ -331,7 +330,7 @@ watch(locale, formatBuild);
     background: linear-gradient(
         90deg,
         transparent 0%,
-        rgba(232, 168, 64, 0.1) 50%,
+        rgb(var(--accent-rgb) / 0.1) 50%,
         transparent 100%
     );
 }
@@ -368,13 +367,13 @@ watch(locale, formatBuild);
 }
 
 .f-link svg {
-    color: var(--accent);
+    color: var(--accent-ink);
     opacity: 0.6;
     transition: opacity 0.2s;
 }
 
 .f-link:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
     transform: translateX(4px);
 }
 
@@ -395,7 +394,7 @@ watch(locale, formatBuild);
 }
 
 .credits-text a:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
     border-bottom-color: var(--accent);
 }
 

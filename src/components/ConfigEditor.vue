@@ -810,7 +810,7 @@ function onJcSlider(ev: Event) {
     color: var(--text);
 }
 .icon-amber {
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
 }
 .mk-card-body {
     padding: 16px;
@@ -831,12 +831,12 @@ function onJcSlider(ev: Event) {
     white-space: nowrap;
 }
 .mk-ed-fmt-conf {
-    color: #64d4e0;
-    border-color: rgba(100, 212, 224, 0.4);
-    background: rgba(100, 212, 224, 0.08);
+    color: var(--cyan);
+    border-color: var(--cyan-line);
+    background: var(--cyan-bg);
 }
 .mk-ed-fmt-vpn {
-    color: var(--amber3);
+    color: var(--accent-ink-lift);
     border-color: var(--border);
     background: var(--ag2);
 }
@@ -872,7 +872,7 @@ function onJcSlider(ev: Event) {
     background: var(--surface-hover);
 }
 .mk-ed-toggle-btn.active {
-    color: var(--bg);
+    color: var(--on-accent);
     background: var(--amber2);
 }
 
@@ -896,7 +896,7 @@ function onJcSlider(ev: Event) {
 }
 .mk-btn-primary {
     background: var(--amber2);
-    color: var(--bg);
+    color: var(--on-accent);
 }
 .mk-btn-primary:hover:not(:disabled) {
     background: var(--amber3);
@@ -967,7 +967,7 @@ function onJcSlider(ev: Event) {
     border-color: var(--amber-deep);
 }
 .mk-ed-convert-btn.active {
-    color: var(--bg);
+    color: var(--on-accent);
     background: var(--amber2);
     border-color: var(--amber2);
 }
@@ -1003,7 +1003,7 @@ function onJcSlider(ev: Event) {
     inset: 0;
     pointer-events: none;
     color: var(--text);
-    background: #0d0b08;
+    background: var(--code-bg);
     z-index: 1;
     /* scroll is driven programmatically from the textarea — no own scrollbar
        (that stray non-interactive scrollbar looked like a dead second slider) */
@@ -1023,7 +1023,7 @@ function onJcSlider(ev: Event) {
     line-height: 1.6;
     text-align: right;
     color: var(--text3);
-    background: #0a0806;
+    background: var(--code-bg-2);
     border: 1px solid var(--border);
     border-right: 1px solid var(--border2);
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
@@ -1040,7 +1040,7 @@ function onJcSlider(ev: Event) {
     z-index: 2;
     background: transparent;
     color: transparent;
-    caret-color: var(--amber2);
+    caret-color: var(--accent-ink);
     resize: vertical;
 }
 .mk-ed-textarea::placeholder {
@@ -1048,24 +1048,24 @@ function onJcSlider(ev: Event) {
 }
 /* Tokens arrive via v-html → not scoped; reach them with :deep(). */
 .mk-ed-highlight :deep(.tok-section) {
-    color: #64d4e0;
+    color: var(--code-section);
     font-weight: 600;
 }
 .mk-ed-highlight :deep(.tok-key) {
-    color: #9a8a68;
+    color: var(--code-key);
 }
 .mk-ed-highlight :deep(.tok-num) {
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
 }
 .mk-ed-highlight :deep(.tok-range) {
-    color: #c98fd8;
+    color: var(--code-range);
     font-weight: 600;
 }
 .mk-ed-highlight :deep(.tok-ip) {
     color: var(--blue, #5b9bd5);
 }
 .mk-ed-highlight :deep(.tok-cps) {
-    color: #e8956b;
+    color: var(--code-cps);
     font-weight: 600;
 }
 .mk-ed-highlight :deep(.tok-val),
@@ -1092,7 +1092,7 @@ function onJcSlider(ev: Event) {
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     margin-bottom: 4px;
 }
 .mk-ed-fields-grid {
@@ -1121,7 +1121,7 @@ function onJcSlider(ev: Event) {
     color: var(--red2);
 }
 .mk-ed-field-badge-warn {
-    color: var(--amber3);
+    color: var(--accent-ink-lift);
 }
 .mk-ed-input {
     width: 100%;
@@ -1215,7 +1215,7 @@ function onJcSlider(ev: Event) {
 .mk-ed-health-toggle:hover,
 .mk-ed-health-toggle.active {
     background: var(--green2);
-    color: var(--bg);
+    color: var(--on-accent);
     border-color: var(--green2);
 }
 .mk-ed-health-ok {
@@ -1245,7 +1245,7 @@ function onJcSlider(ev: Event) {
     color: var(--red2);
 }
 .mk-ed-findings .warn {
-    color: var(--amber3);
+    color: var(--accent-ink-lift);
 }
 
 /* ── Error line ────────────────────────────────────────────────────────── */
@@ -1327,7 +1327,7 @@ function onJcSlider(ev: Event) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
 }
 .mk-ed-multi-count {
     font-family: var(--fm);
@@ -1351,7 +1351,7 @@ function onJcSlider(ev: Event) {
     font-family: var(--fm);
     font-size: 0.74rem;
     font-weight: 600;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 999px;

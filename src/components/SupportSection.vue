@@ -174,7 +174,7 @@ const isInternal = (url: string) => url.startsWith("/");
     margin-bottom: 14px;
     border-radius: var(--radius-lg);
     background: var(--bg4);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .support-head h2 {
@@ -245,7 +245,7 @@ const isInternal = (url: string) => url.startsWith("/");
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .crypto-head h3 {
@@ -296,7 +296,7 @@ const isInternal = (url: string) => url.startsWith("/");
     padding: 2px 6px;
     border-radius: 4px;
     background: var(--bg5);
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     font-family: var(--fm);
     font-size: 0.68rem;
     letter-spacing: 0.03em;
@@ -320,7 +320,7 @@ const isInternal = (url: string) => url.startsWith("/");
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg);
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     font-family: var(--fm);
     font-size: 0.76rem;
     line-height: 1.5;

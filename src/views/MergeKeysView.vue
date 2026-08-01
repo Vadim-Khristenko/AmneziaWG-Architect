@@ -436,13 +436,13 @@ watch(
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  background: rgba(232, 168, 64, 0.1);
-  border: 1px solid rgba(232, 168, 64, 0.28);
+  background: rgb(var(--accent-rgb) / 0.1);
+  border: 1px solid rgb(var(--accent-rgb) / 0.28);
   border-radius: 20px;
   font-family: var(--fu);
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 14px;
@@ -455,9 +455,12 @@ watch(
   letter-spacing: -0.02em;
   margin-bottom: 8px;
 }
+/* Outlined, and on a pastel ground a 0.47-alpha cyan hairline is simply not
+   there. The outline is the accent at full strength now, so the word reads in
+   both schemes without becoming a second solid heading. */
 .mk-header h1 span {
   color: transparent;
-  -webkit-text-stroke: 1px rgba(100, 212, 224, 0.47);
+  -webkit-text-stroke: 1px var(--accent-ink);
 }
 .mk-header p {
   color: var(--text2);
@@ -494,12 +497,12 @@ watch(
   align-items: flex-start;
   gap: 14px;
   padding: 14px 18px;
-  background: rgba(232, 168, 64, 0.06);
-  border: 1px solid rgba(232, 168, 64, 0.2);
+  background: rgb(var(--accent-rgb) / 0.06);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 12px;
 }
 .mk-notice-icon {
-  color: var(--amber);
+  color: var(--accent-ink);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -509,10 +512,10 @@ watch(
   line-height: 1.5;
 }
 .mk-notice-text b {
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
 }
 .mk-notice-text a {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -548,7 +551,7 @@ watch(
 }
 .mk-tab-btn.active {
   background: var(--bg4);
-  color: var(--accent);
+  color: var(--accent-ink);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
 }
 
@@ -620,7 +623,7 @@ watch(
   box-sizing: border-box;
 }
 .mk-ta:focus {
-  border-color: rgba(232, 168, 64, 0.4);
+  border-color: rgb(var(--accent-rgb) / 0.4);
 }
 .mk-ta::placeholder {
   color: var(--text3);
@@ -628,10 +631,10 @@ watch(
 
 /* Readonly output */
 .mk-ta[readonly] {
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   cursor: text;
-  background: #080604;
-  border-color: rgba(232, 168, 64, 0.2);
+  background: var(--code-bg-2);
+  border-color: rgb(var(--accent-rgb) / 0.2);
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -648,7 +651,7 @@ watch(
   border: none;
   padding: 12px 20px;
   border-radius: 10px;
-  color: var(--bg);
+  color: var(--on-accent);
   font-family: var(--fu);
   font-weight: 800;
   font-size: 0.78rem;
@@ -662,7 +665,7 @@ watch(
 .mk-btn-primary:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(232, 168, 64, 0.25);
+  box-shadow: 0 6px 18px rgb(var(--accent-rgb) / 0.25);
 }
 .mk-btn-primary:active {
   transform: translateY(0);
@@ -670,11 +673,11 @@ watch(
 
 /* Secondary button */
 .mk-btn-sec {
-  background: rgba(232, 168, 64, 0.08);
-  border: 1px solid rgba(232, 168, 64, 0.25);
+  background: rgb(var(--accent-rgb) / 0.08);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   padding: 11px 16px;
   border-radius: 10px;
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   font-family: var(--fu);
   font-weight: 700;
   font-size: 0.75rem;
@@ -686,7 +689,7 @@ watch(
   white-space: nowrap;
 }
 .mk-btn-sec:hover {
-  background: rgba(232, 168, 64, 0.14);
+  background: rgb(var(--accent-rgb) / 0.14);
   transform: translateY(-1px);
 }
 
@@ -709,16 +712,16 @@ watch(
 }
 .mk-btn-ghost:hover {
   color: var(--text2);
-  border-color: rgba(232, 168, 64, 0.2);
+  border-color: rgb(var(--accent-rgb) / 0.2);
 }
 
 /* Icon button (small) */
 .mk-btn-icon {
-  background: rgba(232, 168, 64, 0.08);
-  border: 1px solid rgba(232, 168, 64, 0.2);
+  background: rgb(var(--accent-rgb) / 0.08);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 8px;
   padding: 7px 10px;
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -727,7 +730,7 @@ watch(
   flex-shrink: 0;
 }
 .mk-btn-icon:hover {
-  background: rgba(232, 168, 64, 0.15);
+  background: rgb(var(--accent-rgb) / 0.15);
 }
 
 .mk-btn-icon-sm {
@@ -821,11 +824,11 @@ watch(
 /* Warnings */
 .mk-warnings {
   padding: 10px 14px;
-  background: rgba(232, 168, 64, 0.05);
-  border: 1px solid rgba(232, 168, 64, 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 10px;
   font-size: 0.72rem;
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   line-height: 1.6;
   font-family: var(--fm);
 }
@@ -863,7 +866,7 @@ watch(
   animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .mk-slot:focus-within {
-  border-color: rgba(232, 168, 64, 0.35);
+  border-color: rgb(var(--accent-rgb) / 0.35);
   background: var(--bg4);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -881,11 +884,11 @@ watch(
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(232, 168, 64, 0.12);
-  border: 1px solid rgba(232, 168, 64, 0.25);
+  background: rgb(var(--accent-rgb) / 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
   flex-shrink: 0;
 }
 .mk-slot-label {
@@ -935,9 +938,9 @@ watch(
   width: 100%;
 }
 .mk-add-slot:hover {
-  border-color: rgba(232, 168, 64, 0.3);
-  color: var(--accent);
-  background: rgba(232, 168, 64, 0.03);
+  border-color: rgb(var(--accent-rgb) / 0.3);
+  color: var(--accent-ink);
+  background: rgb(var(--accent-rgb) / 0.03);
 }
 
 /* Section divider */
@@ -964,7 +967,7 @@ watch(
   transition: background 0.2s;
 }
 .mk-how-head:hover {
-  background: rgba(232, 168, 64, 0.06);
+  background: rgb(var(--accent-rgb) / 0.06);
 }
 .mk-how-title {
   font-size: 0.75rem;
@@ -1009,9 +1012,9 @@ watch(
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(232, 168, 64, 0.12);
-  border: 1px solid rgba(232, 168, 64, 0.25);
-  color: var(--amber2);
+  background: rgb(var(--accent-rgb) / 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
+  color: var(--accent-ink-lift);
   font-family: var(--fm);
   font-size: 0.65rem;
   font-weight: 700;
@@ -1049,14 +1052,14 @@ watch(
   margin-top: 4px;
 }
 .mk-compat-info {
-  background: rgba(100, 212, 224, 0.05);
-  border: 1px solid rgba(100, 212, 224, 0.18);
-  color: #64d4e0;
+  background: var(--cyan-bg);
+  border: 1px solid var(--cyan-line);
+  color: var(--cyan);
 }
 
 /* Utility */
 .icon-amber {
-  color: var(--amber2);
+  color: var(--accent-ink-lift);
 }
 .flex-shrink {
   flex-shrink: 0;
@@ -1081,12 +1084,12 @@ watch(
 /* Notice link */
 .mk-notice-link {
   cursor: pointer;
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .mk-notice-link:hover {
-  color: var(--amber3);
+  color: var(--accent-ink-lift);
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */

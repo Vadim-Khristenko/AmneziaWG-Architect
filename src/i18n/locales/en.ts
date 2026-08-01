@@ -24,6 +24,12 @@ export const en: Catalog = {
   "lang.label": "Language",
   "lang.switch": "Change language",
 
+  /* ── Theme switcher ───────────────────────────────────────────────────── */
+  "theme.label": "Theme",
+  "theme.system": "Match system",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+
   /* ── Home / hero ──────────────────────────────────────────────────────── */
   "home.badge": "AWG 3.0 READY",
   "home.title.brand": "AmneziaWG",

@@ -35,7 +35,6 @@ import {
   type Locale,
 } from "@/i18n";
 import { seoFor } from "@/i18n/seo";
-import { accentFor, applyAccent } from "@/composables/useTheme";
 
 /* ── Extended route meta typing ──────────────────────────────────────────── */
 
@@ -85,6 +84,37 @@ const BASE_ROUTES: BaseRoute[] = [
     component: () => import("@/views/VaiexiaView.vue"),
   },
 ];
+
+/**
+ * Fetch every route's chunk once the app has settled.
+ *
+ * Each view is its own chunk, which is the right call for the first paint and
+ * the wrong one for the second click: nothing is on disk until you ask for the
+ * page, so every tab switch paid a round trip before it could render. The five
+ * views together are smaller than the validator bundle the generator already
+ * loads, so warming them while the browser is idle costs nothing anyone can
+ * feel and makes the rest of the session immediate.
+ *
+ * Failures are swallowed deliberately. This is a speculative fetch; if it does
+ * not arrive, the navigation will ask for it again in the normal way.
+ */
+export function prefetchRoutes(): void {
+  const warm = () => {
+    for (const route of BASE_ROUTES) void route.component().catch(() => {});
+  };
+
+  // Read off the object rather than testing with `in`: the DOM lib this build
+  // targets has no `requestIdleCallback`, so `in` narrows the else branch to
+  // `never` and `setTimeout` stops existing.
+  const idle = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+
+  if (idle) idle(warm, { timeout: 4000 });
+  else window.setTimeout(warm, 1500);
+}
 
 /** Build the concrete records for one locale. */
 function routesForLocale(loc: Locale): RouteRecordRaw[] {
@@ -184,10 +214,6 @@ function setLink(rel: string, href: string, hreflang?: string): void {
 }
 
 router.afterEach((to) => {
-  // The accent is a property of the page, not of the reader, and it matches
-  // the colour that page has had in every link preview for a year.
-  applyAccent(accentFor(typeof to.name === "string" ? to.name : null));
-
   const loc = isLocale(to.meta.locale) ? to.meta.locale : DEFAULT_LOCALE;
   const seoKey = to.meta.seoKey ?? "home";
   const seo = seoFor(seoKey, loc);

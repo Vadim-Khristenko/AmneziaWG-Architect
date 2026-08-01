@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
     border-radius: var(--radius-lg);
     background: var(--bg3);
     border: 1px solid var(--border2);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .faq-title {
@@ -439,7 +439,7 @@ onBeforeUnmount(() => {
 .faq-cat.active {
     background: var(--amber);
     border-color: var(--amber);
-    color: var(--bg);
+    color: var(--on-accent);
 }
 
 .faq-cat-n {
@@ -499,7 +499,7 @@ onBeforeUnmount(() => {
 }
 
 .faq-q:hover {
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .faq-chevron {
@@ -510,7 +510,7 @@ onBeforeUnmount(() => {
 
 .faq-item.open .faq-chevron {
     transform: rotate(180deg);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .faq-a {
@@ -567,7 +567,7 @@ onBeforeUnmount(() => {
 }
 
 .faq-a a {
-    color: var(--amber);
+    color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
     padding: 1px 5px;
     border-radius: 4px;
     background: var(--bg3);
-    color: var(--amber);
+    color: var(--accent-ink);
     white-space: nowrap;
 }
 
@@ -603,7 +603,7 @@ onBeforeUnmount(() => {
 }
 
 .faq-link:hover {
-    color: var(--amber);
+    color: var(--accent-ink);
     border-color: var(--amber-dim);
 }
 

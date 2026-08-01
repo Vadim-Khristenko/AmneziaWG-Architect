@@ -432,7 +432,7 @@ const stats = computed(() => {
 .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 .stat-label {
     font-size: 0.72rem;
@@ -636,7 +636,7 @@ const stats = computed(() => {
     color: var(--muted);
 }
 .link {
-    color: var(--accent);
+    color: var(--accent-ink);
     text-decoration: underline;
 }
 

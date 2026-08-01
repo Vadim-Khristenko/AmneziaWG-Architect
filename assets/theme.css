@@ -34,8 +34,17 @@
  * `--accent-ink-light` is measured against `#f6f6f7`, not chosen by eye —
  * each clears 4.5:1.
  */
+/*
+ * `--tint` is how much of the accent goes into the light ground, and the six
+ * numbers differ because the six accents do not. Amber is already a light
+ * colour, so a fifth of it barely moves white; purple is dark enough that the
+ * same share would produce a lilac page. These were solved for rather than
+ * chosen: each is the fraction that lands its ground at the same perceived
+ * lightness, so no page reads heavier than the one next to it.
+ */
 :root,
 [data-accent="amber"] {
+    --tint: 20%;
     --accent-rgb: 232 168 64;
     --accent-lift-rgb: 245 192 96;
     --accent-deep-rgb: 196 133 32;
@@ -44,6 +53,7 @@
 }
 
 [data-accent="gold"] {
+    --tint: 24%;
     --accent-rgb: 240 184 96;
     --accent-lift-rgb: 255 208 138;
     --accent-deep-rgb: 201 154 70;
@@ -52,6 +62,7 @@
 }
 
 [data-accent="teal"] {
+    --tint: 22%;
     --accent-rgb: 79 179 201;
     --accent-lift-rgb: 127 214 232;
     --accent-deep-rgb: 60 138 156;
@@ -60,6 +71,7 @@
 }
 
 [data-accent="green"] {
+    --tint: 20%;
     --accent-rgb: 95 191 127;
     --accent-lift-rgb: 142 224 166;
     --accent-deep-rgb: 70 148 98;
@@ -68,6 +80,7 @@
 }
 
 [data-accent="blue"] {
+    --tint: 19%;
     --accent-rgb: 91 155 213;
     --accent-lift-rgb: 141 192 240;
     --accent-deep-rgb: 66 118 165;
@@ -76,6 +89,7 @@
 }
 
 [data-accent="purple"] {
+    --tint: 15%;
     --accent-rgb: 157 123 240;
     --accent-lift-rgb: 192 166 255;
     --accent-deep-rgb: 114 85 187;
@@ -106,19 +120,55 @@
 
 :root {
     /*
-     * Light is a neutral near-white, not a cream.
+     * THE GROUND CARRIES THE ACCENT
      *
-     * The warm-neutral band — anything near L 0.9 with a trace of yellow — is
-     * what every amber-branded site reaches for, and it reads as parchment
-     * whatever the token is called. This ground has no chroma in it at all and
-     * the accent does the warming, which is the same reason the accent had to
-     * split in two: a neutral ground this bright cannot carry amber text.
+     * It did not, at first: the ground was a flat neutral and only the borders
+     * and glows moved when the page changed. That reads as one grey app with
+     * six coloured outlines rather than six rooms, and the accent — the whole
+     * point of the per-page colour — barely registers on the largest surface
+     * on screen.
+     *
+     * So every ground is mixed from the accent itself. `color-mix` in oklab
+     * mixes by perceived lightness rather than by raw channel values, which is
+     * why a 10% purple and a 10% amber land at the same weight instead of the
+     * purple reading twice as dark.
+     *
+     * Light is deliberately pastel — the accent diluted into white, not a
+     * neutral grey. That is a real position rather than a safe one: pastel is
+     * what makes the page recognisably the FAQ's or MergeKeys' at a glance,
+     * and the panels stay pure white so the content still sits *on* something.
+     *
+     * The one thing pastel must not cost is legibility. Every text tier below
+     * is checked against its own ground on every accent, not against an
+     * average, because the amber ground is much lighter than the purple one.
      */
-    --ground: light-dark(#f6f6f7, #0a0806);
-    --ground-2: light-dark(#ffffff, #110e0a);
-    --ground-3: light-dark(#eeeef1, #181410);
-    --ground-4: light-dark(#e5e5e9, #201a14);
-    --ground-5: light-dark(#dcdce1, #281f16);
+    --ground: light-dark(
+        color-mix(in oklab, rgb(var(--accent-rgb)) var(--tint), #fbfbfd),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 5%, #07070a)
+    );
+    /* Panels: pure white on the pastel page, lifted from black in the dark. */
+    --ground-2: light-dark(
+        #ffffff,
+        color-mix(in oklab, rgb(var(--accent-rgb)) 6%, #0e0d11)
+    );
+    /*
+     * The elevated tiers deepen the page rather than being mixed from white
+     * again, so a hover state on the amber page and one on the teal page are
+     * the same step darker instead of the same distance from white — which,
+     * given how differently the two tint, is not the same thing at all.
+     */
+    --ground-3: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 5%, var(--ground)),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 7%, #15141a)
+    );
+    --ground-4: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 10%, var(--ground)),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 8%, #1c1b22)
+    );
+    --ground-5: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 16%, var(--ground)),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 9%, #24232b)
+    );
 
     /*
      * Every tier that carries text clears 4.5:1 on its own ground, measured
@@ -126,19 +176,55 @@
      * placeholder colour was 1.54:1 on a dark input — a hint nobody could
      * read — and 3.44:1 on a light one.
      *
-     * The consequence is that "muted" is a narrower band than it looks. A
-     * fourth tier dim enough to be decorative cannot also be text, so the
-     * decorative one is named separately and used only where nothing is read.
+     * The text is tinted from the accent too, by a little. Neutral grey on a
+     * pastel ground looks like grey that was left behind when the page was
+     * recoloured; the same grey pulled a few percent toward the accent looks
+     * chosen. It is a small enough share not to move the contrast.
+     *
+     * The consequence of measuring is that "muted" is a narrower band than it
+     * looks. A fourth tier dim enough to be decorative cannot also be text, so
+     * the decorative one is named separately and used only where nothing is
+     * read.
      */
-    --ink: light-dark(#17161a, #e0d4b8);
-    --ink-2: light-dark(#45434d, #9a8a68);
-    --ink-3: light-dark(#63616b, #8a7c5c);
-    --ink-4: light-dark(#6b6974, #8a7c5c);
+    --ink: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 8%, #131318),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 13%, #f1efeb)
+    );
+    --ink-2: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 12%, #3c3a44),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 22%, #a8a49d)
+    );
+    --ink-3: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 12%, #55535d),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 22%, #97938c)
+    );
+    --ink-4: var(--ink-3);
 
     /* Scrollbar thumbs and the like. Never text. */
-    --ink-faint: light-dark(#c9c8cf, #3d3226);
+    --ink-faint: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 22%, #c4c3ca),
+        color-mix(in oklab, rgb(var(--accent-rgb)) 16%, #35343c)
+    );
 
-    --accent-ink: light-dark(var(--accent-ink-light), rgb(var(--accent-lift-rgb)));
+    /*
+     * The accent, in its readable form.
+     *
+     * `--accent` is the brand colour and belongs on surfaces — a fill, a
+     * border, a glow. Set as text on the pastel ground it measures about 1.9:1,
+     * which is not a contrast problem so much as an invisible label. So every
+     * `color:` in the app points here instead, and only here: the same hue,
+     * taken down until it can be read, and left exactly as it was in the dark
+     * scheme where it always could be.
+     *
+     * The lift is the hover step. In the dark scheme it is the brighter accent,
+     * as before; in the light one brighter is the wrong direction, so it goes
+     * deeper instead.
+     */
+    --accent-ink: light-dark(var(--accent-ink-light), rgb(var(--accent-rgb)));
+    --accent-ink-lift: light-dark(
+        color-mix(in oklab, black 22%, var(--accent-ink-light)),
+        rgb(var(--accent-lift-rgb))
+    );
 
     /* A wash on white has to be stronger to register at all. */
     --surface: light-dark(
@@ -170,6 +256,18 @@
     --glow: rgb(var(--accent-rgb) / 0.12);
     --glow-soft: rgb(var(--accent-rgb) / 0.06);
     --glow-faint: rgb(var(--accent-rgb) / 0.03);
+
+    /*
+     * What goes on top of an accent fill.
+     *
+     * Near-black in both schemes, which is the whole point: the accent is a
+     * mid-light colour either way, so the readable text on it does not change
+     * when the scheme does. Filled buttons used `var(--bg)` — correct in dark,
+     * where the ground is nearly black, and white-on-amber at 1.9:1 in light,
+     * which is how every primary button in the app became unreadable the
+     * moment there was a light scheme.
+     */
+    --on-accent: color-mix(in oklab, black 84%, rgb(var(--accent-deep-rgb)));
 
     --accent: rgb(var(--accent-rgb));
     --accent-lift: rgb(var(--accent-lift-rgb));
@@ -234,11 +332,21 @@
  * was built with.
  */
 :root {
-    --green: light-dark(#2f7d4c, #5cb87a);
+    /*
+     * The light green is measured against its own wash, not against white.
+     * `#2f7d4c` clears 4.5:1 on a plain background and lands at 3.96–4.17 on
+     * the pale green pill it is always actually used on — which is where the
+     * "100% локально" line and the MergeKeys success banner live.
+     */
+    --green: light-dark(#256640, #5cb87a);
     --green2: light-dark(#24693e, #7dd99a);
     --red: light-dark(#b03a26, #d4604a);
     --red2: light-dark(#8f2c1b, #ff8f7d);
     --blue: light-dark(#1f5f9c, #5b9bd5);
+    /* The `.conf`/compat cyan, which was `#64d4e0` inline in two components. */
+    --cyan: light-dark(#0e6472, #64d4e0);
+    --cyan-bg: light-dark(rgb(14 100 114 / 0.08), rgb(100 212 224 / 0.07));
+    --cyan-line: light-dark(rgb(14 100 114 / 0.28), rgb(100 212 224 / 0.3));
 
     --green-bg: rgb(var(--counter-rgb) / 0.08);
     --gd: rgb(var(--counter-rgb) / 0.15);
@@ -246,3 +354,136 @@
     --rd: light-dark(rgb(176 58 38 / 0.16), rgb(212 96 74 / 0.12));
     --blue-bg: light-dark(rgb(31 95 156 / 0.1), rgb(91 155 213 / 0.08));
 }
+
+/* ── Code ─────────────────────────────────────────────────────────────────── */
+
+/*
+ * A syntax palette is a theme, so it lives here rather than inside the editor
+ * component — which is where it was, as nine fixed hex values chosen against
+ * black. On a pastel page that produced a large void with pale text in it, and
+ * `#080604` is not a colour any light design can absorb.
+ *
+ * Keeping the code surface dark in both schemes was the cheaper answer and a
+ * defensible one, but the app is not a documentation site with one snippet per
+ * page: the config preview, the editor and the readonly output are most of
+ * what is on screen, and three black slabs is not a light theme.
+ */
+:root {
+    --code-bg: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 4%, #f8f8fa),
+        #0d0b08
+    );
+    --code-bg-2: light-dark(
+        color-mix(in oklab, rgb(var(--accent-deep-rgb)) 8%, #f1f1f4),
+        #0a0806
+    );
+
+    --code-section: light-dark(#0f6470, #64d4e0);
+    --code-key: light-dark(#6b5a34, #9a8a68);
+    --code-num: var(--accent-ink);
+    --code-range: light-dark(#78338f, #c98fd8);
+    --code-ip: var(--blue);
+    --code-cps: light-dark(#9c4415, #e8956b);
+    --code-str: var(--green2);
+    --code-kw: var(--red2);
+    --code-comment: var(--ink-3);
+}
+
+/* ── The background layer ─────────────────────────────────────────────────── */
+
+/*
+ * The aurora behind the app was four fixed rgba amber and teal blobs and a
+ * near-black vignette. It stayed amber on the teal page, and in the light
+ * scheme the vignette painted `rgb(10 8 6 / 0.7)` over a white one — the
+ * single worst thing in the app the first time it was shown in daylight.
+ *
+ * These are the alphas the layer needs at each scheme, so the effect can be
+ * written once. Light needs more of the colour and less of the darkening: a
+ * wash that reads on black disappears on white, and a vignette on white is a
+ * tint of the accent rather than a shadow.
+ */
+:root {
+    --fx-aurora-core: light-dark(
+        rgb(var(--accent-rgb) / 0.3),
+        rgb(var(--accent-rgb) / 0.1)
+    );
+    --fx-aurora-mid: light-dark(
+        rgb(var(--accent-rgb) / 0.14),
+        rgb(var(--accent-rgb) / 0.04)
+    );
+    --fx-aurora-edge: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.05),
+        rgb(var(--accent-deep-rgb) / 0.01)
+    );
+
+    --fx-counter-core: light-dark(
+        rgb(var(--counter-rgb) / 0.2),
+        rgb(var(--counter-rgb) / 0.06)
+    );
+    --fx-counter-mid: light-dark(
+        rgb(var(--counter-rgb) / 0.09),
+        rgb(var(--counter-rgb) / 0.03)
+    );
+
+    --fx-grid: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.06),
+        rgb(var(--accent-rgb) / 0.018)
+    );
+    --fx-horizon: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.16),
+        rgb(var(--accent-rgb) / 0.08)
+    );
+    --fx-vignette: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.09),
+        rgb(0 0 0 / 0.42)
+    );
+    --fx-vignette-edge: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.17),
+        rgb(0 0 0 / 0.7)
+    );
+
+    /*
+     * The grain is painted rather than overlaid: the noise texture became a
+     * mask and this is the colour poured through it. A fixed-opacity black
+     * texture can only be tuned per scheme with a second rule, and on white it
+     * reads as dirt — masked, the same effect lightens the dark ground and
+     * tints the light one with the accent.
+     */
+    --fx-noise: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.035),
+        rgb(255 255 255 / 0.03)
+    );
+}
+
+/* ── Switching without a smear ────────────────────────────────────────────── */
+
+/*
+ * Changing the scheme or the accent repaints every colour in the app at once,
+ * but each element eases to its new value at whatever duration its own rule
+ * happens to declare — 150ms here, 400ms there, and `transition: all` in a
+ * dozen places. The result is not a fade, it is a wave passing across the page
+ * with the borders arriving after the backgrounds.
+ *
+ * So the change is instantaneous, and the smoothing — when the browser can do
+ * it — is a view transition, which crossfades one snapshot of the whole page
+ * into another and cannot arrive out of order.
+ */
+:root[data-switching] *,
+:root[data-switching] *::before,
+:root[data-switching] *::after {
+    transition: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 260ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+}
+

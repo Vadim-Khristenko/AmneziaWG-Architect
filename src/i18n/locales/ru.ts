@@ -24,6 +24,12 @@ export const ru = {
   "lang.label": "Язык",
   "lang.switch": "Сменить язык",
 
+  /* ── Theme switcher ───────────────────────────────────────────────────── */
+  "theme.label": "Тема",
+  "theme.system": "Как в системе",
+  "theme.light": "Светлая",
+  "theme.dark": "Тёмная",
+
   /* ── Home / hero ──────────────────────────────────────────────────────── */
   "home.badge": "AWG 3.0 READY",
   "home.title.brand": "AmneziaWG",

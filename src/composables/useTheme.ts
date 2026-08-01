@@ -27,7 +27,16 @@ export type ThemeChoice = "system" | "light" | "dark";
 
 const STORAGE_KEY = "awg-architect:theme";
 
-const CHOICES: readonly ThemeChoice[] = ["system", "light", "dark"];
+/**
+ * In control order, and `system` first on purpose.
+ *
+ * A two-state sun/moon toggle cannot express "follow the system", so the
+ * moment someone touches it they are opted out of it forever without being
+ * told. Three states put the default back within reach.
+ */
+export const THEME_CHOICES: readonly ThemeChoice[] = ["system", "light", "dark"];
+
+const CHOICES = THEME_CHOICES;
 
 export const theme = ref<ThemeChoice>("system");
 
@@ -49,14 +58,77 @@ export function accentFor(routeName: string | undefined | null): Accent {
 }
 
 export function applyAccent(accent: Accent): void {
-  document.documentElement.dataset.accent = accent;
+  // Idempotent, because the callers are not: the first page applies its accent
+  // from two directions and every re-entry would otherwise force a pair of
+  // synchronous reflows to arrive at the colour already on screen.
+  if (document.documentElement.dataset.accent === accent) return;
+
+  // Instant, not crossfaded: this runs as the page transition inserts the new
+  // view, and a view transition on top of that would snapshot the app halfway
+  // through an animation it knows nothing about.
+  instantly(() => {
+    document.documentElement.dataset.accent = accent;
+  });
 }
 
-function applyTheme(choice: ThemeChoice): void {
+function setThemeAttribute(choice: ThemeChoice): void {
   const root = document.documentElement;
   // No attribute means `color-scheme: light dark`, which follows the system.
   if (choice === "system") delete root.dataset.theme;
   else root.dataset.theme = choice;
+}
+
+/**
+ * Change every colour in one frame instead of in a wave.
+ *
+ * Repainting the app means repainting elements whose own rules say
+ * `transition: all 0.2s`, `transition: all 0.15s`, `transition: color 150ms`
+ * and so on. Each eases to its new colour on its own schedule, so a scheme
+ * change is not a fade — it is a smear, the borders arriving after the
+ * backgrounds and the text after both. `[data-switching]` suspends every
+ * transition in the document for the frame in which the change lands.
+ */
+function instantly(mutate: () => void): void {
+  const root = document.documentElement;
+
+  root.dataset.switching = "";
+  mutate();
+
+  // Read a layout property to force a style recalculation while the
+  // suppression is in effect. Without it the attribute and the new colours
+  // land in the same pass and the transitions run after all.
+  void root.offsetHeight;
+
+  // Released in the same call rather than on a later frame. Two frames was the
+  // obvious way to write this and it is wrong twice over: a tab that is not
+  // compositing never gets those frames, so the app would be left with every
+  // transition disabled for the rest of the session — and it is unnecessary,
+  // because the colours have already been recalculated. Removing the attribute
+  // recomputes the same values a second time, and a transition only starts
+  // when a value actually changes.
+  delete root.dataset.switching;
+  void root.offsetHeight;
+}
+
+/**
+ * The same change, smoothed — but smoothed as one thing.
+ *
+ * A view transition crossfades a snapshot of the whole page into another, so
+ * nothing can arrive out of order however many different durations the
+ * underlying rules declare. Where the browser has no such thing, or the reader
+ * has asked for less motion, the change is simply instant: not as pretty, but
+ * never wrong.
+ */
+function crossfade(mutate: () => void): void {
+  const start = document.startViewTransition?.bind(document);
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  if (!start || reduced) {
+    instantly(mutate);
+    return;
+  }
+
+  start(() => instantly(mutate));
 }
 
 /** Read the stored choice. Called once, before the first paint if possible. */
@@ -69,7 +141,8 @@ export function initTheme(): void {
   } catch {
     // Storage blocked. The system default is a perfectly good answer.
   }
-  applyTheme(theme.value);
+  // Directly, not through a crossfade: there is nothing yet to fade from.
+  setThemeAttribute(theme.value);
 }
 
 export function setTheme(choice: ThemeChoice): void {
@@ -84,7 +157,7 @@ export function cycleTheme(): ThemeChoice {
 }
 
 watch(theme, (choice) => {
-  applyTheme(choice);
+  crossfade(() => setThemeAttribute(choice));
   try {
     localStorage.setItem(STORAGE_KEY, choice);
   } catch {

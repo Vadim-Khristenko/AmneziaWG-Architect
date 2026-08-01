@@ -1593,7 +1593,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .icon-inline {
     vertical-align: -2px;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .small-alert {
@@ -1625,7 +1625,7 @@ const paramGroups = computed((): ParamGroup[] => {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: 0 0 16px 2px rgba(232, 168, 64, 0.15);
+    box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.15);
     opacity: 0;
     pointer-events: none;
     animation: badgePulse 3s ease-in-out infinite;
@@ -1660,17 +1660,18 @@ const paramGroups = computed((): ParamGroup[] => {
     color: var(--text);
 }
 
+/*
+ * Solid, not a gradient clipped to the text.
+ *
+ * Clipping a gradient to a heading fixes its colours in absolute terms, so on
+ * the pastel ground the whole word sat at roughly 1.9:1 and the largest thing
+ * on the page was the hardest to read. It also cost nothing to lose: three
+ * shades of the same hue across eight letters is not a gradient anyone can
+ * see, only one they can fail to read.
+ */
 .hero-accent {
     display: block;
-    background: linear-gradient(
-        135deg,
-        var(--amber2) 0%,
-        var(--amber) 50%,
-        var(--amber3) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent-ink);
 }
 
 .hero-desc {
@@ -1722,8 +1723,8 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .ver-tab.active {
     background: var(--amber);
-    color: var(--bg);
-    box-shadow: 0 2px 8px rgba(232, 168, 64, 0.25);
+    color: var(--on-accent);
+    box-shadow: 0 2px 8px rgb(var(--accent-rgb) / 0.25);
 }
 
 /* ── AWG 3.0 ──────────────────────────────────────────────────────────── */
@@ -1739,8 +1740,8 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .ver-tab.active .ver-tag {
-    background: rgba(10, 8, 6, 0.22);
-    color: var(--bg);
+    background: light-dark(rgb(255 255 255 / 0.3), rgb(10 8 6 / 0.22));
+    color: var(--on-accent);
 }
 
 .awg3-panel {
@@ -1758,7 +1759,7 @@ const paramGroups = computed((): ParamGroup[] => {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--amber);
+    color: var(--accent-ink);
     font-family: var(--fw);
     font-weight: 800;
     font-size: 0.82rem;
@@ -1828,7 +1829,7 @@ const paramGroups = computed((): ParamGroup[] => {
 .awg3-note svg {
     flex-shrink: 0;
     margin-top: 3px;
-    color: var(--amber);
+    color: var(--accent-ink);
     opacity: 0.75;
 }
 
@@ -1853,7 +1854,7 @@ const paramGroups = computed((): ParamGroup[] => {
     padding: 1px 4px;
     border-radius: 3px;
     background: var(--bg4);
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
 }
 
 /* ── History Toggle + Badge ───────────────────────────────────────────── */
@@ -1869,7 +1870,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .history-toggle.active {
-    color: var(--accent);
+    color: var(--accent-ink);
     background: var(--surface-active);
 }
 
@@ -1881,7 +1882,7 @@ const paramGroups = computed((): ParamGroup[] => {
     height: 18px;
     padding: 0 5px;
     background: var(--amber);
-    color: var(--bg);
+    color: var(--on-accent);
     font-size: 0.62rem;
     font-weight: 800;
     font-family: var(--fm);
@@ -1892,7 +1893,7 @@ const paramGroups = computed((): ParamGroup[] => {
     line-height: 1;
     z-index: 10;
     pointer-events: none;
-    box-shadow: 0 2px 6px rgba(232, 168, 64, 0.4);
+    box-shadow: 0 2px 6px rgb(var(--accent-rgb) / 0.4);
     animation: countPop 0.3s var(--ease-bounce);
 }
 
@@ -1975,7 +1976,7 @@ const paramGroups = computed((): ParamGroup[] => {
     padding-left: 16px;
     font-size: 0.7rem;
     line-height: 1.5;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     text-wrap: pretty;
 }
 
@@ -1995,7 +1996,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .toggle-row:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .toggle-row.compact {
@@ -2061,7 +2062,7 @@ const paramGroups = computed((): ParamGroup[] => {
     border: 1px solid var(--border2);
     border-radius: var(--radius-sm);
     background: var(--bg2);
-    color: var(--amber);
+    color: var(--accent-ink);
     font-family: var(--fw);
     font-weight: 700;
     font-size: 0.73rem;
@@ -2112,8 +2113,8 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .preset-btn.active {
     background: var(--surface-active);
-    color: var(--accent);
-    border-color: rgba(232, 168, 64, 0.3);
+    color: var(--accent-ink);
+    border-color: rgb(var(--accent-rgb) / 0.3);
 }
 
 /* Intensity */
@@ -2146,7 +2147,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .int-btn.active {
     background: var(--bg);
-    color: var(--accent);
+    color: var(--accent-ink);
     box-shadow: var(--shadow-sm);
 }
 
@@ -2288,7 +2289,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .log-line.log-warn {
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 /* ── Output Panel ─────────────────────────────────────────────────────── */
@@ -2314,8 +2315,8 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .output-card.just-generated {
-    border-color: rgba(232, 168, 64, 0.4);
-    box-shadow: 0 0 20px rgba(232, 168, 64, 0.08);
+    border-color: rgb(var(--accent-rgb) / 0.4);
+    box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.08);
 }
 
 .output-head {
@@ -2337,10 +2338,10 @@ const paramGroups = computed((): ParamGroup[] => {
     font-family: var(--fm);
     font-weight: 700;
     padding: 2px 8px;
-    background: rgba(232, 168, 64, 0.1);
-    color: var(--amber);
+    background: rgb(var(--accent-rgb) / 0.1);
+    color: var(--accent-ink);
     border-radius: 100px;
-    border: 1px solid rgba(232, 168, 64, 0.15);
+    border: 1px solid rgb(var(--accent-rgb) / 0.15);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -2449,7 +2450,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .param-group-icon {
     flex-shrink: 0;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .param-group-grid {
@@ -2530,7 +2531,7 @@ const paramGroups = computed((): ParamGroup[] => {
     font-size: 0.85rem;
     font-family: var(--fm);
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-ink);
     transition: color var(--trans-fast);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2556,7 +2557,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
 /* CPS values always highlighted amber/accent regardless of length */
 .param-cps-value {
-    color: var(--accent) !important;
+    color: var(--accent-ink) !important;
     font-size: 0.68rem;
     font-weight: 600;
     word-break: break-all;
@@ -2566,7 +2567,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .param-cell-cps {
-    border-left: 2px solid rgba(232, 168, 64, 0.25);
+    border-left: 2px solid rgb(var(--accent-rgb) / 0.25);
 }
 
 .param-cell-cps:hover {
@@ -2574,7 +2575,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .is-cps .param-cell-label {
-    color: var(--amber);
+    color: var(--accent-ink);
     font-weight: 700;
 }
 
@@ -2773,7 +2774,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .preview-line.section {
-    color: var(--amber);
+    color: var(--accent-ink);
     font-weight: 600;
 }
 
@@ -2782,7 +2783,7 @@ const paramGroups = computed((): ParamGroup[] => {
     margin-top: 3rem;
     background: linear-gradient(
         135deg,
-        rgba(232, 168, 64, 0.06) 0%,
+        rgb(var(--accent-rgb) / 0.06) 0%,
         var(--bg2) 40%,
         rgba(80, 200, 220, 0.03) 100%
     );
@@ -2798,7 +2799,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .merge-banner:hover {
-    box-shadow: 0 4px 24px rgba(232, 168, 64, 0.06);
+    box-shadow: 0 4px 24px rgb(var(--accent-rgb) / 0.06);
 }
 
 .merge-banner-content {
@@ -2818,7 +2819,7 @@ const paramGroups = computed((): ParamGroup[] => {
     background: var(--surface-active);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    color: var(--accent);
+    color: var(--accent-ink);
     flex-shrink: 0;
     transition: transform var(--trans-norm);
 }
@@ -2878,7 +2879,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
 .help-link > svg:first-child {
     flex-shrink: 0;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .help-link-text {
@@ -2909,7 +2910,7 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .help-link:hover .help-link-arrow {
-    color: var(--amber);
+    color: var(--accent-ink);
     transform: translateX(2px);
 }
 

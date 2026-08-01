@@ -88,8 +88,8 @@ body {
 }
 
 ::selection {
-    background: rgba(232, 168, 64, 0.3);
-    color: var(--amber3);
+    background: rgb(var(--accent-rgb) / 0.3);
+    color: var(--accent-ink-lift);
 }
 
 /* ── Typography ───────────────────────────────────────────────────────────── */
@@ -136,7 +136,7 @@ a {
 }
 
 a:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 img {
@@ -281,7 +281,7 @@ img {
         var(--amber) 0%,
         var(--amber-deep) 100%
     );
-    color: var(--bg);
+    color: var(--on-accent);
     border-color: transparent;
     font-weight: 700;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
@@ -290,12 +290,12 @@ img {
     background: linear-gradient(135deg, var(--amber2) 0%, var(--amber) 100%);
     transform: translateY(-1px);
     box-shadow:
-        0 4px 16px rgba(232, 168, 64, 0.25),
-        0 0 0 1px rgba(232, 168, 64, 0.2);
+        0 4px 16px rgb(var(--accent-rgb) / 0.25),
+        0 0 0 1px rgb(var(--accent-rgb) / 0.2);
 }
 .btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(232, 168, 64, 0.15);
+    box-shadow: 0 2px 8px rgb(var(--accent-rgb) / 0.15);
 }
 
 /* Secondary */
@@ -305,8 +305,8 @@ img {
     color: var(--text);
 }
 .btn-secondary:hover {
-    border-color: rgba(232, 168, 64, 0.3);
-    color: var(--accent);
+    border-color: rgb(var(--accent-rgb) / 0.3);
+    color: var(--accent-ink);
     background: var(--surface-hover);
     transform: translateY(-1px);
 }
@@ -498,7 +498,7 @@ input[type="number"] {
 
 .alert-icon {
     flex-shrink: 0;
-    color: var(--accent);
+    color: var(--accent-ink);
     margin-top: 1px;
     align-self: center;
 }
@@ -511,12 +511,12 @@ input[type="number"] {
     border-color: var(--amber);
     background: linear-gradient(
         90deg,
-        rgba(232, 168, 64, 0.06) 0%,
+        rgb(var(--accent-rgb) / 0.06) 0%,
         transparent 60%
     );
 }
 .alert-warn .alert-icon {
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .alert-success {
@@ -542,7 +542,7 @@ input[type="number"] {
 }
 
 .alert-content a {
-    color: var(--accent);
+    color: var(--accent-ink);
     text-decoration: underline;
     text-decoration-style: dotted;
     text-underline-offset: 3px;
@@ -573,8 +573,8 @@ input[type="number"] {
 
 .badge-amber {
     background: var(--ag);
-    color: var(--amber2);
-    border: 1px solid rgba(232, 168, 64, 0.2);
+    color: var(--accent-ink-lift);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
 }
 
 /* ── Dividers ─────────────────────────────────────────────────────────────── */
@@ -694,7 +694,7 @@ input[type="number"] {
 
 /* ── Utility Text Classes ─────────────────────────────────────────────────── */
 .text-accent {
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 .text-muted {
     color: var(--text2);
@@ -739,9 +739,9 @@ input[type="number"] {
 
 /* ── Code Blocks (global) ─────────────────────────────────────────────────── */
 code:not(pre code) {
-    background: rgba(232, 168, 64, 0.08);
-    border: 1px solid rgba(232, 168, 64, 0.1);
-    color: var(--amber2);
+    background: rgb(var(--accent-rgb) / 0.08);
+    border: 1px solid rgb(var(--accent-rgb) / 0.1);
+    color: var(--accent-ink-lift);
     padding: 2px 6px;
     border-radius: 5px;
     font-size: 0.85em;

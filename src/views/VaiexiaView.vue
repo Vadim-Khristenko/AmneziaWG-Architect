@@ -248,7 +248,7 @@ const features: Feature[] = [
     margin-bottom: 14px;
     border-radius: var(--radius);
     background: var(--bg4);
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .vx-card-title {
@@ -280,7 +280,7 @@ const features: Feature[] = [
     display: flex;
     align-items: center;
     gap: 9px;
-    color: var(--amber);
+    color: var(--accent-ink);
     margin-bottom: 10px;
 }
 
@@ -316,7 +316,7 @@ const features: Feature[] = [
     border-radius: var(--radius);
     font-family: var(--fm);
     font-size: 0.82rem;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     overflow-x: auto;
     white-space: nowrap;
 }
@@ -344,7 +344,7 @@ const features: Feature[] = [
 .vx-status svg {
     flex-shrink: 0;
     margin-top: 2px;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .vx-status p {

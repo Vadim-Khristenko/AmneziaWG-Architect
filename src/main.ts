@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import router from "./router";
+import router, { prefetchRoutes } from "./router";
 
 // Self-hosted variable fonts — bundled & served same-origin, so the UI no
 // longer depends on fonts.gstatic.com being reachable (it is throttled/blocked
@@ -28,3 +28,7 @@ const app = createApp(App);
 app.use(router);
 app.mount("#app");
 installTooltips();
+
+// Every other page, fetched while the browser has nothing better to do, so the
+// second click does not wait on a network round trip the way the first did.
+prefetchRoutes();

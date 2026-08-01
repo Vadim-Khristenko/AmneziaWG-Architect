@@ -13,7 +13,17 @@ import {
     Languages,
     Check,
     ChevronRight,
+    ChevronDown,
+    Monitor,
+    Sun,
+    Moon,
 } from "lucide-vue-next";
+import {
+    THEME_CHOICES,
+    setTheme,
+    theme,
+    type ThemeChoice,
+} from "@/composables/useTheme";
 import {
     LOCALES,
     LOCALE_META,
@@ -38,7 +48,20 @@ const { locale, t, setLocale } = useI18n();
 
 const isMenuOpen = ref(false);
 const isScrolled = ref(false);
-const isLangOpen = ref(false);
+
+/**
+ * Which header dropdown is open, if any.
+ *
+ * One piece of state rather than a boolean per menu: two booleans allow both
+ * menus to be open at once, which is a state nobody wants and every "close the
+ * other one" handler has to remember to prevent.
+ */
+type HeaderMenu = "lang" | "theme";
+const openMenu = ref<HeaderMenu | null>(null);
+
+function toggleHeaderMenu(which: HeaderMenu): void {
+    openMenu.value = openMenu.value === which ? null : which;
+}
 
 const faviconUrl = `${import.meta.env.BASE_URL}assets/favicon.svg`;
 
@@ -59,6 +82,37 @@ const resolvedLinks = computed(() =>
     })),
 );
 
+/** The three theme states, with an icon and a translated label each. */
+const themeOptions = computed<
+    { value: ThemeChoice; icon: Component; label: string }[]
+>(() => {
+    const icons: Record<ThemeChoice, Component> = {
+        system: Monitor,
+        light: Sun,
+        dark: Moon,
+    };
+    const labels: Record<ThemeChoice, MessageKey> = {
+        system: "theme.system",
+        light: "theme.light",
+        dark: "theme.dark",
+    };
+    return THEME_CHOICES.map((value) => ({
+        value,
+        icon: icons[value],
+        label: t(labels[value]),
+    }));
+});
+
+/** What the closed control shows: the state you are actually in. */
+const currentTheme = computed(
+    () => themeOptions.value.find((o) => o.value === theme.value) ?? themeOptions.value[0]!,
+);
+
+function chooseTheme(next: ThemeChoice): void {
+    openMenu.value = null;
+    setTheme(next);
+}
+
 const isActive = (href: string): boolean => {
     const root = localizePath("/", locale.value) || "/";
     if (href === root) return route.path === href || route.path === `${href}/`;
@@ -71,7 +125,7 @@ const isActive = (href: string): boolean => {
  * survives the switch.
  */
 async function switchLocale(next: Locale): Promise<void> {
-    isLangOpen.value = false;
+    openMenu.value = null;
     if (next === locale.value) return;
 
     const { path } = splitLocalePath(route.path);
@@ -79,9 +133,21 @@ async function switchLocale(next: Locale): Promise<void> {
     await router.push({ path: localizePath(path, next), hash: route.hash });
 }
 
-function closeLang(event: MouseEvent): void {
+/**
+ * Close on a click anywhere that is not inside the open menu.
+ *
+ * Marked with `data-menu` rather than by class name so this stays one handler
+ * as menus are added; clicking the *other* menu's trigger still closes this
+ * one, because the name under the pointer is not the name that is open.
+ */
+function closeOnOutsideClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
-    if (!target?.closest(".lang-wrap")) isLangOpen.value = false;
+    const inside = target?.closest<HTMLElement>("[data-menu]")?.dataset.menu;
+    if (inside !== openMenu.value) openMenu.value = null;
+}
+
+function closeOnEscape(event: KeyboardEvent): void {
+    if (event.key === "Escape") openMenu.value = null;
 }
 
 const toggleMenu = () => {
@@ -99,12 +165,14 @@ const handleScroll = () => {
 
 onMounted(() => {
     window.addEventListener("scroll", handleScroll);
-    document.addEventListener("click", closeLang);
+    document.addEventListener("click", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
 });
 
 onUnmounted(() => {
     window.removeEventListener("scroll", handleScroll);
-    document.removeEventListener("click", closeLang);
+    document.removeEventListener("click", closeOnOutsideClick);
+    document.removeEventListener("keydown", closeOnEscape);
     // Leaving with the menu open would strand the body scroll lock.
     document.body.style.overflow = "";
 });
@@ -143,33 +211,87 @@ onUnmounted(() => {
                 </div>
                 <div class="nav-sep"></div>
 
-                <!-- Language switcher -->
-                <div class="lang-wrap">
+                <!-- Theme switcher -->
+                <div class="menu-wrap" data-menu="theme">
                     <button
-                        class="lang-btn"
-                        :aria-label="t('lang.switch')"
-                        :aria-expanded="isLangOpen"
+                        class="menu-btn"
+                        :aria-label="t('theme.label')"
+                        :aria-expanded="openMenu === 'theme'"
                         aria-haspopup="listbox"
-                        @click="isLangOpen = !isLangOpen"
+                        @click="toggleHeaderMenu('theme')"
                     >
-                        <Languages :size="18" />
-                        <span class="lang-code">{{
+                        <component :is="currentTheme.icon" :size="17" />
+                        <ChevronDown :size="13" class="menu-caret" />
+                    </button>
+
+                    <transition name="fade">
+                        <ul
+                            v-if="openMenu === 'theme'"
+                            class="menu-list"
+                            role="listbox"
+                            :aria-label="t('theme.label')"
+                        >
+                            <li v-for="opt in themeOptions" :key="opt.value">
+                                <button
+                                    class="menu-item"
+                                    :class="{ 'is-on': theme === opt.value }"
+                                    role="option"
+                                    :aria-selected="theme === opt.value"
+                                    @click="chooseTheme(opt.value)"
+                                >
+                                    <component
+                                        :is="opt.icon"
+                                        :size="15"
+                                        class="menu-item-icon"
+                                    />
+                                    <span>{{ opt.label }}</span>
+                                    <Check
+                                        v-if="theme === opt.value"
+                                        :size="14"
+                                        class="menu-item-mark"
+                                    />
+                                </button>
+                            </li>
+                        </ul>
+                    </transition>
+                </div>
+
+                <!-- Language switcher -->
+                <div class="menu-wrap" data-menu="lang">
+                    <button
+                        class="menu-btn"
+                        :aria-label="t('lang.switch')"
+                        :aria-expanded="openMenu === 'lang'"
+                        aria-haspopup="listbox"
+                        @click="toggleHeaderMenu('lang')"
+                    >
+                        <Languages :size="17" />
+                        <span class="menu-btn-code">{{
                             locale.toUpperCase()
                         }}</span>
                     </button>
 
                     <transition name="fade">
-                        <ul v-if="isLangOpen" class="lang-menu" role="listbox">
+                        <ul
+                            v-if="openMenu === 'lang'"
+                            class="menu-list"
+                            role="listbox"
+                            :aria-label="t('lang.label')"
+                        >
                             <li v-for="loc in LOCALES" :key="loc">
                                 <button
-                                    class="lang-opt"
-                                    :class="{ active: loc === locale }"
+                                    class="menu-item"
+                                    :class="{ 'is-on': loc === locale }"
                                     role="option"
                                     :aria-selected="loc === locale"
                                     @click="switchLocale(loc)"
                                 >
                                     <span>{{ LOCALE_META[loc].name }}</span>
-                                    <Check v-if="loc === locale" :size="14" />
+                                    <Check
+                                        v-if="loc === locale"
+                                        :size="14"
+                                        class="menu-item-mark"
+                                    />
                                 </button>
                             </li>
                         </ul>
@@ -230,6 +352,26 @@ onUnmounted(() => {
 
                 <div class="mobile-lang">
                     <span class="mobile-lang-label">
+                        <Sun :size="15" />
+                        {{ t("theme.label") }}
+                    </span>
+                    <div class="mobile-lang-opts is-three">
+                        <button
+                            v-for="opt in themeOptions"
+                            :key="opt.value"
+                            class="mobile-lang-opt"
+                            :class="{ active: theme === opt.value }"
+                            :aria-pressed="theme === opt.value"
+                            @click="setTheme(opt.value)"
+                        >
+                            <component :is="opt.icon" :size="15" />
+                            <span>{{ opt.label }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mobile-lang">
+                    <span class="mobile-lang-label">
                         <Languages :size="15" />
                         {{ t("lang.label") }}
                     </span>
@@ -280,10 +422,10 @@ onUnmounted(() => {
 
 .header.is-scrolled {
     height: 64px;
-    background: rgba(14, 11, 7, 0.85);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom-color: rgba(232, 168, 64, 0.1);
+    border-bottom-color: rgb(var(--accent-rgb) / 0.1);
 }
 
 .header-inner {
@@ -308,10 +450,10 @@ onUnmounted(() => {
     height: 38px;
     background: linear-gradient(
         135deg,
-        rgba(232, 168, 64, 0.1) 0%,
-        rgba(232, 168, 64, 0.05) 100%
+        rgb(var(--accent-rgb) / 0.1) 0%,
+        rgb(var(--accent-rgb) / 0.05) 100%
     );
-    border: 1px solid rgba(232, 168, 64, 0.2);
+    border: 1px solid rgb(var(--accent-rgb) / 0.2);
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -378,13 +520,13 @@ onUnmounted(() => {
 }
 
 .nav-link:hover {
-    color: var(--accent);
-    background: rgba(232, 168, 64, 0.04);
+    color: var(--accent-ink);
+    background: rgb(var(--accent-rgb) / 0.04);
 }
 
 .nav-link.router-link-active {
     color: var(--text);
-    background: rgba(232, 168, 64, 0.08);
+    background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .nav-link.router-link-active::before {
@@ -419,17 +561,26 @@ onUnmounted(() => {
 }
 
 .gh-link:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
     background: var(--bg2);
     border-color: var(--border);
 }
 
 /* ── Language switcher ────────────────────────────────────────────────── */
-.lang-wrap {
+/* ── Header dropdowns: theme and language ─────────────────────────────── */
+
+/*
+ * One set of rules for both. They were two — `.lang-btn`/`.lang-menu`/
+ * `.lang-opt` beside a separate segmented theme control — and the second one
+ * was on its way to being a copy of the first with a different prefix. Sharing
+ * the names means the two controls cannot drift apart, which is what a reader
+ * expects of two things that sit next to each other and behave identically.
+ */
+.menu-wrap {
     position: relative;
 }
 
-.lang-btn {
+.menu-btn {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -446,23 +597,33 @@ onUnmounted(() => {
     transition: all 0.2s;
 }
 
-.lang-btn:hover,
-.lang-btn[aria-expanded="true"] {
-    color: var(--accent);
+.menu-btn:hover,
+.menu-btn[aria-expanded="true"] {
+    color: var(--accent-ink);
     background: var(--bg2);
     border-color: var(--border);
 }
 
-.lang-code {
+.menu-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.menu-btn-code {
     letter-spacing: 0.04em;
 }
 
-.lang-menu {
+/* Small enough to read as punctuation rather than as a second icon. */
+.menu-caret {
+    opacity: 0.65;
+}
+
+.menu-list {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
     z-index: 60;
-    min-width: 150px;
+    min-width: 178px;
     margin: 0;
     padding: 5px;
     list-style: none;
@@ -472,10 +633,9 @@ onUnmounted(() => {
     box-shadow: var(--shadow-lg);
 }
 
-.lang-opt {
+.menu-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
     width: 100%;
     padding: 8px 10px;
@@ -490,13 +650,28 @@ onUnmounted(() => {
     transition: all 0.15s;
 }
 
-.lang-opt:hover {
+/* The tick sits at the far edge whether or not the row has a leading icon. */
+.menu-item-mark {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.menu-item-icon {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.menu-item:hover {
     background: var(--bg4);
     color: var(--text);
 }
 
-.lang-opt.active {
-    color: var(--amber);
+.menu-item.is-on {
+    color: var(--accent-ink);
+}
+
+.menu-item.is-on .menu-item-icon {
+    opacity: 1;
 }
 
 /* ── Mobile language switcher ─────────────────────────────────────────── */
@@ -524,7 +699,25 @@ onUnmounted(() => {
     gap: 6px;
 }
 
+/* Three across is narrow, and "Как в системе" does not fit beside an icon. */
+.mobile-lang-opts.is-three {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.mobile-lang-opts.is-three .mobile-lang-opt {
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 6px;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    text-align: center;
+}
+
 .mobile-lang-opt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     padding: 9px 10px;
     border: 1px solid var(--border2);
     border-radius: var(--radius-sm);
@@ -540,7 +733,7 @@ onUnmounted(() => {
 .mobile-lang-opt.active {
     background: var(--amber);
     border-color: var(--amber);
-    color: var(--bg);
+    color: var(--on-accent);
 }
 
 /* ── Mobile Toggle ────────────────────────────────────────────────────── */
@@ -567,7 +760,7 @@ onUnmounted(() => {
 .mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: light-dark(rgb(40 36 30 / 0.4), rgb(0 0 0 / 0.6));
     backdrop-filter: blur(4px);
     z-index: 1001;
 }
@@ -622,8 +815,8 @@ onUnmounted(() => {
 
 .mobile-item:hover,
 .mobile-item.active {
-    background: rgba(232, 168, 64, 0.08);
-    color: var(--accent);
+    background: rgb(var(--accent-rgb) / 0.08);
+    color: var(--accent-ink);
 }
 
 .m-icon {
@@ -632,7 +825,7 @@ onUnmounted(() => {
 
 .mobile-item.active .m-icon {
     opacity: 1;
-    color: var(--accent);
+    color: var(--accent-ink);
 }
 
 .m-arrow {

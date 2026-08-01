@@ -563,7 +563,7 @@ function formatTime(ts: number): string {
 }
 
 .he-param-v {
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;

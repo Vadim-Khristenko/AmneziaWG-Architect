@@ -118,7 +118,7 @@ const suggestions = computed(() => [
     background:
         radial-gradient(
             120% 80% at 50% 0%,
-            rgba(232, 168, 64, 0.09),
+            rgb(var(--accent-rgb) / 0.09),
             transparent 70%
         ),
         var(--bg2);
@@ -160,8 +160,8 @@ const suggestions = computed(() => [
     padding: 6px 14px;
     border: 1px solid var(--amber-dim);
     border-radius: 100px;
-    background: rgba(232, 168, 64, 0.1);
-    color: var(--amber2);
+    background: rgb(var(--accent-rgb) / 0.1);
+    color: var(--accent-ink-lift);
     font-family: var(--fm);
     font-size: 0.68rem;
     font-weight: 700;
@@ -246,7 +246,7 @@ const suggestions = computed(() => [
 .nf-path code {
     font-family: var(--fm);
     font-size: 0.82rem;
-    color: var(--amber2);
+    color: var(--accent-ink-lift);
     word-break: break-all;
 }
 
@@ -295,7 +295,7 @@ const suggestions = computed(() => [
 
 .nf-suggest-link svg:first-child {
     flex-shrink: 0;
-    color: var(--amber);
+    color: var(--accent-ink);
 }
 
 .nf-suggest-arrow {
