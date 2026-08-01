@@ -16,6 +16,7 @@ import type { ParseResult } from "@/types/engine";
 import { xrayCaps, isSupportedVersion, XRAY_VERSIONS } from "./versions";
 import { defaultXhttp } from "./generate";
 import { buildTransport, defaultTransport } from "./transports";
+import { parseSockopt } from "./sockopt";
 import type { TransportConfig, TransportInput } from "./transports";
 import type {
   XrayConfig,
@@ -116,6 +117,8 @@ export function parseVlessUri(input: string): ParseResult<XrayConfig> {
     flow,
     clients: [client],
     transportSettings: buildTransport(defaultTransport()),
+    // A URI carries no socket options; nothing was set, so nothing is claimed.
+    sockopt: parseSockopt(undefined),
   };
   findings.push(warn("version", "xray.parse.version_assumed", { version: NEWEST }));
 
@@ -232,6 +235,7 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
     flow: clients[0]?.flow ?? "",
     clients,
     transportSettings: readTransport(stream),
+    sockopt: parseSockopt(asObject(stream.sockopt)),
   };
 
   const decryption = settings.decryption;

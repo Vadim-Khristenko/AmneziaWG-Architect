@@ -14,6 +14,7 @@ import { fingerprintById } from "@/shared/fingerprints";
 import { xrayCaps, type XhttpModeSupport } from "./versions";
 import { buildFinalMask, defaultFinalMask } from "./finalmask";
 import { buildTransport, defaultTransport } from "./transports";
+import { buildSockopt, defaultSockopt } from "./sockopt";
 import { REALITY_TRANSPORTS } from "./types";
 import type {
   LimitFallback,
@@ -209,8 +210,11 @@ export function defaultXhttp(): XhttpSettings {
 
     serverMaxHeaderBytes: "",
 
-    xmuxMaxConcurrency: "16-32",
-    xmuxMaxConnections: "0",
+    // Empty means "draw one": the xmux numbers are the client's own
+    // connection behaviour, and leaving them at the core defaults makes every
+    // Architect client behave identically where it is most visible.
+    xmuxMaxConcurrency: "",
+    xmuxMaxConnections: "",
     xmuxCMaxReuseTimes: "",
     xmuxHMaxRequestTimes: "",
     xmuxHMaxReusableSecs: "",
@@ -254,6 +258,7 @@ export function createDefaults(): XrayInput {
     pinFingerprint: false,
     xhttp: defaultXhttp(),
     transportSettings: defaultTransport(),
+    sockopt: defaultSockopt(),
     finalMask: defaultFinalMask(),
     clientCount: 1,
   };
@@ -423,19 +428,191 @@ function buildReality(
 }
 
 /** The XHTTP block, with `auto` resolved to what this core actually has. */
+/** A range the core will accept: `"lo-hi"`, never `{from,to}`. */
+function range(lo: number, span: number): string {
+  const start = cryptoRnd(lo, lo + span);
+  return `${start}-${start + cryptoRnd(1, span)}`;
+}
+
+/**
+ * How the client multiplexes its XHTTP connections.
+ *
+ * These are the client's own numbers — how many streams it will put on one
+ * connection, how long it will keep one, how many requests it will send down
+ * it before opening another. Left unset they take the core's defaults, which
+ * means every Architect user's client behaves identically at the connection
+ * level: the same 16-32 concurrency, the same reuse counts, the same session
+ * lengths. That is a pattern, and a pattern is what the whole tool exists to
+ * avoid. Drawn per config, two users look like two deployments.
+ *
+ * `maxConcurrency` and `maxConnections` are mutually exclusive — the core
+ * rejects a config setting both — so one is chosen and the other zeroed.
+ */
+function buildXmux(x: XhttpSettings): Pick<
+  XhttpSettings,
+  | "xmuxMaxConcurrency"
+  | "xmuxMaxConnections"
+  | "xmuxCMaxReuseTimes"
+  | "xmuxHMaxRequestTimes"
+  | "xmuxHMaxReusableSecs"
+  | "xmuxHKeepAlivePeriod"
+> {
+  // Anything the user set by hand stays exactly as they set it. Empty is the
+  // signal to draw, the same convention every other unset knob here uses.
+  const byConnections = Boolean(x.xmuxMaxConnections.trim());
+  const byConcurrency = Boolean(x.xmuxMaxConcurrency.trim());
+
+  return {
+    // Concurrency counts streams on one connection; connections counts the
+    // connections themselves. Both at once is the one combination the core
+    // refuses outright, so whichever was asked for wins and the other is
+    // zeroed.
+    xmuxMaxConcurrency: byConnections ? "0" : byConcurrency ? x.xmuxMaxConcurrency : range(8, 16),
+    xmuxMaxConnections: byConnections ? x.xmuxMaxConnections : "0",
+
+    // How many times a connection is reused before being dropped. Zero means
+    // no limit, which is the core's default and the most identifiable choice.
+    xmuxCMaxReuseTimes: x.xmuxCMaxReuseTimes || range(32, 64),
+
+    // The H-prefixed three apply to HTTP/2 and HTTP/3, where one connection
+    // carries many requests over a long life.
+    xmuxHMaxRequestTimes: x.xmuxHMaxRequestTimes || range(400, 400),
+    xmuxHMaxReusableSecs: x.xmuxHMaxReusableSecs || range(900, 1500),
+
+    // A keepalive ping interval. Zero — the default — means none, and a
+    // connection that never pings is as distinctive as one that pings on a
+    // fixed schedule, so this alternates rather than settling on either.
+    xmuxHKeepAlivePeriod:
+      x.xmuxHKeepAlivePeriod || (cryptoRnd(0, 1) ? String(cryptoRnd(30, 90)) : "0"),
+  };
+}
+
+/**
+ * How the upload is paced.
+ *
+ * The core has a default for every one of these, and a default is a shape:
+ * posts of the same size at the same interval with the same amount allowed to
+ * queue, from every deployment that never touched them. The numbers below sit
+ * in the same neighbourhood as the core's — the traffic still has to work —
+ * but no two configs land on the same point in it.
+ *
+ * Anything the user set by hand is left exactly as they set it; empty is the
+ * signal to draw, which is the convention the rest of this block already uses.
+ */
+function buildPacing(x: XhttpSettings): Pick<
+  XhttpSettings,
+  | "scMaxEachPostBytes"
+  | "scMinPostsIntervalMs"
+  | "scMaxBufferedPosts"
+  | "scStreamUpServerSecs"
+  | "uplinkChunkSize"
+  | "serverMaxHeaderBytes"
+> {
+  return {
+    // Around a megabyte per POST, the core's own order of magnitude.
+    scMaxEachPostBytes: x.scMaxEachPostBytes || range(800_000, 400_000),
+    // Tens of milliseconds between posts: fast enough to be usable, slow
+    // enough not to look like a flood.
+    scMinPostsIntervalMs: x.scMinPostsIntervalMs || range(20, 30),
+    scMaxBufferedPosts: x.scMaxBufferedPosts || String(cryptoRnd(20, 60)),
+    // How long the server holds a stream-up request open before the client
+    // opens the next. A fixed value here is a heartbeat anyone can time.
+    scStreamUpServerSecs: x.scStreamUpServerSecs || range(20, 40),
+
+    uplinkChunkSize: x.uplinkChunkSize || String(cryptoRnd(32, 96) * 1024),
+
+    // The server's cap on request headers. Padding rides in headers, so the
+    // ceiling has to clear the padding this config actually sends.
+    serverMaxHeaderBytes: x.serverMaxHeaderBytes || String(cryptoRnd(12, 24) * 1024),
+  };
+}
+
+/** The alphabet a custom session-id table is drawn from. */
+const BASE62 =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
+
+/**
+ * A custom alphabet for the session id.
+ *
+ * Left empty, the core uses its own table, so every session id in the world is
+ * drawn from the same characters — a property of the string that survives
+ * however random the id itself is.
+ *
+ * The core rejects a table too small to keep the id space above 2^31. With the
+ * shortest id this generator produces being eight characters, that needs at
+ * least fifteen distinct characters; thirty-two is the floor here, which
+ * clears it by orders of magnitude.
+ */
+function sessionIdTable(): string {
+  const pool = [...BASE62];
+  // Fisher-Yates from the crypto source, so the alphabet is not merely
+  // shuffled but unpredictably so.
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = cryptoRnd(0, i);
+    [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+  }
+  return pool.slice(0, cryptoRnd(32, 48)).join("");
+}
+
+/**
+ * Request headers a real client would be carrying anyway.
+ *
+ * An XHTTP request with nothing but the core's own headers is a short, oddly
+ * bare request. These are the ones a browser or an app sends without being
+ * asked, and adding a couple costs nothing.
+ *
+ * `Host` is deliberately absent: the core refuses it here and has its own
+ * field for it.
+ */
+const PLAUSIBLE_HEADERS: [string, string[]][] = [
+  ["Accept-Language", ["en-US,en;q=0.9", "ru-RU,ru;q=0.9,en;q=0.8", "en-GB,en;q=0.9"]],
+  ["Cache-Control", ["no-cache", "max-age=0"]],
+  ["Sec-Fetch-Dest", ["empty"]],
+  ["Sec-Fetch-Mode", ["cors", "no-cors"]],
+  ["Sec-Fetch-Site", ["same-origin", "same-site"]],
+  ["X-Requested-With", ["XMLHttpRequest"]],
+  ["Pragma", ["no-cache"]],
+];
+
+function buildHeaders(existing: Record<string, string>): Record<string, string> {
+  if (Object.keys(existing).length) return existing;
+
+  const pool = [...PLAUSIBLE_HEADERS];
+  const headers: Record<string, string> = {};
+  for (let i = 0; i < cryptoRnd(2, 4) && pool.length; i++) {
+    const [name, values] = pool.splice(cryptoRnd(0, pool.length - 1), 1)[0]!;
+    headers[name] = cryptoPick(values);
+  }
+  return headers;
+}
+
 function buildXhttp(
   input: XrayInput,
   caps: ReturnType<typeof xrayCaps>,
   security: XraySecurity,
 ): NonNullable<XrayConfig["xhttp"]> {
+  const resolvedMode = resolveXhttpMode(
+    input.xhttp.mode,
+    security === "reality",
+    input.xhttp.splitDownload,
+    caps.xhttpModes,
+  );
+
   return {
     ...input.xhttp,
-    resolvedMode: resolveXhttpMode(
-      input.xhttp.mode,
-      security === "reality",
-      input.xhttp.splitDownload,
-      caps.xhttpModes,
-    ),
+    ...buildXmux(input.xhttp),
+    ...buildPacing(input.xhttp),
+    sessionIdTable: input.xhttp.sessionIdTable || sessionIdTable(),
+    headers: buildHeaders(input.xhttp.headers),
+    // GET is only legal in packet-up — the core refuses it anywhere else —
+    // and there it is an ordinary thing for a client to do, which is the
+    // point of choosing between them rather than always sending POST. The
+    // choice is recorded either way rather than left blank for POST, so the
+    // config says what it decided instead of implying nothing was decided.
+    uplinkHttpMethod:
+      input.xhttp.uplinkHttpMethod ||
+      (resolvedMode === "packet-up" ? cryptoPick(["GET", "POST"]) : ""),
+    resolvedMode,
   };
 }
 
@@ -469,6 +646,7 @@ export function generateXray(input: XrayInput): XrayConfig {
     flow,
     clients: buildClients(input.clientCount, flow, encryption),
     transportSettings: buildTransport(input.transportSettings),
+    sockopt: buildSockopt(input.sockopt),
     ...(encryption ? { vlessEncryption: encryption } : {}),
     ...(security === "reality" ? { reality: buildReality(input, caps) } : {}),
     ...(transport === "xhttp"

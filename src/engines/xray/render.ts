@@ -14,6 +14,7 @@
 import type { EngineLine } from "@/types/engine";
 import { xrayCaps } from "./versions";
 import { renderFinalMask } from "./finalmask";
+import { renderSockopt } from "./sockopt";
 import {
   grpcSettings,
   httpUpgradeSettings,
@@ -232,6 +233,7 @@ function streamSettings(cfg: XrayConfig): Record<string, unknown> {
   const reality = realitySettings(cfg);
   const xhttp = xhttpSettings(cfg);
   const finalmask = renderFinalMask(cfg.finalMask);
+  const sockopt = renderSockopt(cfg.sockopt);
 
   return {
     [transportKey]: cfg.transport,
@@ -240,6 +242,7 @@ function streamSettings(cfg: XrayConfig): Record<string, unknown> {
     ...(xhttp ? { xhttpSettings: xhttp } : {}),
     ...transportBlock(cfg),
     ...(finalmask ? { finalmask } : {}),
+    ...(sockopt ? { sockopt } : {}),
   };
 }
 

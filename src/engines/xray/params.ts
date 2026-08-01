@@ -33,12 +33,23 @@ import {
 import { XRAY_VERSIONS } from "./versions";
 
 /**
- * An XRay parameter, plus whether the generator produces it yet.
+ * An XRay parameter, and how far Architect supports it.
  *
- * The flag is on the catalogue rather than in a TODO comment because a
- * comment cannot be tested. `generated: false` means the core accepts the
- * parameter and Architect does not offer it — a gap, listed where it can be
- * counted.
+ * Two flags rather than one, because a single one conflated two different
+ * states and made the coverage number wrong in both directions.
+ *
+ *   - `offered` — the user can set it and the value reaches the config.
+ *   - `generated` — Architect chooses a value without being asked.
+ *
+ * Most parameters want both. Some want only `offered`, and deliberately:
+ * `acceptProxyProtocol` breaks the inbound unless something upstream really
+ * does speak PROXY protocol, and `maxTimeDiff` cuts off clients whose clocks
+ * are wrong. Inventing a value for either would be a worse tool, not a more
+ * complete one — so the gap that matters is `offered: false`, and that is
+ * what the roadmap counts.
+ *
+ * The flags are on the catalogue rather than in a TODO comment because a
+ * comment cannot be tested.
  */
 export interface XrayParam extends ParamDescriptor {
   /** Which block of the config it belongs to, for grouping in the UI. */
@@ -52,15 +63,28 @@ export interface XrayParam extends ParamDescriptor {
     | "transport"
     | "sockopt"
     | "finalmask";
-  /** True when `generateXray` emits it today. */
+  /** True when `generateXray` chooses a value on its own. */
   generated: boolean;
+  /**
+   * True when the user can set it and the value reaches the config.
+   *
+   * Defaults to `generated`: anything Architect produces is by definition
+   * wired through. Set it explicitly for the parameters that are settable but
+   * deliberately not invented.
+   */
+  offered: boolean;
 }
 
 const FLOOR = "24.11.11";
 
 /** Shorthand: most entries share the floor version and are server-side. */
-function p(param: Omit<XrayParam, "since"> & { since?: string }): XrayParam {
-  return { since: FLOOR, ...param };
+function p(
+  param: Omit<XrayParam, "since" | "offered"> & {
+    since?: string;
+    offered?: boolean;
+  },
+): XrayParam {
+  return { since: FLOOR, offered: param.generated, ...param };
 }
 
 /* ── The catalogue ────────────────────────────────────────────────────────── */
@@ -190,6 +214,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "shared",
     field: "reality.maxClientVer",
     generated: false,
+    offered: true,
     source: "transport_security.go: MaxClientVer",
     note: "Верхняя граница версии клиента. Зеркало minClientVer.",
   }),
@@ -200,6 +225,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "shared",
     field: "reality.maxTimeDiff",
     generated: false,
+    offered: true,
     source: "transport_security.go: MaxTimeDiff",
     note: "Допустимое расхождение часов между сторонами, мс.",
   }),
@@ -236,6 +262,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     since: "25.7.23",
     field: "reality.limitFallbackUpload",
     generated: false,
+    offered: true,
     source: "transport_security.go: LimitFallback",
     note: "Троттлинг трафика, ушедшего на сайт-донор.",
   }),
@@ -248,6 +275,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     since: "25.7.23",
     field: "reality.limitFallbackDownload",
     generated: false,
+    offered: true,
     source: "transport_security.go: LimitFallback",
   }),
   p({
@@ -324,7 +352,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "text",
     scope: "shared",
     field: "xhttp.headers",
-    generated: false,
+    generated: true,
     source: 'transport_method.go: "headers" can not contain "host"',
   }),
   p({
@@ -392,7 +420,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "text",
     scope: "shared",
     field: "xhttp.uplinkHttpMethod",
-    generated: false,
+    generated: true,
     source: "transport_method.go: GET only in packet-up mode",
   }),
   p({
@@ -432,7 +460,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "text",
     scope: "shared",
     field: "xhttp.sessionIdTable",
-    generated: false,
+    generated: true,
     source: "transport_method.go: ASCII only, room must exceed 2^31",
     note: "Алфавит идентификатора сессии. Меняет то, как он выглядит в URL.",
   }),
@@ -465,6 +493,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.uplinkDataPlacement",
     bounds: { oneOf: ["auto", "body", "cookie", "header"] },
     generated: false,
+    offered: true,
     source: "transport_method.go: cookie/header only in packet-up",
   }),
   p({
@@ -474,6 +503,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "shared",
     field: "xhttp.uplinkDataKey",
     generated: false,
+    offered: true,
     source: "transport_method.go: default x_data / X-Data",
     note: "Имя параметра, в котором едут данные восходящего потока.",
   }),
@@ -483,7 +513,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.uplinkChunkSize",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "noGRPCHeader",
@@ -511,7 +541,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.scMaxEachPostBytes",
-    generated: false,
+    generated: true,
     note: "Сколько байт уходит одним POST. Заметно влияет на форму трафика.",
   }),
   p({
@@ -520,7 +550,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.scMinPostsIntervalMs",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "scMaxBufferedPosts",
@@ -528,7 +558,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "int",
     scope: "sender",
     field: "xhttp.scMaxBufferedPosts",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "scStreamUpServerSecs",
@@ -536,7 +566,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.scStreamUpServerSecs",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "serverMaxHeaderBytes",
@@ -545,7 +575,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "local",
     field: "xhttp.serverMaxHeaderBytes",
     bounds: { min: 0 },
-    generated: false,
+    generated: true,
     source: "transport_method.go: negative is refused",
   }),
   p({
@@ -583,7 +613,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.xmuxCMaxReuseTimes",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "hMaxRequestTimes",
@@ -591,7 +621,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.xmuxHMaxRequestTimes",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "hMaxReusableSecs",
@@ -599,7 +629,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "range",
     scope: "sender",
     field: "xhttp.xmuxHMaxReusableSecs",
-    generated: false,
+    generated: true,
   }),
   p({
     key: "hKeepAlivePeriod",
@@ -607,7 +637,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "int",
     scope: "sender",
     field: "xhttp.xmuxHKeepAlivePeriod",
-    generated: false,
+    generated: true,
   }),
 
   /* ── Other transports ─────────────────────────────────────────────────── */
@@ -618,6 +648,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "local",
     field: "transportSettings.acceptProxyProtocol",
     generated: false,
+    offered: true,
     source: "transport_method.go: TCPConfig, WebSocketConfig, HttpUpgradeConfig",
   }),
   p({
@@ -654,7 +685,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     kind: "flag",
     scope: "shared",
     field: "transportSettings.grpcMultiMode",
-    generated: false,
+    generated: true,
     source: "transport_method.go: GRPCConfig.MultiMode",
     note: "Обе стороны должны совпасть: односторонний multiMode ломает поток.",
   }),
@@ -672,14 +703,119 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
 
   /* ── sockopt and finalmask ────────────────────────────────────────────── */
   p({
-    key: "sockopt",
+    key: "tcpcongestion",
+    group: "sockopt",
+    kind: "enum",
+    scope: "local",
+    field: "sockopt.tcpCongestion",
+    bounds: { oneOf: ["", "bbr", "cubic", "reno"] },
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.TcpCongestion",
+    note: "Управление перегрузкой. Видно снаружи по форме трафика, но алгоритма может не быть в ядре системы — поэтому выбирается вручную.",
+  }),
+  p({
+    key: "tcpKeepAliveIdle",
+    group: "sockopt",
+    kind: "int",
+    scope: "local",
+    field: "sockopt.tcpKeepAliveIdle",
+    generated: true,
+    source: "transport_internet.go: SocketConfig.TcpKeepAliveIdle",
+    note: "Сколько секунд простоя до первой keepalive-пробы.",
+  }),
+  p({
+    key: "tcpKeepAliveInterval",
+    group: "sockopt",
+    kind: "int",
+    scope: "local",
+    field: "sockopt.tcpKeepAliveInterval",
+    generated: true,
+    source: "transport_internet.go: SocketConfig.TcpKeepAliveInterval",
+    note: "Интервал между пробами. Одинаковый у всех — это тайминг, который можно измерить.",
+  }),
+  p({
+    key: "tcpUserTimeout",
+    group: "sockopt",
+    kind: "int",
+    scope: "local",
+    field: "sockopt.tcpUserTimeout",
+    generated: true,
+    source: "transport_internet.go: SocketConfig.TcpUserTimeout",
+  }),
+  p({
+    key: "tcpNoDelay",
+    group: "sockopt",
+    kind: "flag",
+    scope: "local",
+    field: "sockopt.tcpNoDelay",
+    generated: true,
+    source: "transport_internet.go: SocketConfig.TcpNoDelay",
+  }),
+  p({
+    key: "tcpFastOpen",
+    group: "sockopt",
+    kind: "flag",
+    scope: "local",
+    field: "sockopt.tcpFastOpen",
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.Tfo",
+    note: "Данные в SYN. Промежуточные узлы обрабатывают это по-разному, так что по умолчанию выключено.",
+  }),
+  p({
+    key: "tcpMptcp",
+    group: "sockopt",
+    kind: "flag",
+    scope: "local",
+    field: "sockopt.tcpMptcp",
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.TcpMptcp",
+    note: "Multipath TCP. Нужна поддержка ядра с обеих сторон, иначе соединение не встаёт вовсе.",
+  }),
+  p({
+    key: "tcpMaxSeg",
+    group: "sockopt",
+    kind: "int",
+    scope: "local",
+    field: "sockopt.tcpMaxSeg",
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.TcpMaxSeg",
+  }),
+  p({
+    key: "domainStrategy",
+    group: "sockopt",
+    kind: "enum",
+    scope: "local",
+    field: "sockopt.domainStrategy",
+    bounds: { oneOf: ["AsIs", "UseIP", "UseIPv4", "UseIPv6"] },
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.DomainStrategy",
+  }),
+  p({
+    key: "mark",
+    group: "sockopt",
+    kind: "int",
+    scope: "local",
+    field: "sockopt.mark",
+    generated: false,
+    offered: true,
+    source: "transport_internet.go: SocketConfig.Mark",
+    note: "Метка маршрутизации. Зависит от конкретной машины, поэтому не подставляется.",
+  }),
+  p({
+    key: "interface",
     group: "sockopt",
     kind: "text",
     scope: "local",
-    field: "sockopt",
+    field: "sockopt.bindInterface",
     generated: false,
-    source: "transport_internet.go: SocketConfig",
-    note: "Настройки сокета: mark, TCP Fast Open, tproxy, интерфейс.",
+    offered: true,
+    source: "transport_internet.go: SocketConfig.Interface",
+    note: "Интерфейс, к которому привязан сокет. Угаданное имя даёт конфиг, который не стартует.",
   }),
   p({
     key: "finalmask",
@@ -760,15 +896,36 @@ export const XRAY_GENERATED = XRAY_PARAMETERS.filter((p) => p.generated);
  * counted, grouped and shown — and so that adding support for one means
  * flipping a flag, not remembering to delete a TODO.
  */
-export const XRAY_MISSING = XRAY_PARAMETERS.filter((p) => !p.generated);
+/**
+ * Parameters the core accepts and Architect cannot express at all.
+ *
+ * This, and not the un-generated set, is the roadmap. A parameter the user can
+ * set is supported whether or not anything invents a value for it — and for
+ * several of them inventing one would be a defect, since the right value
+ * depends on infrastructure Architect cannot see.
+ */
+export const XRAY_MISSING = XRAY_PARAMETERS.filter((p) => !p.offered);
 
-/** How much of the known surface is generated, per block. */
-export function xrayCoverage(): Record<string, { done: number; total: number }> {
-  const out: Record<string, { done: number; total: number }> = {};
+/**
+ * Parameters that are settable but never chosen for you.
+ *
+ * Kept separate rather than folded into either side: it is a real category,
+ * and one worth showing, because a user reading the panel should know which
+ * fields stay at the core's defaults unless they act.
+ */
+export const XRAY_MANUAL = XRAY_PARAMETERS.filter((p) => p.offered && !p.generated);
+
+/** How much of the known surface Architect covers, per block. */
+export function xrayCoverage(): Record<
+  string,
+  { done: number; manual: number; total: number }
+> {
+  const out: Record<string, { done: number; manual: number; total: number }> = {};
   for (const param of XRAY_PARAMETERS) {
-    const bucket = (out[param.group] ??= { done: 0, total: 0 });
+    const bucket = (out[param.group] ??= { done: 0, manual: 0, total: 0 });
     bucket.total += 1;
     if (param.generated) bucket.done += 1;
+    else if (param.offered) bucket.manual += 1;
   }
   return out;
 }

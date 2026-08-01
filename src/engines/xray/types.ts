@@ -95,6 +95,7 @@ export type VlessEncryptionMode = "native" | "xorpub" | "random";
 
 import type { FinalMaskConfig, FinalMaskInput } from "./finalmask";
 import type { TransportConfig, TransportInput } from "./transports";
+import type { SockoptConfig, SockoptInput } from "./sockopt";
 
 /* ── Input ────────────────────────────────────────────────────────────────── */
 
@@ -257,6 +258,14 @@ export interface XrayInput {
   transportSettings: TransportInput;
 
   /**
+   * Options on the socket underneath everything else.
+   *
+   * Congestion control and keepalive timing are visible from outside and
+   * identical across every deployment that never set them.
+   */
+  sockopt: SockoptInput;
+
+  /**
    * FinalMask: XRay's own obfuscation, below the transport.
    *
    * The closest thing the core has to what AmneziaWG does — junk packets and
@@ -339,6 +348,9 @@ export interface XrayConfig {
 
   /** Settings for whichever transport was chosen. */
   transportSettings: TransportConfig;
+
+  /** Socket options, below every other layer. */
+  sockopt: SockoptConfig;
 
   /**
    * FinalMask: XRay obfuscating its own traffic, below the transport.
