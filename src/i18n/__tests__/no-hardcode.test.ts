@@ -72,6 +72,35 @@ function hardcoded(source: string): string[] {
   return found;
 }
 
+/**
+ * Cyrillic written straight into the markup, as text rather than as a string.
+ *
+ * A separate pass because the first one only sees quoted strings, and the
+ * commonest way to hard-code a sentence in a Vue file is not to quote it at
+ * all — `<div>Профиль нестабилен.</div>`. Four of those survived the sweep
+ * that was supposed to have finished this, and the test passed anyway.
+ */
+function hardcodedInTemplate(source: string): string[] {
+  const start = source.indexOf("<template>");
+  const end = source.lastIndexOf("</template>");
+  if (start < 0 || end < 0) return [];
+
+  const markup = source
+    .slice(start + "<template>".length, end)
+    // Interpolations are expressions, and their strings are covered above.
+    .replace(/\{\{[\s\S]*?\}\}/g, "")
+    // Attribute values likewise: `:label="t('…')"` and `placeholder="…"` are
+    // both quoted, so the literal pass already reads them.
+    .replace(/=\s*"[^"]*"/g, "")
+    .replace(/=\s*'[^']*'/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+
+  return markup
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => /[а-яА-ЯёЁ]/.test(line));
+}
+
 describe("interface text lives in the catalogue", () => {
   it("has no Russian string literals in the source", () => {
     const offenders: string[] = [];
@@ -79,6 +108,18 @@ describe("interface text lives in the catalogue", () => {
     for (const file of sourceFiles("src")) {
       for (const text of hardcoded(readFileSync(file, "utf8"))) {
         offenders.push(`${file}: ${text.slice(0, 70)}`);
+      }
+    }
+
+    expect(offenders, "move these into src/i18n/locales").toEqual([]);
+  });
+
+  it("has no Russian written straight into the markup", () => {
+    const offenders: string[] = [];
+
+    for (const file of sourceFiles("src").filter((f) => f.endsWith(".vue"))) {
+      for (const line of hardcodedInTemplate(readFileSync(file, "utf8"))) {
+        offenders.push(`${file}: ${line.slice(0, 70)}`);
       }
     }
 

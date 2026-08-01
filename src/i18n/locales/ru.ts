@@ -910,6 +910,14 @@ export const ru = {
   "history.noMatch": "Ничего не нашлось. Попробуйте другой запрос.",
   "history.note": "Заметка",
   "history.notePlaceholder": "Чем эта запись отличается",
+  "gen.fp.yandexUnstable": "Профиль Яндекс Браузера нестабилен.",
+  "gen.extreme.warning":
+    "Jc до 128, S3 до 256, разброс H1–H4 до 10M. Может увеличить оверхед трафика.",
+  "gen.router.warning":
+    "Jc ≤ 3, Jmax ≤ 128, I2–I5 отключены. Для слабых устройств: NanoPi, Keenetic, OpenWrt.",
+  "gen.preview.waiting": "// Ожидание генерации…",
+  "gen.fp.yandexDesktop": "Яндекс Браузер Desktop ⚠",
+  "gen.fp.yandexMobile": "Яндекс Браузер Mobile ⚠",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

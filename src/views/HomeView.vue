@@ -1268,10 +1268,10 @@ const paramGroups = computed((): ParamGroup[] => {
                                         <option value="safari">Safari</option>
                                         <option value="edge">Edge</option>
                                         <option value="yandex_desktop">
-                                            Яндекс Браузер Desktop ⚠
+                                            {{ t("gen.fp.yandexDesktop") }}
                                         </option>
                                         <option value="yandex_mobile">
-                                            Яндекс Браузер Mobile ⚠
+                                            {{ t("gen.fp.yandexMobile") }}
                                         </option>
                                     </select>
                                     <transition name="fade">
@@ -1284,8 +1284,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                                 class="alert-icon"
                                             />
                                             <div class="alert-content">
-                                                Профиль Яндекс Браузера
-                                                нестабилен.
+                                                {{ t("gen.fp.yandexUnstable") }}
                                             </div>
                                         </div>
                                     </transition>
@@ -1418,8 +1417,8 @@ const paramGroups = computed((): ParamGroup[] => {
                                 >
                                     <TriangleAlert :size="14" />
                                     <div>
-                                        <b>Extreme mode:</b> Jc до 128, S3 до 256, H1-H4 разброс 10M.
-                                        Может увеличить оверхед трафика.
+                                        <b>{{ t("gen.extreme.title") }}:</b>
+                                        {{ t("gen.extreme.warning") }}
                                     </div>
                                 </div>
                             </transition>
@@ -1448,9 +1447,8 @@ const paramGroups = computed((): ParamGroup[] => {
                                 >
                                     <TriangleAlert :size="14" />
                                     <div>
-                                        <b>{{ t("gen.router.title") }}:</b> Jc ≤ 3, Jmax ≤
-                                        128, I2–I5 отключены. Для слабых
-                                        устройств: NanoPi, Keenetic, OpenWrt.
+                                        <b>{{ t("gen.router.title") }}:</b>
+                                        {{ t("gen.router.warning") }}
                                     </div>
                                 </div>
                             </transition>
@@ -1806,7 +1804,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <pre
                             class="preview-code"
                         ><template v-if="previewLines.length"><span v-for="(line, i) in previewLines" :key="i" class="preview-line" :class="line.type">{{ line.type === 'kv' ? `${line.key} = ${line.value}` : line.value }}
-</span></template><template v-else><span class="text-dim">// Ожидание генерации...</span></template></pre>
+</span></template><template v-else><span class="text-dim">{{ t("gen.preview.waiting") }}</span></template></pre>
                     </div>
                 </div>
             </div>
@@ -2451,12 +2449,25 @@ const paramGroups = computed((): ParamGroup[] => {
     text-transform: uppercase;
 }
 
+/*
+ * Two rows, then it stops.
+ *
+ * A row is here to identify an entry at a glance — the whole config is one
+ * click away on the restore button. An AWG 3.0 entry carries five CPS chains
+ * and a header-protection key, and with every long value claiming a row of
+ * its own a single entry filled the entire panel.
+ */
 .he-params {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     flex: 1;
     min-width: 0;
+    max-height: 2.6rem;
+    overflow: hidden;
+    /* Fades rather than cuts, so it reads as "there is more" instead of as a
+       rendering fault. */
+    mask-image: linear-gradient(to bottom, #000 60%, transparent);
 }
 
 .he-param {
@@ -2467,9 +2478,9 @@ const paramGroups = computed((): ParamGroup[] => {
     max-width: 180px;
 }
 
+/* A long value gets more room, not a row to itself. */
 .he-param-wide {
-    max-width: 100%;
-    flex-basis: 100%;
+    max-width: 260px;
 }
 
 .he-param-k {
@@ -2533,36 +2544,9 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 /* ── Panel (shared) ───────────────────────────────────────────────────── */
-.panel {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-}
-
-.panel-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border2);
-}
-
-.panel-title {
-    font-family: var(--fu);
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text2);
-}
-
-.panel-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
+/* .panel, .panel-head, .panel-title and .panel-body are global — see
+   assets/main.css. They were here, which put them out of reach of every
+   other view that used the same class names. */
 
 /* ── Controls Panel ───────────────────────────────────────────────────── */
 .panel-controls {

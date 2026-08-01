@@ -85,6 +85,17 @@
     /* Semantic Aliases */
     --accent: var(--amber2);
     --accent-glow: var(--ag);
+    /*
+     * Names three views were already using that nothing ever defined.
+     * `var(--muted)` with no value falls through to the inherited colour and
+     * `var(--panel)` to a transparent background — which is why the simulator
+     * s panels had no shell at all. Aliases rather than new colours: the
+     * intent was plainly the existing tokens under an older set of names.
+     */
+    --panel: var(--bg2);
+    --panel-2: var(--bg3);
+    --muted: var(--text3);
+
     --radius: 12px;
     --radius-sm: 8px;
     --radius-lg: 16px;
@@ -928,6 +939,43 @@ pre {
     .tooltip-layer.below.visible {
         transform: none;
     }
+}
+
+/* ── Panels ───────────────────────────────────────────────────────────────── */
+/*
+ * Lived in HomeView s scoped block, where the simulator could not reach it —
+ * so `class="panel"` there resolved to nothing and rendered as bare text on the
+ * page background.
+ */
+.panel {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border2);
+}
+
+.panel-title {
+    font-family: var(--fu);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text2);
+}
+
+.panel-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 /* ── Responsive Visibility ────────────────────────────────────────────────── */

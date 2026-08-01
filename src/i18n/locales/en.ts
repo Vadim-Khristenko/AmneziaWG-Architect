@@ -897,6 +897,14 @@ export const en: Catalog = {
   "history.noMatch": "Nothing matched. Try a different query.",
   "history.note": "Note",
   "history.notePlaceholder": "What makes this one different",
+  "gen.fp.yandexUnstable": "The Yandex Browser profile is unstable.",
+  "gen.extreme.warning":
+    "Jc up to 128, S3 up to 256, H1–H4 spread up to 10M. May add traffic overhead.",
+  "gen.router.warning":
+    "Jc ≤ 3, Jmax ≤ 128, I2–I5 off. For modest hardware: NanoPi, Keenetic, OpenWrt.",
+  "gen.preview.waiting": "// Waiting for a generation…",
+  "gen.fp.yandexDesktop": "Yandex Browser Desktop ⚠",
+  "gen.fp.yandexMobile": "Yandex Browser Mobile ⚠",
 };
 
 export default en;
