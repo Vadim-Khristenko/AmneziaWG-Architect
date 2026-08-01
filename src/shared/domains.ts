@@ -145,11 +145,38 @@ export function rolesOf(
   return ALL_ROLES.filter((role) => meetsRole(domain, role, allowUnknown));
 }
 
+/**
+ * Answers already worked out, keyed by the question.
+ *
+ * The database is fixed at build time, so the same query always has the same
+ * answer and there is no invalidation to get wrong. Worth caching because the
+ * callers are not one-off: the generator asks per packet, and the panel that
+ * shows example hosts asks once per role per recompute — fourteen sweeps of
+ * two and a half thousand records every time the profile changes.
+ */
+const answers = new Map<string, readonly DomainRecord[]>();
+
+function cacheKey(query: DomainQuery): string {
+  const { regions, role, dnsType, excludeCdn, whitelistedIn, allowUnknown } = query;
+  return [
+    regions?.join("+") ?? "",
+    role ?? "",
+    dnsType ?? "",
+    excludeCdn?.join("+") ?? "",
+    whitelistedIn ?? "",
+    allowUnknown ? "1" : "",
+  ].join("|");
+}
+
 /** Every domain matching a query, in database order. */
 export function findDomains(query: DomainQuery = {}): readonly DomainRecord[] {
+  const key = cacheKey(query);
+  const known = answers.get(key);
+  if (known) return known;
+
   const { regions, role, dnsType, excludeCdn, whitelistedIn, allowUnknown = false } = query;
 
-  return DOMAINS.filter((domain) => {
+  const found = DOMAINS.filter((domain) => {
     if (regions?.length && !domain.regions.some((r) => regions.includes(r))) {
       return false;
     }
@@ -158,11 +185,23 @@ export function findDomains(query: DomainQuery = {}): readonly DomainRecord[] {
     if (role && !meetsRole(domain, role, allowUnknown, dnsType)) return false;
     return true;
   });
+
+  answers.set(key, found);
+  return found;
 }
+
+/** The names for a query, cached beside the records for the same reason. */
+const names = new Map<string, readonly string[]>();
 
 /** Hostnames matching a query — what the generators actually want. */
 export function hostsFor(query: DomainQuery = {}): readonly string[] {
-  return findDomains(query).map((d) => d.host);
+  const key = cacheKey(query);
+  const known = names.get(key);
+  if (known) return known;
+
+  const found = findDomains(query).map((d) => d.host);
+  names.set(key, found);
+  return found;
 }
 
 /**

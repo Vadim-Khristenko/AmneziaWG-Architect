@@ -24,7 +24,7 @@ import {
   rolesOf,
   REGIONS,
 } from "../domains";
-import type { DomainRecord } from "@/types/domain";
+import type { DomainQuery, DomainRecord } from "@/types/domain";
 
 /** A record with nothing established, to be overridden field by field. */
 const blank: DomainRecord = {
@@ -253,5 +253,54 @@ describe("the database itself", () => {
     expect(stats.total).toBe(DOMAINS.length);
     expect(stats.verified).toBeLessThanOrEqual(stats.total);
     expect(hostsFor({}).length).toBe(DOMAINS.length);
+  });
+});
+
+/**
+ * The cache is an optimisation, and an optimisation that changes an answer is
+ * a bug wearing a stopwatch.
+ */
+describe("remembering answers", () => {
+  it("gives the same result whether or not it has been asked before", () => {
+    const queries: DomainQuery[] = [
+      { role: "quic" },
+      { role: "quic", regions: ["ru"] },
+      { role: "quic", regions: ["ru"], allowUnknown: true },
+      { role: "dns", dnsType: "MX" },
+      { role: "dns", dnsType: "A" },
+      { role: "donor", excludeCdn: ["cloudflare"] },
+      { whitelistedIn: "ru" },
+    ];
+
+    for (const query of queries) {
+      const first = findDomains(query).map((d) => d.host);
+      const second = findDomains(query).map((d) => d.host);
+      expect(second, JSON.stringify(query)).toEqual(first);
+    }
+  });
+
+  it("keeps queries apart that differ only in one field", () => {
+    // A key that collapsed two of these would serve one query's answer to the
+    // other, which is the failure mode a cache brings with it.
+    const a = hostsFor({ role: "dns", dnsType: "A" });
+    const mx = hostsFor({ role: "dns", dnsType: "MX" });
+    expect(a).not.toEqual(mx);
+
+    const strict = hostsFor({ role: "quic", regions: ["cn"] });
+    const loose = hostsFor({ role: "quic", regions: ["cn"], allowUnknown: true });
+    expect(loose.length).toBeGreaterThanOrEqual(strict.length);
+
+    const anyCdn = hostsFor({ role: "tls" });
+    const noCloudflare = hostsFor({ role: "tls", excludeCdn: ["cloudflare"] });
+    expect(noCloudflare.length).toBeLessThan(anyCdn.length);
+  });
+
+  it("still draws differently each time, cache or no cache", () => {
+    // The pool is remembered; the pick is not. A cached draw would give every
+    // packet in a run the same hostname.
+    const drawn = new Set(
+      Array.from({ length: 40 }, () => pickHost({ role: "tls" })),
+    );
+    expect(drawn.size).toBeGreaterThan(1);
   });
 });
