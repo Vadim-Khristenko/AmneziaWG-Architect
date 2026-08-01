@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * ConfigEditor.vue — "Редактор & Конвертер" for the /mergekeys page.
+ * ConfigEditor.vue — the editor and converter on the /mergekeys page.
  *
  * Uses useConfigEditor composable as the single source of truth.
  * Supports three input formats: vpn:// key, AmneziaWG .conf, JSON.
@@ -31,26 +31,14 @@ import {
     OBFUSCATION_KEYS,
 } from "@/composables/useConfigEditor";
 import { parseConf, vpnToConf } from "@/engines/awg/awgFormat";
-import { pluralRu } from "@/utils/plural";
 import { useI18n } from "@/i18n";
 import { resolveFinding } from "@/shared/findings";
 import type { GeneratedParams, AwgVersion } from "@/engines/awg/mergekeys";
 
 const { locale, t } = useI18n();
 
-/**
- * Russian needs three plural forms; English two. Selected by locale so the
- * key counter reads naturally in both.
- */
-const KEY_FORMS: [string, string, string] = ["ключ", "ключа", "ключей"];
-
-function keyWord(n: number): string {
-    return locale.value === "ru"
-        ? pluralRu(n, KEY_FORMS)
-        : n === 1
-          ? "key"
-          : "keys";
-}
+/** The counter reads naturally in each language; the catalogue knows how. */
+const keyWord = (n: number) => t("count.key", { n });
 
 /* ── Props & emits ──────────────────────────────────────────────────────── */
 

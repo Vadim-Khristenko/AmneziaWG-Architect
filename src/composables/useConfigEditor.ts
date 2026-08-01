@@ -6,29 +6,22 @@
  * views can never drift apart.
  *
  * Multi-key mode: when rawText holds several vpn:// keys (one per line), the
- * editor edits one "active" key while "Обновить обфускацию" patches them all.
+ * editor edits one "active" key while the refresh action patches them all.
  *
  * All work is local — nothing leaves the browser.
  */
 
 import { ref, computed, watch } from "vue";
-import { locale, translate } from "@/i18n";
-import { pluralRu } from "@/utils/plural";
+import { translate } from "@/i18n";
 
 /**
- * Locale-aware plurals. Russian takes three forms, English two — a shared
- * helper keeps the message builders below readable.
+ * Counted nouns come from the catalogue, which already knows each language's
+ * plural rules through Intl.PluralRules. The previous pair of helpers carried
+ * the Russian forms inline and branched on `locale === "ru"`, so a third
+ * language would silently have taken the English rule.
  */
-function keyWord(n: number): string {
-  if (locale.value === "ru") return pluralRu(n, ["ключе", "ключах", "ключах"]);
-  return n === 1 ? "key" : "keys";
-}
-
-function containerWord(n: number): string {
-  if (locale.value === "ru")
-    return pluralRu(n, ["контейнер", "контейнера", "контейнеров"]);
-  return n === 1 ? "container" : "containers";
-}
+const keyWord = (n: number) => translate("count.keyIn", { n });
+const containerWord = (n: number) => translate("count.container", { n });
 import {
   detectFormat,
   confToVpn,

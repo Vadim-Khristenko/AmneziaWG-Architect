@@ -743,6 +743,28 @@ export const en: Catalog = {
   "mk.err.needTwo": "Merging needs at least two keys.",
   "mk.warn.duplicateContainer":
     "Container “{name}” from key #{from} was skipped — key #{seen} already carries it.",
+
+  /* ── Counted nouns ────────────────────────────────────────────────────── */
+  "count.key": { one: "key", other: "keys" },
+  "count.keyIn": { one: "key", other: "keys" },
+  "count.container": { one: "container", other: "containers" },
+
+  /* ── Generator: the custom-host field ─────────────────────────────────── */
+  "gen.host.hint.quic": "A host that speaks HTTP/3. From the database: {examples}",
+  "gen.host.hint.tls": "Any host with TLS 1.3. From the database: {examples}",
+  "gen.host.hint.dtls": "A host that answers DTLS — WebRTC or TURN: {examples}",
+  "gen.host.hint.sip": "A host that really does answer SIP: {examples}",
+  "gen.host.hint.stun": "A STUN server answering on 3478: {examples}",
+  "gen.host.hint.dns": "A name that has an A record: {examples}",
+  "gen.host.hint.random":
+    "The profile is drawn at random and the name to match. Yours works too.",
+  "gen.host.placeholder.quic": "for example {example}",
+  "gen.host.placeholder.tls": "for example {example}",
+  "gen.host.placeholder.dtls": "for example {example}",
+  "gen.host.placeholder.sip": "for example {example}",
+  "gen.host.placeholder.stun": "for example {example}",
+  "gen.host.placeholder.dns": "for example {example}",
+  "gen.host.placeholder.random": "your own host (optional)",
 };
 
 export default en;

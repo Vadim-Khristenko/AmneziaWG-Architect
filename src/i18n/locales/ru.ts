@@ -741,6 +741,43 @@ export const ru = {
   "mk.err.needTwo": "Для объединения нужно минимум 2 ключа.",
   "mk.warn.duplicateContainer":
     "Дубликат контейнера «{name}» из ключа #{from} пропущен — он уже есть из ключа #{seen}.",
+
+  /* ── Counted nouns ────────────────────────────────────────────────────── */
+  "count.key": {
+    one: "ключ",
+    few: "ключа",
+    many: "ключей",
+    other: "ключей",
+  },
+  "count.keyIn": {
+    one: "ключе",
+    few: "ключах",
+    many: "ключах",
+    other: "ключах",
+  },
+  "count.container": {
+    one: "контейнер",
+    few: "контейнера",
+    many: "контейнеров",
+    other: "контейнеров",
+  },
+
+  /* ── Generator: the custom-host field ─────────────────────────────────── */
+  "gen.host.hint.quic": "Хост с HTTP/3. Примеры из базы: {examples}",
+  "gen.host.hint.tls": "Любой хост с TLS 1.3. Примеры из базы: {examples}",
+  "gen.host.hint.dtls": "Хост, отвечающий по DTLS — WebRTC или TURN: {examples}",
+  "gen.host.hint.sip": "Хост, который действительно отвечает по SIP: {examples}",
+  "gen.host.hint.stun": "STUN-сервер, отвечающий на 3478: {examples}",
+  "gen.host.hint.dns": "Имя, у которого есть A-запись: {examples}",
+  "gen.host.hint.random":
+    "Профиль выбирается случайно, имя — под него. Можно указать своё.",
+  "gen.host.placeholder.quic": "например, {example}",
+  "gen.host.placeholder.tls": "например, {example}",
+  "gen.host.placeholder.dtls": "например, {example}",
+  "gen.host.placeholder.sip": "например, {example}",
+  "gen.host.placeholder.stun": "например, {example}",
+  "gen.host.placeholder.dns": "например, {example}",
+  "gen.host.placeholder.random": "свой хост (необязательно)",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

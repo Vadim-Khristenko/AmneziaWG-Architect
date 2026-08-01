@@ -9,7 +9,7 @@
  *   - feedback(ok) — подтверждение/отклонение конфига с автоусилением
  *   - setVersion / setIntensity — переключение режимов
  *   - addLog — журнал последних действий
- *   - hintMap / placeholderMap — подсказки по профилям
+ *   - hintMap / placeholderMap — help text for the custom-host field
  */
 
 import { ref, reactive, computed, watch } from "vue";
@@ -29,6 +29,8 @@ import {
   type RenderLabels,
 } from "@/engines/awg/generator";
 import { translate } from "@/i18n";
+import { hostsFor } from "@/shared/domains";
+import type { DomainRegion, DomainRole } from "@/types/domain";
 import { copyText } from "@/utils/clipboard";
 import { downloadText } from "@/utils/download";
 import { confToVpn, buildVpnConfig } from "@/engines/awg/awgFormat";
@@ -467,38 +469,96 @@ export function useGenerator() {
     );
   }
 
-  // ── Подсказки по профилям ─────────────────────────────────────────────────
+  /* ── The custom-host field ─────────────────────────────────────────────── */
 
-  /** Подсказки под полем кастомного хоста */
-  const hintMap: Record<MimicProfile, string> = {
-    quic_initial: "QUIC-capable: fastly.net, cdn-apple.com, yastatic.net …",
-    quic_0rtt: "QUIC 0-RTT: fastly.net, s3.amazonaws.com, yastatic.net …",
-    tls_client_hello: "Любой HTTPS-хост: vk.com, github.com, ozon.ru …",
-    dtls: "STUN/TURN-сервер: stun.yandex.net, stun.jit.si …",
-    http3: "HTTP/3-хост: fastly.net, cdn.gcore.com, yandex.net …",
-    sip: "SIP-регистратор: sip.zadarma.com, sip.linphone.org …",
-    wireguard_noise: "WireGuard Noise_IK — хост не используется",
-    tls_to_quic: "TLS+QUIC: vk.com, yandex.ru, ozon.ru …",
-    quic_burst: "QUIC-burst: fastly.net, cdn-apple.com, yastatic.net …",
-    dns_query: "DNS-сервер: 8.8.8.8, 1.1.1.1, 77.88.8.8 (или оставьте пустым для пула)",
-    random:
-      "Пул выбирается по случайному профилю (опционально укажите свой хост)",
+  /**
+   * Which role each profile's host has to fill.
+   *
+   * The same table the generator draws by, so the hint and the draw cannot
+   * disagree — the previous version listed `vk.com` under DTLS and
+   * `stun.yandex.net` as a STUN example, neither of which was true of what
+   * the generator actually picked.
+   */
+  const PROFILE_ROLE: Record<MimicProfile, DomainRole | "none"> = {
+    quic_initial: "quic",
+    quic_0rtt: "quic",
+    http3: "quic",
+    quic_burst: "quic",
+    tls_client_hello: "tls",
+    tls_to_quic: "tls",
+    dtls: "dtls",
+    sip: "sip",
+    dns_query: "dns",
+    wireguard_noise: "none",
+    random: "none",
   };
 
-  /** Placeholder для поля кастомного хоста */
-  const placeholderMap: Record<MimicProfile, string> = {
-    quic_initial: "Хост с QUIC (напр., fastly.net)",
-    quic_0rtt: "Хост с QUIC 0-RTT (напр., cdn-apple.com)",
-    tls_client_hello: "Любой домен (напр., github.com)",
-    dtls: "STUN/TURN-хост (напр., stun.jit.si)",
-    http3: "HTTP/3-домен (напр., vk.com)",
-    sip: "SIP-сервер (напр., sip.zadarma.com)",
-    wireguard_noise: "Хост не используется для этого профиля",
-    tls_to_quic: "TLS→QUIC хост (напр., vk.com)",
-    quic_burst: "QUIC-хост (напр., fastly.net)",
-    dns_query: "DNS-сервер (напр., 8.8.8.8) или домен",
-    random: "Свой домен (опционально)",
-  };
+  /**
+   * Examples taken from the database rather than written down.
+   *
+   * A hint naming hosts that were true in Q1 2026 ages exactly as badly as the
+   * pools did, and for the same reason. These are hosts that qualify right
+   * now, for the role this profile actually asks for.
+   */
+  function examplesFor(role: DomainRole, count: number): string[] {
+    const regions =
+      config.hostRegion === "any"
+        ? undefined
+        : [config.hostRegion as DomainRegion];
+    const found = hostsFor({ regions, role });
+    const pool = found.length ? found : hostsFor({ role, allowUnknown: true });
+
+    // An example is meant to be recognised, so the shortest names win and
+    // each has to come from a different site. Taking the head of the list
+    // instead gave "00.img.avito.st, 01.img.avito.st, 05.img.avito.st" —
+    // three shards of one CDN, alphabetically first and useless as examples.
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const host of [...pool].sort((a, b) => a.length - b.length)) {
+      const site = host.split(".").slice(-2).join(".");
+      if (seen.has(site)) continue;
+      seen.add(site);
+      out.push(host);
+      if (out.length === count) break;
+    }
+    return out;
+  }
+
+  /** Help text under the custom-host field. */
+  const hintMap = computed<Record<MimicProfile, string>>(() => {
+    const out = {} as Record<MimicProfile, string>;
+    for (const profile of Object.keys(PROFILE_ROLE) as MimicProfile[]) {
+      const role = PROFILE_ROLE[profile];
+      if (role === "none") {
+        // Noise names no host at all, and the field is hidden for it — see
+        // showCustomHost. Nothing reads this, so nothing is written.
+        out[profile] = profile === "random" ? translate("gen.host.hint.random") : "";
+        continue;
+      }
+      out[profile] = translate(`gen.host.hint.${role}` as "gen.host.hint.tls", {
+        examples: examplesFor(role, 3).join(", ") || "—",
+      });
+    }
+    return out;
+  });
+
+  /** Placeholder inside the custom-host field. */
+  const placeholderMap = computed<Record<MimicProfile, string>>(() => {
+    const out = {} as Record<MimicProfile, string>;
+    for (const profile of Object.keys(PROFILE_ROLE) as MimicProfile[]) {
+      const role = PROFILE_ROLE[profile];
+      if (role === "none") {
+        out[profile] =
+          profile === "random" ? translate("gen.host.placeholder.random") : "";
+        continue;
+      }
+      out[profile] = translate(
+        `gen.host.placeholder.${role}` as "gen.host.placeholder.tls",
+        { example: examplesFor(role, 1)[0] ?? "example.com" },
+      );
+    }
+    return out;
+  });
 
   // ── Вычисляемые свойства UI ───────────────────────────────────────────────
 
