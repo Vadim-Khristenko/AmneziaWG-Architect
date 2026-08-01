@@ -56,11 +56,21 @@ export function mkQUICi(input: GeneratorInput, iv: number): string {
   // Length that covers it. Two bytes are reserved for the Length varint —
   // anything past 63 bytes of payload needs them, and a QUIC Initial that
   // short would be strange in itself.
+  //
+  // `extraB` belongs in that Length as much as the padding does: every tag
+  // below puts its bytes on the wire after this header, so a Length of
+  // `pnLen + pad` under-declares the packet by exactly the tags' size. It
+  // was counted for the MTU budget and left out of the field that describes
+  // it — and a Length that does not cover what follows is the first thing a
+  // QUIC reader checks.
   const headerB = prefix.length / 2 + 2 + pnLen;
   const pad = calcPadding(headerB, extraB, getFpRange(input, "qi"), iv, input.mtu);
+  // Only what the tags actually put on the wire counts towards the
+  // Length. With <r> off the padding is never sent.
+  const sentPad = input.useTagR ? pad : 0;
 
   const hex = assertEvenHex(
-    prefix + quicVarint(pnLen + pad) + rh(pnLen),
+    prefix + quicVarint(pnLen + sentPad + extraB) + rh(pnLen),
     "mkQUICi",
   );
 
@@ -103,9 +113,12 @@ export function mkQUIC0(input: GeneratorInput, iv: number): string {
     (input.useTagC ? 4 : 0) +
     (input.useTagT ? 4 : 0);
   const pad = calcPadding(headerB, extraB, getFpRange(input, "q0"), iv, mtu);
+  // Only what the tags actually put on the wire counts towards the
+  // Length. With <r> off the padding is never sent.
+  const sentPad = input.useTagR ? pad : 0;
 
   const hex = assertEvenHex(
-    prefix + quicVarint(pnLen + pad) + rh(pnLen),
+    prefix + quicVarint(pnLen + sentPad + extraB) + rh(pnLen),
     "mkQUIC0",
   );
 
@@ -155,9 +168,12 @@ export function mkHTTP3(input: GeneratorInput, iv: number): string {
     (input.useTagC ? 4 : 0) +
     (input.useTagT ? 4 : 0);
   const pad = calcPadding(headerB, extraB, getFpRange(input, "h3"), iv, mtu);
+  // Only what the tags actually put on the wire counts towards the
+  // Length. With <r> off the padding is never sent.
+  const sentPad = input.useTagR ? pad : 0;
 
   const hex = assertEvenHex(
-    prefix + quicVarint(pnLen + pad) + rh(pnLen),
+    prefix + quicVarint(pnLen + sentPad + extraB) + rh(pnLen),
     "mkHTTP3",
   );
 

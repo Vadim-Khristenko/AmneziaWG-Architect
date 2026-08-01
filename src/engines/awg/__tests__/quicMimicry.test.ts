@@ -26,8 +26,14 @@ const seeded = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   ...over,
 });
 
-/** The `<b 0x…>` blob and the total bytes of `<r N>` padding after it. */
-function readChain(chain: string): { header: Uint8Array; padding: number } {
+/**
+ * The `<b 0x…>` blob, and every byte the tags after it put on the wire.
+ *
+ * It used to count `<r N>` alone, which is why a Length that ignored the
+ * other tags passed for as long as it did: the only test that compared the
+ * Length to what followed ran with those tags switched off.
+ */
+function readChain(chain: string): { header: Uint8Array; payload: number } {
   const blob = /<b 0x([0-9a-fA-F]*)>/.exec(chain);
   if (!blob) throw new Error(`no <b> tag in: ${chain}`);
 
@@ -37,11 +43,18 @@ function readChain(chain: string): { header: Uint8Array; padding: number } {
     header[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
   }
 
-  const padding = [...chain.matchAll(/<r (\d+)>/g)].reduce(
-    (sum, m) => sum + Number(m[1]),
-    0,
-  );
-  return { header, padding };
+  const sum = (re: RegExp) =>
+    [...chain.matchAll(re)].reduce((n, m) => n + Number(m[1]), 0);
+
+  const payload =
+    sum(/<r (\d+)>/g) +
+    sum(/<rc (\d+)>/g) +
+    sum(/<rd (\d+)>/g) +
+    // The counter and the timestamp are four bytes each.
+    (chain.match(/<c>/g)?.length ?? 0) * 4 +
+    (chain.match(/<t>/g)?.length ?? 0) * 4;
+
+  return { header, payload };
 }
 
 /** Read a QUIC variable-length integer at `at`. RFC 9000 §16. */
@@ -53,7 +66,12 @@ function readVarint(bytes: Uint8Array, at: number): { value: number; size: numbe
   return { value, size };
 }
 
-/** Parse the header the way a QUIC stack would, failing loudly if it cannot. */
+/**
+ * Parse a long header the way a QUIC stack would, failing loudly if it cannot.
+ *
+ * Named for the Initial because that is what it was written for, and kept
+ * because every long-header packet shares this shape bar the token.
+ */
 function parseInitial(header: Uint8Array) {
   let at = 0;
   const first = header[at++]!;
@@ -69,7 +87,13 @@ function parseInitial(header: Uint8Array) {
   const scidLen = header[at++]!;
   at += scidLen;
 
-  const token = readVarint(header, at);
+  // Only an Initial carries a token — RFC 9000 §17.2.2. 0-RTT (§17.2.3) and
+  // Handshake (§17.2.4) go straight to the Length, and reading a token there
+  // puts every field after it at the wrong offset.
+  const isInitial = ((first >> 4) & 0x03) === 0;
+  const token = isInitial
+    ? readVarint(header, at)
+    : { value: 0, size: 0 };
   at += token.size + token.value;
 
   const length = readVarint(header, at);
@@ -151,16 +175,59 @@ describe("the QUIC Initial the generator emits", () => {
   });
 
   it("writes a Length that covers the packet number and the payload", () => {
-    // This is the one that was wrong: the field used to be four random bytes,
-    // so it decoded to some enormous number unrelated to what followed.
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const chain = genCfg(seeded()).i1;
-      const { header, padding } = readChain(chain);
-      const packet = parseInitial(header);
+    // This is the one that was wrong twice. First the field was four random
+    // bytes, decoding to a number unrelated to what followed. Then it counted
+    // the `<r>` padding only — so with the other tags on it under-declared the
+    // packet by their size, and with `<r>` off it declared padding that was
+    // never sent. Both survived because this check only ever ran with one tag
+    // combination.
+    const combinations = [
+      { useTagR: true, useTagRC: false, useTagC: false, useTagT: false },
+      { useTagR: true, useTagRC: true, useTagC: true, useTagT: true },
+      { useTagR: false, useTagRC: true, useTagC: true, useTagT: true },
+      { useTagR: false, useTagRC: false, useTagC: false, useTagT: false },
+    ];
 
-      expect(packet.length, `attempt ${attempt}: ${chain.slice(0, 60)}`).toBe(
-        packet.pnLen + padding,
-      );
+    for (const tags of combinations) {
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const chain = genCfg(seeded(tags)).i1;
+        const { header, payload } = readChain(chain);
+        const packet = parseInitial(header);
+
+        expect(
+          packet.length,
+          `${JSON.stringify(tags)}: ${chain.slice(0, 60)}`,
+        ).toBe(packet.pnLen + payload);
+      }
+    }
+  });
+
+  it("declares a matching Length on every packet it can produce", () => {
+    // Three builders write this field — Initial, 0-RTT, and the HTTP/3 pair —
+    // and the fault was in all three. One of them being right is not the
+    // question.
+    for (const profile of [
+      "quic_initial",
+      "quic_0rtt",
+      "http3",
+      "quic_burst",
+    ] as const) {
+      for (const tags of [
+        { useTagR: true, useTagRC: true, useTagC: true, useTagT: true },
+        { useTagR: false, useTagRC: true, useTagC: false, useTagT: true },
+      ]) {
+        for (let attempt = 0; attempt < 15; attempt++) {
+          const chain = genCfg(seeded({ profile, ...tags })).i1;
+          const { header, payload } = readChain(chain);
+          // A short header declares no length, so there is nothing to check.
+          if ((header[0]! & 0x80) === 0) continue;
+
+          const packet = parseInitial(header);
+          expect(packet.length, `${profile} ${JSON.stringify(tags)}`).toBe(
+            packet.pnLen + payload,
+          );
+        }
+      }
     }
   });
 
@@ -221,7 +288,7 @@ describe("the other QUIC packets the generator emits", () => {
 
   it("writes 0-RTT with no token field, and a Length that adds up", () => {
     for (let attempt = 0; attempt < 30; attempt++) {
-      const { header, padding } = readChain(
+      const { header, payload } = readChain(
         genCfg(seeded({ profile: "quic_0rtt" })).i1,
       );
       // 0-RTT is type 01, and RFC 9000 gives only Initial a token.
@@ -229,7 +296,7 @@ describe("the other QUIC packets the generator emits", () => {
 
       expect(packet.fixedBit, "fixed bit").toBe(1);
       expect(packet.packetType, "0-RTT").toBe(1);
-      expect(packet.length).toBe(packet.pnLen + padding);
+      expect(packet.length).toBe(packet.pnLen + payload);
       expect(packet.consumed).toBe(header.length);
     }
   });
@@ -239,7 +306,7 @@ describe("the other QUIC packets the generator emits", () => {
     let sawHandshake = false;
 
     for (let attempt = 0; attempt < 60; attempt++) {
-      const { header, padding } = readChain(genCfg(seeded({ profile: "http3" })).i1);
+      const { header, payload } = readChain(genCfg(seeded({ profile: "http3" })).i1);
       const type = (header[0]! >> 4) & 0x03;
 
       // Initial is 00 and Handshake is 10; only the first has a token, which
@@ -247,7 +314,7 @@ describe("the other QUIC packets the generator emits", () => {
       expect([0, 2], "packet type").toContain(type);
       const packet = parseLongHeader(header, type === 0);
 
-      expect(packet.length).toBe(packet.pnLen + padding);
+      expect(packet.length).toBe(packet.pnLen + payload);
       expect(packet.consumed).toBe(header.length);
 
       if (type === 0) sawInitial = true;
