@@ -901,6 +901,13 @@ export const ru = {
   "awgParam.header": "Магический заголовок пакета. Один и тот же на обеих сторонах.",
   "awgParam.headerRange":
     "Диапазон заголовков: значение выбирается случайно для каждого пакета.",
+  "history.search": "Поиск по истории",
+  "history.pin": "Закрепить — не будет вытеснена лимитом",
+  "history.unpin": "Открепить",
+  "history.export": "Сохранить историю в файл",
+  "history.import": "Загрузить историю из файла",
+  "history.imported": "Импорт: добавлено {added}, пропущено {skipped}",
+  "history.noMatch": "Ничего не нашлось. Попробуйте другой запрос.",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

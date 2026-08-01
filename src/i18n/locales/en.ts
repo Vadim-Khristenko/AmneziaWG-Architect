@@ -888,6 +888,13 @@ export const en: Catalog = {
   "awgParam.header": "The packet's magic header. Identical on both ends.",
   "awgParam.headerRange":
     "A range of headers: the value is drawn afresh for each packet.",
+  "history.search": "Search the history",
+  "history.pin": "Pin — the limit will not push it out",
+  "history.unpin": "Unpin",
+  "history.export": "Save the history to a file",
+  "history.import": "Load a history from a file",
+  "history.imported": "Imported: {added} added, {skipped} skipped",
+  "history.noMatch": "Nothing matched. Try a different query.",
 };
 
 export default en;

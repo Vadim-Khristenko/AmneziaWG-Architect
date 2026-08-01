@@ -52,8 +52,12 @@ import {
     Activity,
     FileJson,
     Boxes,
+    Pin,
+    Search,
+    Upload,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
+import { downloadText } from "@/utils/download";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import { useHistory, type HistoryRecord } from "@/composables/useHistory";
 import {
@@ -250,16 +254,59 @@ interface HistoryEntry extends HistoryRecord {
 
 const {
     entries: historyEntries,
+    visible: historyVisible,
+    query: historyQuery,
     load: loadHistory,
     add: addToHistory,
     remove: removeHistoryEntry,
     clear: clearHistory,
+    setPinned: setHistoryPinned,
+    setNote: setHistoryNote,
+    toJson: historyToJson,
+    fromJson: historyFromJson,
 } = useHistory<HistoryEntry>({
     engineId: "awg",
     // Entries written before the key was namespaced, moved on first load
     // rather than dropped.
     legacyKey: "awg-architect:history",
+    /**
+     * What makes two generations the same.
+     *
+     * The rendered config, which is every parameter the user chose and every
+     * value drawn for them. Pressing generate twice on unchanged settings
+     * produces different junk, so this is not "the same button pressed" — it
+     * is the same config, and two identical entries a second apart are
+     * exactly what filled the list before.
+     */
+    fingerprint: (entry) => entry.text,
+    /** Version, entropy and profile are how anyone describes one of these. */
+    searchText: (entry) =>
+        [entry.version, entry.intensity, entry.profile].join(" "),
 });
+
+/** Save the history to a file the user keeps or moves to another browser. */
+function exportHistory() {
+    downloadText(
+        `awg-history-${new Date().toISOString().slice(0, 10)}.json`,
+        historyToJson(),
+    );
+}
+
+/** Read one back. Merged with what is here rather than replacing it. */
+async function importHistory(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const result = historyFromJson(await file.text());
+    addLog(
+        t("history.imported", { added: result.added, skipped: result.skipped }),
+        result.added ? "ok" : "warn",
+    );
+    // Clear the input, or choosing the same file twice does nothing the
+    // second time.
+    input.value = "";
+}
 
 const showHistory = ref(false);
 
@@ -653,19 +700,64 @@ const paramGroups = computed((): ParamGroup[] => {
                                 historyEntries.length
                             }}</span>
                         </div>
-                        <button
-                            v-if="historyEntries.length"
-                            class="btn btn-ghost btn-icon sm"
-                            @click="clearHistory"
-                            :data-tooltip='t("history.clear")'
-                        >
-                            <Trash2 :size="14" />
-                        </button>
+                        <div class="history-header-actions">
+                            <label
+                                class="btn btn-ghost btn-icon sm"
+                                :data-tooltip='t("history.import")'
+                            >
+                                <Upload :size="14" />
+                                <input
+                                    type="file"
+                                    accept="application/json"
+                                    class="visually-hidden"
+                                    @change="importHistory"
+                                />
+                            </label>
+                            <button
+                                v-if="historyEntries.length"
+                                class="btn btn-ghost btn-icon sm"
+                                @click="exportHistory"
+                                :data-tooltip='t("history.export")'
+                            >
+                                <Download :size="14" />
+                            </button>
+                            <button
+                                v-if="historyEntries.length"
+                                class="btn btn-ghost btn-icon sm"
+                                @click="clearHistory"
+                                :data-tooltip='t("history.clear")'
+                            >
+                                <Trash2 :size="14" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Worth showing only once the list is long enough to
+                         need looking through. -->
+                    <div v-if="historyEntries.length > 3" class="history-search">
+                        <Search :size="14" />
+                        <input
+                            v-model="historyQuery"
+                            type="text"
+                            class="input-field"
+                            :placeholder='t("history.search")'
+                            :aria-label='t("history.search")'
+                        />
                     </div>
 
                     <div v-if="!historyEntries.length" class="history-empty">
                         <Clock :size="20" />
                         <span>{{ t("history.empty") }}</span>
+                    </div>
+
+                    <!-- A search that matched nothing is not an empty
+                         history, and saying nothing at all reads as a bug. -->
+                    <div
+                        v-else-if="!historyVisible.length"
+                        class="history-empty"
+                    >
+                        <Search :size="20" />
+                        <span>{{ t("history.noMatch") }}</span>
                     </div>
 
                     <div v-else class="history-list">
@@ -675,11 +767,30 @@ const paramGroups = computed((): ParamGroup[] => {
                             class="history-list-inner"
                         >
                             <div
-                                v-for="entry in historyEntries"
+                                v-for="entry in historyVisible"
                                 :key="entry.id"
                                 class="history-entry"
+                                :class="{ pinned: entry.pinned }"
                             >
                                 <div class="he-info">
+                                    <button
+                                        class="he-pin"
+                                        :class="{ on: entry.pinned }"
+                                        type="button"
+                                        :data-tooltip="
+                                            entry.pinned
+                                                ? t('history.unpin')
+                                                : t('history.pin')
+                                        "
+                                        @click="
+                                            setHistoryPinned(
+                                                entry.id,
+                                                !entry.pinned,
+                                            )
+                                        "
+                                    >
+                                        <Pin :size="13" />
+                                    </button>
                                     <span class="he-time">{{
                                         formatTime(entry.timestamp)
                                     }}</span>
@@ -2113,6 +2224,40 @@ const paramGroups = computed((): ParamGroup[] => {
     margin-bottom: 16px;
 }
 
+.history-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/*
+ * A file input styled as a button. Hiding it with display:none would take it
+ * out of the tab order too, which is the one thing a keyboard user needs it
+ * to keep.
+ */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.history-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: var(--text3);
+}
+
+.history-search .input-field {
+    flex: 1;
+}
+
 .history-header-left {
     display: flex;
     align-items: center;
@@ -2179,11 +2324,45 @@ const paramGroups = computed((): ParamGroup[] => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* A pinned entry is outside the cap, so it says so before it is hovered. */
+.history-entry.pinned {
+    border-color: var(--amber, var(--accent));
+    background: color-mix(in srgb, var(--amber, var(--accent)) 6%, var(--bg3));
+}
+
+.he-pin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: color var(--trans-fast), background var(--trans-fast);
+}
+
+.he-pin:hover {
+    color: var(--text2);
+    background: var(--bg2);
+}
+
+.he-pin.on {
+    color: var(--amber, var(--accent));
+}
+
 .he-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 140px;
+}
+
+.he-info .he-pin {
+    align-self: flex-start;
 }
 
 .he-time {

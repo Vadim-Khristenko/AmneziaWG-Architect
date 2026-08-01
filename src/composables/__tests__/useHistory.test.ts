@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import {
+  allHistories,
   storageKeyFor,
   useHistory,
   type HistoryRecord,
@@ -189,5 +190,198 @@ describe("removing", () => {
     history.clear();
     expect(history.entries.value).toEqual([]);
     expect(storage.store.get(storageKeyFor("awg"))).toBe("[]");
+  });
+});
+
+/**
+ * What a history is for, beyond remembering.
+ *
+ * Twenty entries a second apart, all of the same config, is a list nobody
+ * reads. Neither is one where the entry worth keeping fell off the end
+ * because nineteen throwaways were generated after it.
+ */
+describe("keeping what matters", () => {
+  it("exempts pinned entries from the cap", () => {
+    stubStorage();
+    const history = useHistory<Entry>({ engineId: "awg", limit: 2 });
+
+    const keep = history.add({ text: "keep" });
+    history.setPinned(keep.id, true);
+
+    history.add({ text: "a" });
+    history.add({ text: "b" });
+    history.add({ text: "c" });
+
+    const texts = history.entries.value.map((e) => e.text);
+    // The cap still bounds the throwaways — two of them — and the pinned one
+    // is simply not counted.
+    expect(texts).toContain("keep");
+    expect(texts.filter((t) => t !== "keep")).toEqual(["c", "b"]);
+  });
+
+  it("leaves pinned entries alone when clearing, and takes them on clearAll", () => {
+    stubStorage();
+    const history = useHistory<Entry>({ engineId: "awg" });
+    const keep = history.add({ text: "keep" });
+    history.add({ text: "noise" });
+    history.setPinned(keep.id, true);
+
+    history.clear();
+    expect(history.entries.value.map((e) => e.text)).toEqual(["keep"]);
+
+    history.clearAll();
+    expect(history.entries.value).toEqual([]);
+  });
+
+  it("keeps the user's note across a regeneration of the same config", () => {
+    stubStorage();
+    const history = useHistory<Entry>({
+      engineId: "awg",
+      fingerprint: (e) => e.text,
+    });
+
+    const first = history.add({ text: "same" });
+    history.setNote(first.id, "the one that worked");
+    history.setPinned(first.id, true);
+
+    vi.setSystemTime(new Date("2026-07-31T12:05:00Z"));
+    const again = history.add({ text: "same" });
+
+    // One entry, not two — and the parts the user supplied survive, while the
+    // timestamp moves to when it was last produced.
+    expect(history.entries.value).toHaveLength(1);
+    expect(again.id).toBe(first.id);
+    expect(again.note).toBe("the one that worked");
+    expect(again.pinned).toBe(true);
+    expect(again.timestamp).toBeGreaterThan(first.timestamp);
+  });
+
+  it("still adds an entry when the config really is different", () => {
+    stubStorage();
+    const history = useHistory<Entry>({
+      engineId: "awg",
+      fingerprint: (e) => e.text,
+    });
+
+    history.add({ text: "one" });
+    history.add({ text: "two" });
+    expect(history.entries.value).toHaveLength(2);
+  });
+});
+
+describe("finding an entry again", () => {
+  it("searches the note and whatever the engine offers", () => {
+    stubStorage();
+    const history = useHistory<Entry>({
+      engineId: "awg",
+      searchText: (e) => e.text,
+    });
+
+    const a = history.add({ text: "quic profile" });
+    history.add({ text: "sip profile" });
+    history.setNote(a.id, "for the router");
+
+    history.query.value = "sip";
+    expect(history.visible.value.map((e) => e.text)).toEqual(["sip profile"]);
+
+    // The note is searched even though the engine never mentions it.
+    history.query.value = "router";
+    expect(history.visible.value.map((e) => e.text)).toEqual(["quic profile"]);
+
+    history.query.value = "";
+    expect(history.visible.value).toHaveLength(2);
+  });
+
+  it("puts pinned entries first whatever the query", () => {
+    stubStorage();
+    const history = useHistory<Entry>({
+      engineId: "awg",
+      searchText: (e) => e.text,
+    });
+
+    history.add({ text: "old match" });
+    const pinned = history.add({ text: "match" });
+    history.add({ text: "new match" });
+    history.setPinned(pinned.id, true);
+
+    history.query.value = "match";
+    expect(history.visible.value[0]!.text).toBe("match");
+  });
+});
+
+describe("moving a history between browsers", () => {
+  it("merges rather than replaces, and reassigns ids", () => {
+    stubStorage();
+    const source = useHistory<Entry>({
+      engineId: "awg",
+      fingerprint: (e) => e.text,
+    });
+    source.add({ text: "from the laptop" });
+    const exported = source.toJson();
+
+    vi.unstubAllGlobals();
+    stubStorage();
+    const target = useHistory<Entry>({
+      engineId: "awg",
+      fingerprint: (e) => e.text,
+    });
+    const mine = target.add({ text: "from the desktop" });
+
+    const result = target.fromJson(exported);
+    expect(result).toEqual({ added: 1, skipped: 0 });
+
+    const texts = target.entries.value.map((e) => e.text);
+    expect(texts).toContain("from the laptop");
+    expect(texts).toContain("from the desktop");
+
+    // Both exports start at id 1, so an imported id would collide and
+    // "delete this one" would delete the wrong entry.
+    const ids = target.entries.value.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(target.entries.value.find((e) => e.text === "from the desktop")!.id).toBe(
+      mine.id,
+    );
+  });
+
+  it("skips what it already has", () => {
+    stubStorage();
+    const history = useHistory<Entry>({
+      engineId: "awg",
+      fingerprint: (e) => e.text,
+    });
+    history.add({ text: "same" });
+
+    expect(history.fromJson(history.toJson())).toEqual({ added: 0, skipped: 1 });
+    expect(history.entries.value).toHaveLength(1);
+  });
+
+  it("survives being handed something that is not a history", () => {
+    stubStorage();
+    const history = useHistory<Entry>({ engineId: "awg" });
+    history.add({ text: "mine" });
+
+    expect(history.fromJson("not json at all")).toEqual({ added: 0, skipped: 0 });
+    expect(history.fromJson('{"nope":true}')).toEqual({ added: 0, skipped: 0 });
+    expect(history.entries.value).toHaveLength(1);
+  });
+});
+
+describe("every engine at once", () => {
+  it("reads each engine's entries without mounting its composable", () => {
+    const storage = stubStorage();
+    storage.store.set(storageKeyFor("awg"), JSON.stringify([{ id: 1, timestamp: 1 }]));
+    storage.store.set(storageKeyFor("xray"), JSON.stringify([{ id: 1, timestamp: 2 }]));
+    storage.store.set("something-else", "not ours");
+    // localStorage.key() is what the sweep walks; the stub needs it.
+    const keys = [...storage.store.keys()];
+    vi.stubGlobal("localStorage", {
+      ...storage,
+      length: keys.length,
+      key: (i: number) => keys[i] ?? null,
+    });
+
+    const all = allHistories();
+    expect(Object.keys(all).sort()).toEqual(["awg", "xray"]);
+    expect(all.awg).toHaveLength(1);
   });
 });
