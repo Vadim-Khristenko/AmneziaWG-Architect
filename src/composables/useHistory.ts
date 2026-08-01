@@ -22,28 +22,9 @@
 
 import { computed, ref, type Ref } from "vue";
 
-/** What every history entry has, whatever protocol produced it. */
-export interface HistoryRecord {
-  id: number;
-  /** Unix milliseconds. */
-  timestamp: number;
-  /**
-   * Kept regardless of age.
-   *
-   * The cap exists to stop the list growing without bound, not to decide what
-   * matters — so anything the user says matters is outside it.
-   */
-  pinned?: boolean;
-  /** The user's own words about this entry. */
-  note?: string;
-  /**
-   * What this entry *is*, for spotting a repeat.
-   *
-   * Supplied by the engine through `fingerprint`, because only the engine
-   * knows which of its fields make one config the same as another.
-   */
-  fingerprint?: string;
-}
+import type { HistoryRecord } from "@/types/history";
+
+export type { HistoryRecord } from "@/types/history";
 
 export interface HistoryOptions<T extends HistoryRecord> {
   /**

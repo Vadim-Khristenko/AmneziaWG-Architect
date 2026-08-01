@@ -60,7 +60,9 @@ import {
 import { useGenerator } from "@/composables/useGenerator";
 import { downloadText } from "@/utils/download";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
-import { useHistory, type HistoryRecord } from "@/composables/useHistory";
+import { useHistory } from "@/composables/useHistory";
+import HistoryPanel from "@/components/HistoryPanel.vue";
+import type { AwgHistoryEntry } from "@/engines/awg/history";
 import { awgParamBlocks, awgParamRecord } from "@/engines/awg/generator";
 import type { AWGParamGroup } from "@/engines/awg/generator/params";
 import {
@@ -122,7 +124,7 @@ const activeFaqIdx = ref<number | null>(null);
  * they share one instance and one timing. The keys are prefixed because a
  * group key and a parameter name live in the same namespace here.
  */
-const { copy, isCopied, mark } = useCopyFeedback();
+const { copy, copied, isCopied, mark } = useCopyFeedback();
 const configCopied = computed(() => isCopied("config"));
 const groupCopied = (key: string) => isCopied(`group:${key}`);
 const paramCopied = (key: string) => isCopied(`param:${key}`);
@@ -235,26 +237,6 @@ const openMergeKeys = (tab: "update" | "merge") => {
 
 /* ── Generation History ───────────────────────────────────────────────── */
 
-/**
- * One remembered generation.
- *
- * Everything past `id` and `timestamp` is AmneziaWG's own: the composable
- * that stores it does not read these, which is what lets XRay keep a history
- * of a completely different shape under its own key.
- */
-interface HistoryEntry extends HistoryRecord {
-    version: string;
-    intensity: string;
-    profile: string;
-    text: string;
-    params: Record<string, string | number>;
-    /**
-     * The full config, so an entry can actually be restored rather than only
-     * copied. Optional because entries persisted by older builds lack it.
-     */
-    cfg?: AWGConfig;
-}
-
 const {
     entries: historyEntries,
     visible: historyVisible,
@@ -267,7 +249,7 @@ const {
     setNote: setHistoryNote,
     toJson: historyToJson,
     fromJson: historyFromJson,
-} = useHistory<HistoryEntry>({
+} = useHistory<AwgHistoryEntry>({
     engineId: "awg",
     // Entries written before the key was namespaced, moved on first load
     // rather than dropped.
@@ -302,7 +284,7 @@ function registerNoteInput(id: number, el: unknown) {
  * Opening a field the user then has to click into is two actions where they
  * asked for one.
  */
-function toggleNote(entry: HistoryEntry) {
+function toggleNote(entry: AwgHistoryEntry) {
     noteOpen.value = noteOpen.value === entry.id ? null : entry.id;
     if (noteOpen.value === entry.id) {
         void nextTick(() => noteInputs.get(entry.id)?.focus());
@@ -318,19 +300,12 @@ function exportHistory() {
 }
 
 /** Read one back. Merged with what is here rather than replacing it. */
-async function importHistory(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
+async function importHistory(file: File) {
     const result = historyFromJson(await file.text());
     addLog(
         t("history.imported", { added: result.added, skipped: result.skipped }),
         result.added ? "ok" : "warn",
     );
-    // Clear the input, or choosing the same file twice does nothing the
-    // second time.
-    input.value = "";
 }
 
 const showHistory = ref(false);
@@ -370,7 +345,7 @@ function saveToHistory() {
  * Put a stored config back on screen. Entries written before configs were
  * stored can only be copied, so fall back to that rather than doing nothing.
  */
-async function restoreFromHistory(entry: HistoryEntry) {
+async function restoreFromHistory(entry: AwgHistoryEntry) {
     if (entry.cfg) {
         restoreConfig(entry.cfg);
         mark(`restore:${entry.id}`);
@@ -390,7 +365,7 @@ async function restoreFromHistory(entry: HistoryEntry) {
     showHistory.value = false;
 }
 
-async function copyHistoryEntry(entry: HistoryEntry) {
+async function copyHistoryEntry(entry: AwgHistoryEntry) {
     await copy(`history:${entry.id}`, entry.text);
 }
 
@@ -608,236 +583,22 @@ const paramGroups = computed((): ParamGroup[] => {
                  the version bar, and rendering it after the 3.0 panel opened
                  it a screenful away from the button that opened it. -->
             <transition name="expand">
-                <div v-if="showHistory" class="history-panel">
-                    <div class="history-header">
-                        <div class="history-header-left">
-                            <History :size="16" />
-                            <span class="history-title">{{ t("history.title") }}</span>
-                            <span class="badge badge-amber">{{
-                                historyEntries.length
-                            }}</span>
-                        </div>
-                        <div class="history-header-actions">
-                            <label
-                                class="btn btn-ghost btn-icon sm"
-                                :data-tooltip='t("history.import")'
-                            >
-                                <Upload :size="14" />
-                                <input
-                                    type="file"
-                                    accept="application/json"
-                                    class="visually-hidden"
-                                    @change="importHistory"
-                                />
-                            </label>
-                            <button
-                                v-if="historyEntries.length"
-                                class="btn btn-ghost btn-icon sm"
-                                @click="exportHistory"
-                                :data-tooltip='t("history.export")'
-                            >
-                                <Download :size="14" />
-                            </button>
-                            <button
-                                v-if="historyEntries.length"
-                                class="btn btn-ghost btn-icon sm"
-                                @click="clearHistory"
-                                :data-tooltip='t("history.clear")'
-                            >
-                                <Trash2 :size="14" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Worth showing only once the list is long enough to
-                         need looking through. -->
-                    <div v-if="historyEntries.length > 3" class="history-search">
-                        <Search :size="14" />
-                        <input
-                            v-model="historyQuery"
-                            type="text"
-                            class="input-field"
-                            :placeholder='t("history.search")'
-                            :aria-label='t("history.search")'
-                        />
-                    </div>
-
-                    <div v-if="!historyEntries.length" class="history-empty">
-                        <Clock :size="20" />
-                        <span>{{ t("history.empty") }}</span>
-                    </div>
-
-                    <!-- A search that matched nothing is not an empty
-                         history, and saying nothing at all reads as a bug. -->
-                    <div
-                        v-else-if="!historyVisible.length"
-                        class="history-empty"
-                    >
-                        <Search :size="20" />
-                        <span>{{ t("history.noMatch") }}</span>
-                    </div>
-
-                    <div v-else class="history-list">
-                        <transition-group
-                            name="hist-item"
-                            tag="div"
-                            class="history-list-inner"
-                        >
-                            <div
-                                v-for="entry in historyVisible"
-                                :key="entry.id"
-                                class="history-entry"
-                                :class="{ pinned: entry.pinned }"
-                            >
-                                <div class="he-info">
-                                    <div class="he-time-row">
-                                    <button
-                                        class="he-pin"
-                                        :class="{ on: entry.pinned }"
-                                        type="button"
-                                        :data-tooltip="
-                                            entry.pinned
-                                                ? t('history.unpin')
-                                                : t('history.pin')
-                                        "
-                                        @click="
-                                            setHistoryPinned(
-                                                entry.id,
-                                                !entry.pinned,
-                                            )
-                                        "
-                                    >
-                                        <Pin :size="13" />
-                                    </button>
-                                    <span class="he-time">{{
-                                        formatTime(entry.timestamp)
-                                    }}</span>
-                                    </div>
-                                    <span class="he-tags">
-                                        <span class="he-tag">{{
-                                            entry.version
-                                        }}</span>
-                                        <span class="he-tag">{{
-                                            entry.intensity
-                                        }}</span>
-                                        <span class="he-tag">{{
-                                            entry.profile
-                                        }}</span>
-                                    </span>
-                                </div>
-                                <div class="he-params">
-                                    <span
-                                        v-for="(val, key) in entry.params"
-                                        :key="key"
-                                        class="he-param"
-                                        :class="{
-                                            'he-param-wide':
-                                                String(val).length > 20,
-                                        }"
-                                    >
-                                        <span class="he-param-k">{{
-                                            key
-                                        }}</span>
-                                        <span
-                                            class="he-param-v"
-                                            :title="String(val)"
-                                            >{{
-                                                String(val).length > 30
-                                                    ? String(val).slice(0, 27) +
-                                                      "…"
-                                                    : val
-                                            }}</span
-                                        >
-                                    </span>
-                                </div>
-                                <div class="he-actions">
-                                    <button
-                                        class="btn btn-ghost btn-icon sm"
-                                        :class="{ on: noteOpen === entry.id }"
-                                        @click="toggleNote(entry)"
-                                        :data-tooltip='t("history.note")'
-                                    >
-                                        <StickyNote :size="14" />
-                                    </button>
-                                    <button
-                                        class="btn btn-ghost btn-icon sm"
-                                        :class="{
-                                            'copy-ok': wasRestored(entry.id),
-                                        }"
-                                        :disabled="!entry.cfg"
-                                        @click="restoreFromHistory(entry)"
-                                        :data-tooltip="
-                                            entry.cfg
-                                                ? t('history.restore')
-                                                : t('history.legacy')
-                                        "
-                                    >
-                                        <Check
-                                            v-if="wasRestored(entry.id)"
-                                            :size="14"
-                                        />
-                                        <RotateCcw v-else :size="14" />
-                                    </button>
-                                    <button
-                                        class="btn btn-ghost btn-icon sm"
-                                        :class="{
-                                            'copy-ok':
-                                                historyCopied(entry.id),
-                                        }"
-                                        @click="copyHistoryEntry(entry)"
-                                        :data-tooltip="
-                                            t('history.copy')
-                                        "
-                                    >
-                                        <ClipboardCheck
-                                            v-if="historyCopied(entry.id)"
-                                            :size="14"
-                                        />
-                                        <Copy v-else :size="14" />
-                                    </button>
-                                    <button
-                                        class="btn btn-ghost btn-icon sm"
-                                        @click="removeHistoryEntry(entry.id)"
-                                        :data-tooltip="
-                                            t('history.delete')
-                                        "
-                                    >
-                                        <X :size="14" />
-                                    </button>
-                                </div>
-
-                                <!-- Below the row rather than in it: a note
-                                     is a sentence, and a sentence in a cell
-                                     squeezes everything else out. -->
-                                <div
-                                    v-if="noteOpen === entry.id || entry.note"
-                                    class="he-note"
-                                >
-                                    <input
-                                        :ref="
-                                            (el) => registerNoteInput(entry.id, el)
-                                        "
-                                        :value="entry.note ?? ''"
-                                        type="text"
-                                        class="input-field"
-                                        :placeholder='t("history.notePlaceholder")'
-                                        :aria-label='t("history.note")'
-                                        @change="
-                                            setHistoryNote(
-                                                entry.id,
-                                                ($event.target as HTMLInputElement)
-                                                    .value,
-                                            )
-                                        "
-                                        @keyup.enter="
-                                            ($event.target as HTMLInputElement).blur()
-                                        "
-                                    />
-                                </div>
-                            </div>
-                        </transition-group>
-                    </div>
-                </div>
+                <HistoryPanel
+                    v-if="showHistory"
+                    :entries="historyEntries"
+                    :visible="historyVisible"
+                    :query="historyQuery"
+                    :marked-key="copied ?? null"
+                    @update:query="historyQuery = $event"
+                    @restore="restoreFromHistory"
+                    @copy="copyHistoryEntry"
+                    @remove="removeHistoryEntry"
+                    @pin="setHistoryPinned"
+                    @note="setHistoryNote"
+                    @clear="clearHistory"
+                    @export="exportHistory"
+                    @import="importHistory"
+                />
             </transition>
 
             <!-- ── Version-specific options ────────────────────────────── -->
@@ -2147,281 +1908,6 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 /* ── History Panel ────────────────────────────────────────────────────── */
-.history-panel {
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin-bottom: 1.5rem;
-    max-height: 400px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: panelSlideIn 0.3s var(--ease-snap);
-}
-
-@keyframes panelSlideIn {
-    0% {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.history-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/*
- * A file input styled as a button. Hiding it with display:none would take it
- * out of the tab order too, which is the one thing a keyboard user needs it
- * to keep.
- */
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-}
-
-.history-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    color: var(--text3);
-}
-
-.history-search .input-field {
-    flex: 1;
-}
-
-.history-header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text2);
-}
-
-.history-title {
-    font-family: var(--fu);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.history-empty {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--text3);
-    font-size: 0.85rem;
-    padding: 16px 0;
-}
-
-.history-list {
-    overflow-y: auto;
-    max-height: 300px;
-}
-
-.history-list-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.hist-item-enter-active {
-    transition: all 0.35s var(--ease-snap);
-}
-.hist-item-leave-active {
-    transition: all 0.2s var(--ease);
-}
-.hist-item-enter-from {
-    opacity: 0;
-    transform: translateX(-16px);
-}
-.hist-item-leave-to {
-    opacity: 0;
-    transform: translateX(16px) scale(0.95);
-}
-
-.history-entry {
-    display: grid;
-    grid-template-columns: minmax(150px, auto) 1fr auto;
-    align-items: center;
-    gap: 10px 16px;
-    padding: 10px 14px;
-    background: var(--bg3);
-    border: 1px solid var(--border3);
-    border-radius: var(--radius-sm);
-    transition: all var(--trans-fast);
-}
-
-.history-entry:hover {
-    border-color: var(--border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* A pinned entry is outside the cap, so it says so before it is hovered. */
-.history-entry.pinned {
-    border-color: var(--amber, var(--accent));
-    background: color-mix(in srgb, var(--amber, var(--accent)) 6%, var(--bg3));
-}
-
-.he-pin {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text3);
-    cursor: pointer;
-    transition: color var(--trans-fast), background var(--trans-fast);
-}
-
-.he-pin:hover {
-    color: var(--text2);
-    background: var(--bg2);
-}
-
-.he-pin.on {
-    color: var(--amber, var(--accent));
-}
-
-.he-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
-.he-time-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.he-time {
-    font-family: var(--fm);
-    font-size: 0.72rem;
-    color: var(--text3);
-}
-
-.he-tags {
-    display: flex;
-    gap: 4px;
-}
-
-.he-tag {
-    font-size: 0.6rem;
-    font-family: var(--fm);
-    padding: 1px 6px;
-    background: var(--surface);
-    border-radius: 4px;
-    color: var(--text2);
-    text-transform: uppercase;
-}
-
-/*
- * Two rows, then it stops.
- *
- * A row is here to identify an entry at a glance — the whole config is one
- * click away on the restore button. An AWG 3.0 entry carries five CPS chains
- * and a header-protection key, and with every long value claiming a row of
- * its own a single entry filled the entire panel.
- */
-.he-params {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    flex: 1;
-    min-width: 0;
-    max-height: 2.6rem;
-    overflow: hidden;
-    /* Fades rather than cuts, so it reads as "there is more" instead of as a
-       rendering fault. */
-    mask-image: linear-gradient(to bottom, #000 60%, transparent);
-}
-
-.he-param {
-    display: flex;
-    gap: 3px;
-    font-family: var(--fm);
-    font-size: 0.68rem;
-    max-width: 180px;
-}
-
-/* A long value gets more room, not a row to itself. */
-.he-param-wide {
-    max-width: 260px;
-}
-
-.he-param-k {
-    color: var(--text3);
-    flex-shrink: 0;
-}
-
-.he-param-v {
-    color: var(--accent);
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.he-actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-/* Spans every column: a note is a sentence, and a sentence in a cell
-   squeezes the parameters into nothing. */
-.he-note {
-    grid-column: 1 / -1;
-}
-
-.he-note .input-field {
-    width: 100%;
-    font-size: 0.75rem;
-    padding: 5px 9px;
-}
-
-/*
- * On a narrow screen the three columns stack. Parameters wrap either way, so
- * the row was already the tallest thing in the panel; what it could not do was
- * keep the action buttons on screen.
- */
-@media (max-width: 640px) {
-    .history-entry {
-        grid-template-columns: 1fr;
-    }
-
-    .he-actions {
-        justify-content: flex-end;
-    }
-}
 
 /* ── Main Grid ────────────────────────────────────────────────────────── */
 .main-grid {
