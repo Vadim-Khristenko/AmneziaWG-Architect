@@ -29,100 +29,32 @@
     line-gap-override: 0%;
 }
 
-/* ── Palette ──────────────────────────────────────────────────────────────── */
+/* ── Shape, type and motion ───────────────────────────────────────────────── */
+/*
+ * The colours live in theme.css, which is imported first: they change with the
+ * page and with the scheme, and these do not. Keeping both here meant the two
+ * halves of a token set were edited in different places.
+ */
 :root {
-    /* Backgrounds — layered depth */
-    --bg: #0a0806;
-    --bg2: #110e0a;
-    --bg3: #181410;
-    --bg4: #201a14;
-    --bg5: #281f16;
-
-    /* Surface — for cards, panels, elevated elements */
-    --surface: rgba(232, 168, 64, 0.03);
-    --surface-hover: rgba(232, 168, 64, 0.06);
-    --surface-active: rgba(232, 168, 64, 0.09);
-
-    /* Accent: Amber */
-    --amber: #e8a840;
-    --amber2: #f5c060;
-    --amber3: #ffd980;
-    --amber-dim: #7a5820;
-    --amber-deep: #c48520;
-
-    /* Accent Glow */
-    --ag: rgba(232, 168, 64, 0.12);
-    --ag2: rgba(232, 168, 64, 0.06);
-    --ag3: rgba(232, 168, 64, 0.03);
-
-    /* Semantic — Green */
-    --green: #5cb87a;
-    --green2: #7dd99a;
-    --green-bg: rgba(92, 184, 122, 0.08);
-    --gd: rgba(92, 184, 122, 0.15);
-
-    /* Semantic — Red */
-    --red: #d4604a;
-    --red2: #ff8f7d;
-    --red-bg: rgba(212, 96, 74, 0.08);
-    --rd: rgba(212, 96, 74, 0.12);
-
-    /* Semantic — Blue (info accents) */
-    --blue: #5b9bd5;
-    --blue-bg: rgba(91, 155, 213, 0.08);
-
-    /* Text */
-    --text: #e0d4b8;
-    --text2: #9a8a68;
-    --text3: #5e5038;
-    --text4: #3d3226;
-
-    /* Borders */
-    --border: rgba(232, 168, 64, 0.14);
-    --border2: rgba(232, 168, 64, 0.07);
-    --border3: rgba(232, 168, 64, 0.03);
-
-    /* Semantic Aliases */
-    --accent: var(--amber2);
-    --accent-glow: var(--ag);
-    /*
-     * Names three views were already using that nothing ever defined.
-     * `var(--muted)` with no value falls through to the inherited colour and
-     * `var(--panel)` to a transparent background — which is why the simulator
-     * s panels had no shell at all. Aliases rather than new colours: the
-     * intent was plainly the existing tokens under an older set of names.
-     */
-    --panel: var(--bg2);
-    --panel-2: var(--bg3);
-    --muted: var(--text3);
-
     --radius: 12px;
     --radius-sm: 8px;
     --radius-lg: 16px;
     --radius-xl: 20px;
 
-    /* Fonts — self-hosted variable faces (bundled via @fontsource-variable in
-       main.ts) with metric-matched fallback faces (see @font-face above) so a
-       font swap causes ~0 reflow. */
+    /* Self-hosted variable faces (bundled via @fontsource-variable in main.ts)
+       with metric-matched fallbacks (see @font-face above), so a font swap
+       causes ~0 reflow. */
     --fw: "Manrope Variable", "Manrope Fallback", sans-serif;
     --fu: "Unbounded Variable", "Unbounded Fallback", sans-serif;
     --fm: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono",
         "Segoe UI Mono", "Liberation Mono", monospace;
 
-    /* Animation */
     --ease: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     --trans-fast: 150ms var(--ease);
     --trans-norm: 250ms var(--ease);
     --trans-slow: 400ms var(--ease);
-
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-glow:
-        0 0 20px rgba(232, 168, 64, 0.08), 0 0 60px rgba(232, 168, 64, 0.04);
 }
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
@@ -747,7 +679,7 @@ input[type="number"] {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: var(--text4);
+    background: var(--ink-faint);
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -757,7 +689,7 @@ input[type="number"] {
 /* Firefox scrollbar */
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--text4) transparent;
+    scrollbar-color: var(--ink-faint) transparent;
 }
 
 /* ── Utility Text Classes ─────────────────────────────────────────────────── */

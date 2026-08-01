@@ -10,11 +10,19 @@ import "@fontsource-variable/manrope/index.css";
 import "@fontsource-variable/unbounded/index.css";
 import "@fontsource-variable/jetbrains-mono/index.css";
 
+// The token kit first: main.css reads its colours, and a sheet cannot use a
+// variable that is defined after it in the cascade.
+import "../assets/theme.css";
 import "../assets/main.css";
 
 // Tooltips render in one element on the body rather than as a pseudo-element
 // on each trigger, so nothing that scrolls can clip them. See utils/tooltip.
 import { installTooltips } from "./utils/tooltip";
+import { initTheme } from "./composables/useTheme";
+
+// Before the first paint: a reader who chose light should not see a dark
+// frame first.
+initTheme();
 
 const app = createApp(App);
 app.use(router);

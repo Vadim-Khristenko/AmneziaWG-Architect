@@ -35,6 +35,7 @@ import {
   type Locale,
 } from "@/i18n";
 import { seoFor } from "@/i18n/seo";
+import { accentFor, applyAccent } from "@/composables/useTheme";
 
 /* ── Extended route meta typing ──────────────────────────────────────────── */
 
@@ -183,6 +184,10 @@ function setLink(rel: string, href: string, hreflang?: string): void {
 }
 
 router.afterEach((to) => {
+  // The accent is a property of the page, not of the reader, and it matches
+  // the colour that page has had in every link preview for a year.
+  applyAccent(accentFor(typeof to.name === "string" ? to.name : null));
+
   const loc = isLocale(to.meta.locale) ? to.meta.locale : DEFAULT_LOCALE;
   const seoKey = to.meta.seoKey ?? "home";
   const seo = seoFor(seoKey, loc);
