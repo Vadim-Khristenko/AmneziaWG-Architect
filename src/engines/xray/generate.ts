@@ -673,4 +673,3 @@ export function generateXrayBatch(
 }
 
 /** Kept for symmetry with the AmneziaWG generator's random helpers. */
-export { cryptoRnd as xrayRandomInt };

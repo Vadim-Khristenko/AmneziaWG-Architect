@@ -479,6 +479,9 @@ export function useGenerator() {
    * `stun.yandex.net` as a STUN example, neither of which was true of what
    * the generator actually picked.
    */
+  /** How many ranked examples to keep per role. Nothing asks for more. */
+  const EXAMPLES_KEPT = 3;
+
   const PROFILE_ROLE: Record<MimicProfile, DomainRole | "none"> = {
     quic_initial: "quic",
     quic_0rtt: "quic",
@@ -499,66 +502,90 @@ export function useGenerator() {
    * A hint naming hosts that were true in Q1 2026 ages exactly as badly as the
    * pools did, and for the same reason. These are hosts that qualify right
    * now, for the role this profile actually asks for.
+   *
+   * Worked out once per role and region and kept, because the two maps below
+   * used to ask for the same thing twice — three examples for the hint, one
+   * for the placeholder — and each ask sorted a several-hundred-entry array.
+   * Eleven profiles came to twenty-two sorts on every recompute, and the
+   * second of each pair re-derived a prefix of what the first had just built.
    */
-  function examplesFor(role: DomainRole, count: number): string[] {
-    const regions =
-      config.hostRegion === "any"
-        ? undefined
-        : [config.hostRegion as DomainRegion];
-    const found = hostsFor({ regions, role });
-    const pool = found.length ? found : hostsFor({ role, allowUnknown: true });
+  const exampleCache = new Map<string, string[]>();
 
-    // An example is meant to be recognised, so the shortest names win and
-    // each has to come from a different site. Taking the head of the list
-    // instead gave "00.img.avito.st, 01.img.avito.st, 05.img.avito.st" —
-    // three shards of one CDN, alphabetically first and useless as examples.
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const host of [...pool].sort((a, b) => a.length - b.length)) {
-      const site = host.split(".").slice(-2).join(".");
-      if (seen.has(site)) continue;
-      seen.add(site);
-      out.push(host);
-      if (out.length === count) break;
+  function examplesFor(role: DomainRole, count: number): string[] {
+    const region = config.hostRegion;
+    const key = `${role}|${region}`;
+
+    let ranked = exampleCache.get(key);
+    if (!ranked) {
+      const regions =
+        region === "any" ? undefined : [region as DomainRegion];
+      const found = hostsFor({ regions, role });
+      const pool = found.length ? found : hostsFor({ role, allowUnknown: true });
+
+      // An example is meant to be recognised, so the shortest names win and
+      // each has to come from a different site. Taking the head of the list
+      // instead gave "00.img.avito.st, 01.img.avito.st, 05.img.avito.st" —
+      // three shards of one CDN, alphabetically first and useless as examples.
+      const seen = new Set<string>();
+      ranked = [];
+      for (const host of [...pool].sort((a, b) => a.length - b.length)) {
+        const site = host.split(".").slice(-2).join(".");
+        if (seen.has(site)) continue;
+        seen.add(site);
+        ranked.push(host);
+        // Nothing asks for more than a handful, and ranking the whole pool to
+        // show three of it is work nobody sees.
+        if (ranked.length === EXAMPLES_KEPT) break;
+      }
+      exampleCache.set(key, ranked);
     }
-    return out;
+
+    return ranked.slice(0, count);
   }
 
-  /** Help text under the custom-host field. */
-  const hintMap = computed<Record<MimicProfile, string>>(() => {
-    const out = {} as Record<MimicProfile, string>;
-    for (const profile of Object.keys(PROFILE_ROLE) as MimicProfile[]) {
-      const role = PROFILE_ROLE[profile];
-      if (role === "none") {
-        // Noise names no host at all, and the field is hidden for it — see
-        // showCustomHost. Nothing reads this, so nothing is written.
-        out[profile] = profile === "random" ? translate("gen.host.hint.random") : "";
-        continue;
-      }
-      out[profile] = translate(`gen.host.hint.${role}` as "gen.host.hint.tls", {
-        examples: examplesFor(role, 3).join(", ") || "—",
-      });
-    }
-    return out;
-  });
+  /**
+   * Both maps, built in one pass.
+   *
+   * They were two copies of the same loop over the same table, differing in
+   * the catalogue key and in how many examples they wanted.
+   */
+  const hostHelp = computed(() => {
+    const hints = {} as Record<MimicProfile, string>;
+    const placeholders = {} as Record<MimicProfile, string>;
 
-  /** Placeholder inside the custom-host field. */
-  const placeholderMap = computed<Record<MimicProfile, string>>(() => {
-    const out = {} as Record<MimicProfile, string>;
     for (const profile of Object.keys(PROFILE_ROLE) as MimicProfile[]) {
       const role = PROFILE_ROLE[profile];
+
       if (role === "none") {
-        out[profile] =
-          profile === "random" ? translate("gen.host.placeholder.random") : "";
+        // Noise names no host at all and the field is hidden for it — see
+        // showCustomHost. Nothing reads those, so nothing is written.
+        const isRandom = profile === "random";
+        hints[profile] = isRandom ? translate("gen.host.hint.random") : "";
+        placeholders[profile] = isRandom
+          ? translate("gen.host.placeholder.random")
+          : "";
         continue;
       }
-      out[profile] = translate(
+
+      const examples = examplesFor(role, 3);
+      hints[profile] = translate(
+        `gen.host.hint.${role}` as "gen.host.hint.tls",
+        { examples: examples.join(", ") || "—" },
+      );
+      placeholders[profile] = translate(
         `gen.host.placeholder.${role}` as "gen.host.placeholder.tls",
-        { example: examplesFor(role, 1)[0] ?? "example.com" },
+        { example: examples[0] ?? "example.com" },
       );
     }
-    return out;
+
+    return { hints, placeholders };
   });
+
+  /** Help text under the custom-host field. */
+  const hintMap = computed(() => hostHelp.value.hints);
+
+  /** Placeholder inside the custom-host field. */
+  const placeholderMap = computed(() => hostHelp.value.placeholders);
 
   // ── Вычисляемые свойства UI ───────────────────────────────────────────────
 
@@ -578,10 +605,8 @@ export function useGenerator() {
   const isFullObfuscation = computed(() => caps.value.extraSizes);
 
   /** true для версий с защитой заголовков, паддингом и таймингами */
-  const isAwg3 = computed(() => caps.value.headerProtection);
 
   /** Метка режима интенсивности (для отображения в UI) */
-  const intensityLabel = computed(() => intensity.value.toUpperCase());
 
   /** Dots прогресса итераций (5 точек) */
   const iterDots = computed(() =>
@@ -622,10 +647,8 @@ export function useGenerator() {
     showCustomHost,
     isCPSSupported,
     isFullObfuscation,
-    isAwg3,
     restoreConfig,
     isRouterMode,
-    intensityLabel,
     iterDots,
     hintMap,
     placeholderMap,

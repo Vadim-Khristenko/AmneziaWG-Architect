@@ -211,16 +211,23 @@ export function linesToText(lines: EngineLine[]): string {
     .join("\n");
 }
 
-/** A failed parse carrying one explanation. */
+/**
+ * A failed parse carrying one explanation.
+ *
+ * `values` are the ones the message interpolates — "expected vless, got
+ * {protocol}". A finding has always carried them; this signature did not, so
+ * the XRay parser kept a private copy of this function that did.
+ */
 export function parseFailed<T>(
   field: string,
   code: string,
+  values?: Record<string, string | number>,
   line?: number,
 ): ParseResult<T> {
   return {
     ok: false,
     config: null,
-    findings: [{ field, level: "error", code, line }],
+    findings: [{ field, level: "error", code, values, line }],
   };
 }
 

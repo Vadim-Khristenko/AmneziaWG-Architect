@@ -13,6 +13,7 @@
 import { error, warn } from "@/shared/findings";
 import type { Finding } from "@/types/findings";
 import type { ParseResult } from "@/types/engine";
+import { parseFailed } from "@/types/engine";
 import { xrayCaps, isSupportedVersion, XRAY_VERSIONS } from "./versions";
 import { defaultXhttp } from "./generate";
 import { buildTransport, defaultTransport } from "./transports";
@@ -28,14 +29,6 @@ import type {
 } from "./types";
 
 const NEWEST = XRAY_VERSIONS[0].id;
-
-function fail(field: string, code: string, values?: Record<string, string | number>) {
-  return {
-    ok: false as const,
-    config: null,
-    findings: [error(field, code, values)],
-  };
-}
 
 /** Transport names the core accepts, normalised to the current spelling. */
 function normaliseTransport(value: string): XrayTransport | null {
@@ -67,18 +60,18 @@ function normaliseFlow(value: string | undefined): XrayFlow {
 export function parseVlessUri(input: string): ParseResult<XrayConfig> {
   const text = input.trim();
   if (!text.toLowerCase().startsWith("vless://")) {
-    return fail("uri", "xray.parse.not_vless");
+    return parseFailed<XrayConfig>("uri", "xray.parse.not_vless");
   }
 
   let url: URL;
   try {
     url = new URL(text);
   } catch {
-    return fail("uri", "xray.parse.malformed_uri");
+    return parseFailed<XrayConfig>("uri", "xray.parse.malformed_uri");
   }
 
   const id = decodeURIComponent(url.username);
-  if (!id) return fail("id", "xray.parse.no_uuid");
+  if (!id) return parseFailed<XrayConfig>("id", "xray.parse.no_uuid");
 
   const address = url.hostname.replace(/^\[|\]$/g, "");
   const port = Number(url.port || 443);
@@ -88,7 +81,7 @@ export function parseVlessUri(input: string): ParseResult<XrayConfig> {
 
   const transport = normaliseTransport(q.get("type") ?? "raw");
   if (!transport) {
-    return fail("type", "xray.parse.unknown_transport", {
+    return parseFailed<XrayConfig>("type", "xray.parse.unknown_transport", {
       transport: q.get("type") ?? "",
     });
   }
@@ -176,18 +169,18 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
   try {
     parsed = JSON.parse(input);
   } catch {
-    return fail("json", "xray.parse.bad_json");
+    return parseFailed<XrayConfig>("json", "xray.parse.bad_json");
   }
 
   const root = asObject(parsed);
-  if (!root) return fail("json", "xray.parse.bad_json");
+  if (!root) return parseFailed<XrayConfig>("json", "xray.parse.bad_json");
 
   // Accept either a bare inbound or a whole config with an inbounds array.
   const inbounds = Array.isArray(root.inbounds) ? root.inbounds : null;
   const inbound = asObject(inbounds?.[0]) ?? root;
 
   if (inbound.protocol !== "vless") {
-    return fail("protocol", "xray.parse.not_vless_inbound", {
+    return parseFailed<XrayConfig>("protocol", "xray.parse.not_vless_inbound", {
       protocol: String(inbound.protocol ?? ""),
     });
   }
@@ -199,7 +192,7 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
   const transportRaw = String(stream.method ?? stream.network ?? "raw");
   const transport = normaliseTransport(transportRaw);
   if (!transport) {
-    return fail("transport", "xray.parse.unknown_transport", {
+    return parseFailed<XrayConfig>("transport", "xray.parse.unknown_transport", {
       transport: transportRaw,
     });
   }
@@ -317,10 +310,10 @@ export function parseXrayJson(input: string): ParseResult<XrayConfig> {
 /** Read whichever form was pasted. */
 export function parseXray(input: string): ParseResult<XrayConfig> {
   const text = input.trim();
-  if (!text) return fail("config", "parse.empty");
+  if (!text) return parseFailed<XrayConfig>("config", "parse.empty");
   if (text.toLowerCase().startsWith("vless://")) return parseVlessUri(text);
   if (text.startsWith("{")) return parseXrayJson(text);
-  return fail("config", "xray.parse.unrecognised");
+  return parseFailed<XrayConfig>("config", "xray.parse.unrecognised");
 }
 
 
