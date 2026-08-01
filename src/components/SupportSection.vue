@@ -25,7 +25,6 @@ import {
 } from "@/data/support";
 
 const { locale, t } = useI18n();
-const isRu = computed(() => locale.value === "ru");
 
 const { copied: copiedId, copy } = useCopyFeedback();
 
@@ -72,7 +71,7 @@ const isInternal = (url: string) => url.startsWith("/");
         <div class="crypto-block">
             <div class="crypto-head">
                 <Wallet :size="16" />
-                <h3>{{ isRu ? "Криптовалюта" : "Cryptocurrency" }}</h3>
+                <h3>{{ t("donate.crypto") }}</h3>
             </div>
 
             <div class="alert alert-warn crypto-warn">
@@ -117,14 +116,10 @@ const isInternal = (url: string) => url.startsWith("/");
         <div class="projects-block">
             <div class="crypto-head">
                 <Compass :size="16" />
-                <h3>{{ isRu ? "Другие мои проекты" : "My other projects" }}</h3>
+                <h3>{{ t("donate.projects.title") }}</h3>
             </div>
             <p class="projects-lede">
-                {{
-                    isRu
-                        ? "Architect — не единственное, что я делаю. Загляните, если интересно, чем ещё занимаюсь."
-                        : "Architect is not the only thing I build. Have a look if you are curious what else I work on."
-                }}
+                {{ t("donate.projects.lede") }}
             </p>
 
             <div class="projects-grid">

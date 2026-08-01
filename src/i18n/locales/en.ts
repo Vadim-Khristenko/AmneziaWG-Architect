@@ -765,6 +765,129 @@ export const en: Catalog = {
   "gen.host.placeholder.stun": "for example {example}",
   "gen.host.placeholder.dns": "for example {example}",
   "gen.host.placeholder.random": "your own host (optional)",
+
+  /* ── VAIEXIA ──────────────────────────────────────────────────────────── */
+  "vaiexia.soon": "SOON",
+  "vaiexia.lede": "A web panel and a Telegram / Discord / Matrix bot — and more.",
+  "vaiexia.desc":
+    "Run your server or cluster from anywhere, however you like. Installing packages takes one click, and so do the advanced protocol settings.",
+  "vaiexia.feature.panel.title": "Web panel",
+  "vaiexia.feature.panel.desc":
+    "One interface for a single server or a whole cluster. State, metrics and controls in one place instead of a scatter of SSH sessions.",
+  "vaiexia.feature.bots.title": "Telegram, Discord, Matrix",
+  "vaiexia.feature.bots.desc":
+    "The same control from a chat window. Restart a service, issue a key or check the load from your phone, without opening a laptop.",
+  "vaiexia.feature.install.title": "One-click installs",
+  "vaiexia.feature.install.desc":
+    "Packages and services install with a single press — no hand-built dependencies, no editing systemd units.",
+  "vaiexia.feature.protocols.title": "Advanced protocol settings",
+  "vaiexia.feature.protocols.desc":
+    "The fine obfuscation parameters are in the panel itself, not only in a config file. Including the ones this Architect generates.",
+  "vaiexia.feature.clusters.title": "Clusters and multi-server",
+  "vaiexia.feature.clusters.desc":
+    "Several nodes managed as one. Roll a configuration out to a group of servers instead of repeating the same steps.",
+  "vaiexia.feature.beyond.title": "Not only VPN",
+  "vaiexia.feature.beyond.desc":
+    "The panel is not tied to one protocol or one job — it is a general tool for running your infrastructure.",
+  "vaiexia.mirror.title": "GitHub unreachable?",
+  "vaiexia.mirror.lede":
+    "If GitHub does not open for you and you need the Amnezia apps, try a mirror:",
+  "vaiexia.mirror.copy": "Copy the link",
+  "vaiexia.mirror.open": "Open",
+  "vaiexia.mirror.warning":
+    "This is an independent mirror, not Amnezia's official site. Check the checksums and release signatures before installing — as you would for any third-party source.",
+  "vaiexia.wip":
+    "The project is being built. This page is an announcement: no dates yet, and no promises on credit.",
+
+  /* ── FAQ page ─────────────────────────────────────────────────────────── */
+  "faq.title": "Questions and answers",
+  "faq.lede":
+    "How the AmneziaWG parameters work, what separates the versions, and what to do when the tunnel will not come up.",
+  "faq.search.placeholder": "Search: Jc, nonce, will not connect…",
+  "faq.search.label": "Search the FAQ",
+  "faq.search.clear": "Clear",
+  "faq.category.all": "All",
+  "faq.found": "Found: {n}",
+  "faq.link.copied": "Link copied",
+  "faq.link.copy": "Link to this question",
+  "faq.empty":
+    "Nothing matched. Try a different query, or drop the category filter.",
+  "faq.reset": "Reset",
+
+
+  /* ── Donate section ───────────────────────────────────────────────────── */
+  "donate.crypto": "Cryptocurrency",
+  "donate.projects.title": "My other projects",
+  "donate.projects.lede":
+    "Architect is not the only thing I build. Have a look if you are curious what else I work on.",
+
+  /* ── Client releases ──────────────────────────────────────────────────── */
+  "client.release.upTo": "up to {version}",
+
+
+  /* ── Parameter notes ──────────────────────────────────────────────────── */
+  "awgParam.S1": "Random padding before the handshake initiation.",
+  "awgParam.S2": "Padding before the handshake response.",
+  "awgParam.S3": "Padding before the cookie reply.",
+  "awgParam.S4": "Padding on transport packets. The protocol caps it at 32 bytes.",
+  "awgParam.Jc": "How many junk packets go out before the handshake.",
+  "awgParam.Jmin": "Lower bound on a junk packet's size.",
+  "awgParam.Jmax": "Upper bound on a junk packet's size.",
+  "awgParam.cpsChain": "A fabricated packet sent before the handshake. The far end never parses it.",
+  "awgParam.HeaderProtectionKey": "ChaCha20 key for encrypting headers. The nonce comes from the first 12 bytes of the S padding.",
+  "awgParam.ContentPaddingAddition": "Random padding inside the encrypted payload. The receiver does not need to know it.",
+  "awgParam.timer": "A protocol timer. Each side keeps its own.",
+  "xrayParam.inbound.port": "The port the server listens on and the client connects to.",
+  "xrayParam.vless.id": "The client UUID. A non-UUID string is accepted too — the core hashes it into one.",
+  "xrayParam.vless.flow": "Vision only works over TLS or REALITY.",
+  "xrayParam.vless.decryption": "VLESS Encryption. Arrived in v26.1.13 — v25.8.29 does not know it.",
+  "xrayParam.inbound.fallbacks": "Where traffic that fails authentication goes.",
+  "xrayParam.reality.target": "The donor site: traffic that fails REALITY authentication is handed to it.",
+  "xrayParam.reality.serverNames": "The SNIs the server will answer for. The client sends one of them.",
+  "xrayParam.reality.shortIds": "An even number of hex characters: an odd one will not decode.",
+  "xrayParam.reality.minClientVer": "Written only where the core has no default of its own: from v26.7.11 it fills in 26.3.27 itself, so the field is left out.",
+  "xrayParam.reality.maxClientVer": "Upper bound on the client version. The mirror of minClientVer.",
+  "xrayParam.reality.maxTimeDiff": "How far the two clocks may differ, in milliseconds.",
+  "xrayParam.reality.mldsa65Seed": "Required on v25.7.23: without it REALITY does not start.",
+  "xrayParam.reality.mldsa65Verify": "The field is there and empty: the 1952 bytes are derived from the seed by ML-DSA-65 itself, and this page does not carry that algorithm. Fill it with the core's own mldsa65 command.",
+  "xrayParam.reality.limitFallbackUpload": "Throttling for traffic handed to the donor site.",
+  "xrayParam.reality.fingerprint": "Client side: which browser uTLS imitates.",
+  "xrayParam.reality.spiderX": "The spider's path. The p/c/t/i/r parameters in the query set spiderY.",
+  "xrayParam.reality.spiderY": "Fine tuning for the crawl: padding, concurrency, retries, interval, return.",
+  "xrayParam.xhttp.path": "Client and server have to agree on the path, or the request lands in a 404.",
+  "xrayParam.xhttp.host": "The Host header. Empty means the address is used.",
+  "xrayParam.xhttp.mode": "v24.11.11 does not know stream-one.",
+  "xrayParam.xhttp.xPaddingBytes": "Both bounds must be strictly above zero, or the core refuses the config.",
+  "xrayParam.xhttp.xPaddingPlacement": "Where the padding rides. Both ends have to look for it there.",
+  "xrayParam.xhttp.xPaddingKey": "Name of the padding parameter. The default is recognisable; your own is less so.",
+  "xrayParam.xhttp.xPaddingMethod": "tokenish makes the padding look like a token rather than a run of the letter x.",
+  "xrayParam.xhttp.sessionIDPlacement": "Before v26.6.22 the field is called sessionPlacement.",
+  "xrayParam.xhttp.sessionIDLength": "Length of the session id. Together with the alphabet it decides how the id looks in a URL.",
+  "xrayParam.xhttp.sessionIDKey": "Name of the session-id parameter, when the id is not in the path.",
+  "xrayParam.xhttp.sessionIDTable": "Alphabet the session id is drawn from. It changes how the id looks in a URL.",
+  "xrayParam.xhttp.seqPlacement": "Where the chunk counter rides. Both ends have to read it from the same place.",
+  "xrayParam.xhttp.seqKey": "Name of the chunk-counter parameter, when it is not in the path.",
+  "xrayParam.xhttp.uplinkDataKey": "Name of the parameter the uplink data rides in.",
+  "xrayParam.xhttp.noGRPCHeader": "Drops the header that makes the stream read as gRPC.",
+  "xrayParam.xhttp.noSSEHeader": "Drops the header that makes the stream read as SSE.",
+  "xrayParam.xhttp.scMaxEachPostBytes": "How many bytes go out in one POST. It visibly shapes the traffic.",
+  "xrayParam.xhttp.downloadSettings": "A separate transport for the downstream.",
+  "xrayParam.transport.header": "An HTTP masquerade over RAW: its own mimicry, separate from REALITY.",
+  "xrayParam.transport.multiMode": "Both ends have to agree: one-sided multiMode breaks the stream.",
+  "xrayParam.transport.hysteria": "The Hysteria 2 transport, with its masquerade. Versions below v26.1.13 do not know it.",
+  "xrayParam.sockopt.tcpcongestion": "Congestion control. It is visible from outside in the shape of the traffic, but the algorithm may not be built into the machine's kernel — so it is chosen by hand.",
+  "xrayParam.sockopt.tcpKeepAliveIdle": "Seconds of idleness before the first keepalive probe.",
+  "xrayParam.sockopt.tcpKeepAliveInterval": "Interval between probes. The same for everyone is a timing anyone can measure.",
+  "xrayParam.sockopt.tcpFastOpen": "Data in the SYN. Middleboxes handle it inconsistently, so it is off unless asked.",
+  "xrayParam.sockopt.tcpMptcp": "Multipath TCP. Needs kernel support at both ends; without it the connection does not come up at all.",
+  "xrayParam.sockopt.mark": "Routing mark. It depends on the particular machine, so nothing is filled in.",
+  "xrayParam.sockopt.interface": "The interface the socket binds to. A guessed name produces a config that does not start.",
+  "xrayParam.finalmask.finalmask": "XRay's own obfuscation above the transport — the closest thing it has to what AmneziaWG does. Both ends must choose the same mask.",
+  "xrayParam.finalmask.quicParams.congestion": "Congestion control for transports over QUIC. Each side keeps its own.",
+  "xrayParam.finalmask.finalmask.infrastructure": "Masks that need infrastructure of their own: header-custom is a packet scripting language, xmc wants a Minecraft host, xdns resolvers, xicmp addresses, realm a URL and STUN servers. The generator cannot invent them.",
+  "awgParam.header": "The packet's magic header. Identical on both ends.",
+  "awgParam.headerRange":
+    "A range of headers: the value is drawn afresh for each packet.",
 };
 
 export default en;

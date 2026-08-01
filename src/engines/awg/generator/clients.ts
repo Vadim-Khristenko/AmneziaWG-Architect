@@ -83,7 +83,8 @@ export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
     releases: [
       {
         id: "<2.0.2",
-        label: "до 2.0.2",
+        label: "client.release.upTo",
+        labelParams: { version: "2.0.2" },
         limits: { maxHValue: INT32_MAX },
         notes: ["client.note.windowsHCap"],
       },

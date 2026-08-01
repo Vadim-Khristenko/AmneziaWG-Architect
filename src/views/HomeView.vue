@@ -275,7 +275,6 @@ const fieldsPath = computed(() => ({
     hash: "#client-fields",
 }));
 
-const isRu = computed(() => locale.value === "ru");
 
 function saveToHistory() {
     if (!currentAwg.value || !plainText.value) return;
@@ -350,9 +349,10 @@ async function restoreFromHistory(entry: HistoryEntry) {
         restoreConfig(entry.cfg);
         mark(`restore:${entry.id}`);
         addLog(
-            isRu.value
-                ? `Восстановлен конфиг AWG ${entry.cfg.version} от ${formatTime(entry.timestamp)}`
-                : `Restored AWG ${entry.cfg.version} config from ${formatTime(entry.timestamp)}`,
+            t("history.restored", {
+                version: entry.cfg.version,
+                time: formatTime(entry.timestamp),
+            }),
             "ok",
         );
         showHistory.value = false;
@@ -730,12 +730,8 @@ const paramGroups = computed((): ParamGroup[] => {
                                         @click="restoreFromHistory(entry)"
                                         :data-tooltip="
                                             entry.cfg
-                                                ? isRu
-                                                    ? 'Восстановить конфиг'
-                                                    : 'Restore config'
-                                                : isRu
-                                                  ? 'Старая запись — только копирование'
-                                                  : 'Legacy entry — copy only'
+                                                ? t('history.restore')
+                                                : t('history.legacy')
                                         "
                                     >
                                         <Check
@@ -752,9 +748,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                         }"
                                         @click="copyHistoryEntry(entry)"
                                         :data-tooltip="
-                                            isRu
-                                                ? 'Копировать конфиг'
-                                                : 'Copy config'
+                                            t('history.copy')
                                         "
                                     >
                                         <ClipboardCheck
@@ -767,7 +761,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                         class="btn btn-ghost btn-icon sm"
                                         @click="removeHistoryEntry(entry.id)"
                                         :data-tooltip="
-                                            isRu ? 'Удалить' : 'Delete'
+                                            t('history.delete')
                                         "
                                     >
                                         <X :size="14" />
@@ -891,7 +885,10 @@ const paramGroups = computed((): ParamGroup[] => {
                                         {{
                                             choice.id === null
                                                 ? t("gen.client.releaseCurrent")
-                                                : choice.label
+                                                : t(
+                                                      choice.label as "client.release.upTo",
+                                                      choice.labelParams,
+                                                  )
                                         }}
                                     </option>
                                 </select>

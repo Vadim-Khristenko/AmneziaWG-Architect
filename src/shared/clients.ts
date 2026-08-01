@@ -22,8 +22,16 @@
 export interface ClientRelease<Limits> {
   /** Version the behaviour belongs to, as the vendor writes it. */
   id: string;
-  /** Label for the picker, e.g. "до 2.0.2". */
+  /**
+   * Catalogue key for the picker's label.
+   *
+   * A key rather than the text, because "up to 2.0.2" is a sentence even
+   * though "2.0.2" is not — the version goes in as a parameter and the
+   * wording around it is translated like anything else.
+   */
   label: string;
+  /** Values the label interpolates, e.g. the version it is bounded by. */
+  labelParams?: Readonly<Record<string, string | number>>;
   limits: Partial<Limits>;
   /** What is wrong with this build, in the user's terms. */
   notes?: readonly string[];
@@ -108,9 +116,17 @@ export function clientTable<Limits>(profiles: readonly ClientProfile<Limits>[]):
  */
 export function releaseOptions<Limits>(
   profile: ClientProfile<Limits>,
-): readonly { id: string | null; label: string }[] {
+): readonly {
+  id: string | null;
+  label: string;
+  labelParams?: Readonly<Record<string, string | number>>;
+}[] {
   return [
     { id: null, label: CURRENT_LABEL },
-    ...(profile.releases ?? []).map((r) => ({ id: r.id, label: r.label })),
+    ...(profile.releases ?? []).map((r) => ({
+      id: r.id,
+      label: r.label,
+      ...(r.labelParams ? { labelParams: r.labelParams } : {}),
+    })),
   ];
 }

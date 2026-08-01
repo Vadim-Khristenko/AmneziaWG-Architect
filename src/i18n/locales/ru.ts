@@ -778,6 +778,129 @@ export const ru = {
   "gen.host.placeholder.stun": "например, {example}",
   "gen.host.placeholder.dns": "например, {example}",
   "gen.host.placeholder.random": "свой хост (необязательно)",
+
+  /* ── VAIEXIA ──────────────────────────────────────────────────────────── */
+  "vaiexia.soon": "СКОРО",
+  "vaiexia.lede": "Веб-панель и Telegram / Discord / Matrix бот — и не только.",
+  "vaiexia.desc":
+    "Руководите своим сервером или кластером где угодно и как угодно. Установка пакетов в один клик — как и продвинутых настроек протоколов.",
+  "vaiexia.feature.panel.title": "Веб-панель",
+  "vaiexia.feature.panel.desc":
+    "Единый интерфейс для сервера или целого кластера. Состояние, метрики и управление в одном месте, без беготни по SSH-сессиям.",
+  "vaiexia.feature.bots.title": "Telegram, Discord, Matrix",
+  "vaiexia.feature.bots.desc":
+    "Тот же контроль из мессенджера. Перезапустить сервис, выдать ключ или посмотреть нагрузку можно с телефона, не открывая ноутбук.",
+  "vaiexia.feature.install.title": "Установка в один клик",
+  "vaiexia.feature.install.desc":
+    "Пакеты и сервисы ставятся одним нажатием — без ручной сборки зависимостей и правки юнитов systemd.",
+  "vaiexia.feature.protocols.title": "Продвинутая настройка протоколов",
+  "vaiexia.feature.protocols.desc":
+    "Тонкие параметры обфускации доступны прямо из панели, а не только в конфиге. Включая то, что генерирует этот Architect.",
+  "vaiexia.feature.clusters.title": "Кластеры и мультисервер",
+  "vaiexia.feature.clusters.desc":
+    "Несколько узлов управляются как один. Раскатка конфигурации на группу серверов вместо повторения одних и тех же шагов.",
+  "vaiexia.feature.beyond.title": "Не только VPN",
+  "vaiexia.feature.beyond.desc":
+    "Панель не привязана к одному протоколу или задаче — это общий инструмент управления вашей инфраструктурой.",
+  "vaiexia.mirror.title": "GitHub недоступен?",
+  "vaiexia.mirror.lede":
+    "Если GitHub у вас не открывается, а приложения Amnezia нужны — попробуйте зеркало:",
+  "vaiexia.mirror.copy": "Скопировать ссылку",
+  "vaiexia.mirror.open": "Открыть",
+  "vaiexia.mirror.warning":
+    "Это независимое зеркало, а не официальный сайт Amnezia. Сверяйте контрольные суммы и подписи релизов перед установкой — как и для любого стороннего источника.",
+  "vaiexia.wip":
+    "Проект в разработке. Эта страница — анонс: сроков пока нет, обещаний в кредит тоже.",
+
+  /* ── FAQ page ─────────────────────────────────────────────────────────── */
+  "faq.title": "Вопросы и ответы",
+  "faq.lede":
+    "Как устроены параметры AmneziaWG, чем отличаются версии и что делать, когда туннель не поднимается.",
+  "faq.search.placeholder": "Поиск: Jc, nonce, не подключается…",
+  "faq.search.label": "Поиск по FAQ",
+  "faq.search.clear": "Очистить",
+  "faq.category.all": "Все",
+  "faq.found": "Найдено: {n}",
+  "faq.link.copied": "Ссылка скопирована",
+  "faq.link.copy": "Ссылка на вопрос",
+  "faq.empty":
+    "Ничего не нашлось. Попробуйте другой запрос или снимите фильтр категории.",
+  "faq.reset": "Сбросить",
+
+
+  /* ── Donate section ───────────────────────────────────────────────────── */
+  "donate.crypto": "Криптовалюта",
+  "donate.projects.title": "Другие мои проекты",
+  "donate.projects.lede":
+    "Architect — не единственное, что я делаю. Загляните, если интересно, чем ещё занимаюсь.",
+
+  /* ── Client releases ──────────────────────────────────────────────────── */
+  "client.release.upTo": "до {version}",
+
+
+  /* ── Parameter notes ──────────────────────────────────────────────────── */
+  "awgParam.S1": "Случайный паддинг перед handshake initiation.",
+  "awgParam.S2": "Паддинг перед handshake response.",
+  "awgParam.S3": "Паддинг перед cookie reply.",
+  "awgParam.S4": "Паддинг транспортных пакетов. Протокол ограничивает его 32 байтами.",
+  "awgParam.Jc": "Сколько мусорных пакетов уходит перед рукопожатием.",
+  "awgParam.Jmin": "Нижняя граница размера мусорного пакета.",
+  "awgParam.Jmax": "Верхняя граница размера мусорного пакета.",
+  "awgParam.cpsChain": "Поддельный пакет, уходящий до рукопожатия. Получатель его не разбирает.",
+  "awgParam.HeaderProtectionKey": "Ключ ChaCha20 для шифрования заголовков. Nonce берётся из первых 12 байт S-паддинга.",
+  "awgParam.ContentPaddingAddition": "Случайный паддинг внутри шифрованной нагрузки. Получателю знать его не нужно.",
+  "awgParam.timer": "Таймер протокола. У каждой стороны свой.",
+  "xrayParam.inbound.port": "Порт, который слушает сервер и в который идёт клиент.",
+  "xrayParam.vless.id": "UUID клиента. Строка не-UUID тоже принимается — ядро хеширует её в UUID.",
+  "xrayParam.vless.flow": "Vision работает только поверх TLS или REALITY.",
+  "xrayParam.vless.decryption": "VLESS Encryption. Появилась в v26.1.13 — на v25.8.29 ядро её не знает.",
+  "xrayParam.inbound.fallbacks": "Куда отдавать трафик, не прошедший аутентификацию.",
+  "xrayParam.reality.target": "Сайт-донор: к нему идёт трафик, не прошедший аутентификацию REALITY.",
+  "xrayParam.reality.serverNames": "SNI, которые сервер готов обслужить. Клиент шлёт один из них.",
+  "xrayParam.reality.shortIds": "Чётное число hex-символов: нечётное не декодируется.",
+  "xrayParam.reality.minClientVer": "Пишется только там, где у ядра нет своего дефолта: с v26.7.11 оно подставляет 26.3.27 само, и поле не выдаётся.",
+  "xrayParam.reality.maxClientVer": "Верхняя граница версии клиента. Зеркало minClientVer.",
+  "xrayParam.reality.maxTimeDiff": "Допустимое расхождение часов между сторонами, мс.",
+  "xrayParam.reality.mldsa65Seed": "На v25.7.23 обязателен: без него REALITY не стартует.",
+  "xrayParam.reality.mldsa65Verify": "Поле есть, но пустое: 1952 байта выводятся из seed самим ML-DSA-65, а этот алгоритм страница не носит. Заполняется командой ядра mldsa65.",
+  "xrayParam.reality.limitFallbackUpload": "Троттлинг трафика, ушедшего на сайт-донор.",
+  "xrayParam.reality.fingerprint": "Клиентская сторона: какой браузер имитирует uTLS.",
+  "xrayParam.reality.spiderX": "Путь для «паука». Параметры p/c/t/i/r в query задают spiderY.",
+  "xrayParam.reality.spiderY": "Тонкая настройка обхода: паддинг, конкурентность, повторы, интервал, возврат.",
+  "xrayParam.xhttp.path": "Клиент и сервер должны совпасть по пути, иначе запрос уходит в 404.",
+  "xrayParam.xhttp.host": "Заголовок Host. Пустой — берётся адрес.",
+  "xrayParam.xhttp.mode": "v24.11.11 не знает stream-one.",
+  "xrayParam.xhttp.xPaddingBytes": "Обе границы строго больше нуля — иначе ядро отказывается.",
+  "xrayParam.xhttp.xPaddingPlacement": "Где едет паддинг. Обе стороны должны его там искать.",
+  "xrayParam.xhttp.xPaddingKey": "Имя параметра паддинга. Дефолт узнаваем — своё значение менее типично.",
+  "xrayParam.xhttp.xPaddingMethod": "tokenish делает паддинг похожим на токен, а не на строку из «x».",
+  "xrayParam.xhttp.sessionIDPlacement": "До v26.6.22 поле называется sessionPlacement.",
+  "xrayParam.xhttp.sessionIDLength": "Длина идентификатора сессии. Вместе с алфавитом задаёт, как он выглядит в URL.",
+  "xrayParam.xhttp.sessionIDKey": "Имя параметра идентификатора сессии, когда он не в пути.",
+  "xrayParam.xhttp.sessionIDTable": "Алфавит идентификатора сессии. Меняет то, как он выглядит в URL.",
+  "xrayParam.xhttp.seqPlacement": "Где едет номер части. Обе стороны должны читать его из одного места.",
+  "xrayParam.xhttp.seqKey": "Имя параметра для номера части, когда он не в пути.",
+  "xrayParam.xhttp.uplinkDataKey": "Имя параметра, в котором едут данные восходящего потока.",
+  "xrayParam.xhttp.noGRPCHeader": "Убирает заголовок, по которому поток выглядит как gRPC.",
+  "xrayParam.xhttp.noSSEHeader": "Убирает заголовок, по которому поток выглядит как SSE.",
+  "xrayParam.xhttp.scMaxEachPostBytes": "Сколько байт уходит одним POST. Заметно влияет на форму трафика.",
+  "xrayParam.xhttp.downloadSettings": "Отдельный транспорт под нисходящий поток.",
+  "xrayParam.transport.header": "HTTP-маскировка поверх RAW: своя мимикрия, отдельная от REALITY.",
+  "xrayParam.transport.multiMode": "Обе стороны должны совпасть: односторонний multiMode ломает поток.",
+  "xrayParam.transport.hysteria": "Транспорт Hysteria 2 с маскарадом. Версии ниже v26.1.13 его не знают.",
+  "xrayParam.sockopt.tcpcongestion": "Управление перегрузкой. Видно снаружи по форме трафика, но алгоритма может не быть в ядре системы — поэтому выбирается вручную.",
+  "xrayParam.sockopt.tcpKeepAliveIdle": "Сколько секунд простоя до первой keepalive-пробы.",
+  "xrayParam.sockopt.tcpKeepAliveInterval": "Интервал между пробами. Одинаковый у всех — это тайминг, который можно измерить.",
+  "xrayParam.sockopt.tcpFastOpen": "Данные в SYN. Промежуточные узлы обрабатывают это по-разному, так что по умолчанию выключено.",
+  "xrayParam.sockopt.tcpMptcp": "Multipath TCP. Нужна поддержка ядра с обеих сторон, иначе соединение не встаёт вовсе.",
+  "xrayParam.sockopt.mark": "Метка маршрутизации. Зависит от конкретной машины, поэтому не подставляется.",
+  "xrayParam.sockopt.interface": "Интерфейс, к которому привязан сокет. Угаданное имя даёт конфиг, который не стартует.",
+  "xrayParam.finalmask.finalmask": "Собственная обфускация XRay поверх транспорта — ближайший аналог того, чем занимается AmneziaWG. Обе стороны должны выбрать одну и ту же маску.",
+  "xrayParam.finalmask.quicParams.congestion": "Управление перегрузкой для транспортов поверх QUIC. У каждой стороны своё.",
+  "xrayParam.finalmask.finalmask.infrastructure": "Маски, которым нужна чужая инфраструктура: header-custom это язык скриптования пакетов, xmc требует хост Minecraft, xdns резолверы, xicmp адреса, realm URL и STUN-серверы. Генератор не может их выдумать.",
+  "awgParam.header": "Магический заголовок пакета. Один и тот же на обеих сторонах.",
+  "awgParam.headerRange":
+    "Диапазон заголовков: значение выбирается случайно для каждого пакета.",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

@@ -26,7 +26,7 @@ import { stripRich } from "@/utils/richText";
 import RichText from "@/components/RichText";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -35,7 +35,6 @@ const activeCategory = ref<FaqCategoryId | "all">("all");
 const openIds = ref<Set<string>>(new Set());
 const { copied: copiedId, copy } = useCopyFeedback();
 
-const isRu = computed(() => locale.value === "ru");
 
 /* ── Search ──────────────────────────────────────────────────────────────── */
 
@@ -181,14 +180,10 @@ onBeforeUnmount(() => {
                     <HelpCircle :size="26" />
                 </div>
                 <h1 class="faq-title">
-                    {{ isRu ? "Вопросы и ответы" : "Questions & answers" }}
+                    {{ t("faq.title") }}
                 </h1>
                 <p class="faq-lede">
-                    {{
-                        isRu
-                            ? "Как устроены параметры AmneziaWG, чем отличаются версии и что делать, когда туннель не поднимается."
-                            : "How the AmneziaWG parameters work, how the versions differ, and what to check when a tunnel will not come up."
-                    }}
+                    {{ t("faq.lede") }}
                 </p>
             </header>
 
@@ -200,16 +195,14 @@ onBeforeUnmount(() => {
                     type="search"
                     class="faq-search-input"
                     :placeholder="
-                        isRu
-                            ? 'Поиск: Jc, nonce, не подключается…'
-                            : 'Search: Jc, nonce, not connecting…'
+                        t('faq.search.placeholder')
                     "
-                    :aria-label="isRu ? 'Поиск по FAQ' : 'Search the FAQ'"
+                    :aria-label="t('faq.search.label')"
                 />
                 <button
                     v-if="query"
                     class="faq-search-clear"
-                    :aria-label="isRu ? 'Очистить' : 'Clear'"
+                    :aria-label="t('faq.search.clear')"
                     @click="clearSearch"
                 >
                     <X :size="15" />
@@ -225,7 +218,7 @@ onBeforeUnmount(() => {
                     :aria-selected="activeCategory === 'all'"
                     @click="activeCategory = 'all'"
                 >
-                    {{ isRu ? "Все" : "All" }}
+                    {{ t("faq.category.all") }}
                     <span class="faq-cat-n">{{ counts.all }}</span>
                 </button>
                 <button
@@ -248,9 +241,7 @@ onBeforeUnmount(() => {
             <!-- ── Results ─────────────────────────────────────────────── -->
             <p class="faq-count" aria-live="polite">
                 {{
-                    isRu
-                        ? `Найдено: ${filtered.length}`
-                        : `${filtered.length} found`
+                    t('faq.found', { n: filtered.length })
                 }}
             </p>
 
@@ -292,12 +283,8 @@ onBeforeUnmount(() => {
                                 <Link2 v-else :size="13" />
                                 <span>{{
                                     copiedId === entry.id
-                                        ? isRu
-                                            ? "Ссылка скопирована"
-                                            : "Link copied"
-                                        : isRu
-                                          ? "Ссылка на вопрос"
-                                          : "Link to this question"
+                                        ? t("faq.link.copied")
+                                        : t("faq.link.copy")
                                 }}</span>
                             </button>
                         </div>
@@ -309,13 +296,11 @@ onBeforeUnmount(() => {
                 <Search :size="22" />
                 <p>
                     {{
-                        isRu
-                            ? "Ничего не нашлось. Попробуйте другой запрос или снимите фильтр категории."
-                            : "Nothing matched. Try a different query, or clear the category filter."
+                        t("faq.empty")
                     }}
                 </p>
                 <button class="btn btn-secondary" @click="clearSearch">
-                    {{ isRu ? "Сбросить" : "Reset" }}
+                    {{ t("faq.reset") }}
                 </button>
             </div>
         </div>

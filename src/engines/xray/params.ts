@@ -99,7 +99,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "port",
     bounds: { min: 1, max: 65535 },
     generated: true,
-    note: "Порт, который слушает сервер и в который идёт клиент.",
+    note: "xrayParam.inbound.port",
   }),
   p({
     key: "id",
@@ -109,7 +109,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "clients.0.id",
     generated: true,
     source: "proxy/vless/inbound: non-UUID strings are hashed into one",
-    note: "UUID клиента. Строка не-UUID тоже принимается — ядро хеширует её в UUID.",
+    note: "xrayParam.vless.id",
   }),
   p({
     key: "flow",
@@ -120,7 +120,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["", "xtls-rprx-vision"] },
     generated: true,
     source: "infra/conf/vless.go",
-    note: "Vision работает только поверх TLS или REALITY.",
+    note: "xrayParam.vless.flow",
   }),
   p({
     key: "decryption",
@@ -131,7 +131,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "vlessEncryption.decryption",
     generated: true,
     source: "infra/conf/vless.go: mlkem768x25519plus.<mode>.<seconds>.<key>",
-    note: "VLESS Encryption. Появилась в v26.1.13 — на v25.8.29 ядро её не знает.",
+    note: "xrayParam.vless.decryption",
   }),
   p({
     key: "fallbacks",
@@ -141,7 +141,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "fallbacks",
     generated: false,
     source: "infra/conf/vless.go: FallbackConfig",
-    note: "Куда отдавать трафик, не прошедший аутентификацию.",
+    note: "xrayParam.inbound.fallbacks",
   }),
 
   /* ── REALITY ──────────────────────────────────────────────────────────── */
@@ -154,7 +154,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: true,
     aliases: ["dest"],
     source: "transport_security.go: c.Target overrides c.Dest",
-    note: "Сайт-донор: к нему идёт трафик, не прошедший аутентификацию REALITY.",
+    note: "xrayParam.reality.target",
   }),
   p({
     key: "serverNames",
@@ -164,7 +164,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "reality.serverNames",
     generated: true,
     source: 'transport_security.go: empty "serverNames" is refused',
-    note: "SNI, которые сервер готов обслужить. Клиент шлёт один из них.",
+    note: "xrayParam.reality.serverNames",
   }),
   p({
     key: "privateKey",
@@ -185,7 +185,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { max: 16 },
     generated: true,
     source: "transport_security.go: hex.Decode into 8 bytes, length ≤ 16",
-    note: "Чётное число hex-символов: нечётное не декодируется.",
+    note: "xrayParam.reality.shortIds",
   }),
   p({
     key: "xver",
@@ -205,7 +205,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "reality.minClientVer",
     generated: true,
     source: "transport_security.go: three bytes, each < 256",
-    note: "Пишется только там, где у ядра нет своего дефолта: с v26.7.11 оно подставляет 26.3.27 само, и поле не выдаётся.",
+    note: "xrayParam.reality.minClientVer",
   }),
   p({
     key: "maxClientVer",
@@ -216,7 +216,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_security.go: MaxClientVer",
-    note: "Верхняя граница версии клиента. Зеркало minClientVer.",
+    note: "xrayParam.reality.maxClientVer",
   }),
   p({
     key: "maxTimeDiff",
@@ -227,7 +227,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_security.go: MaxTimeDiff",
-    note: "Допустимое расхождение часов между сторонами, мс.",
+    note: "xrayParam.reality.maxTimeDiff",
   }),
   p({
     key: "mldsa65Seed",
@@ -239,7 +239,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { byteLength: 32 },
     generated: true,
     source: "transport_security.go: 32 bytes, must differ from privateKey",
-    note: "На v25.7.23 обязателен: без него REALITY не стартует.",
+    note: "xrayParam.reality.mldsa65Seed",
   }),
   p({
     key: "mldsa65Verify",
@@ -251,7 +251,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { byteLength: 1952 },
     generated: false,
     source: "transport_security.go: 1952 bytes",
-    note: "Поле есть, но пустое: 1952 байта выводятся из seed самим ML-DSA-65, а этот алгоритм страница не носит. Заполняется командой ядра mldsa65.",
+    note: "xrayParam.reality.mldsa65Verify",
   }),
   p({
     key: "limitFallbackUpload",
@@ -264,7 +264,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_security.go: LimitFallback",
-    note: "Троттлинг трафика, ушедшего на сайт-донор.",
+    note: "xrayParam.reality.limitFallbackUpload",
   }),
   p({
     key: "limitFallbackDownload",
@@ -289,7 +289,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "reality.fingerprint",
     generated: true,
     source: 'transport_security.go: "unsafe" and "hellogolang" are refused',
-    note: "Клиентская сторона: какой браузер имитирует uTLS.",
+    note: "xrayParam.reality.fingerprint",
   }),
   p({
     key: "spiderX",
@@ -299,7 +299,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "reality.spiderX",
     generated: true,
     source: "transport_security.go: must start with /",
-    note: "Путь для «паука». Параметры p/c/t/i/r в query задают spiderY.",
+    note: "xrayParam.reality.spiderX",
   }),
   p({
     key: "spiderY",
@@ -311,7 +311,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "reality.spiderX",
     generated: true,
     source: "transport_security.go: parse(p|c|t|i|r) into ten int64s",
-    note: "Тонкая настройка обхода: паддинг, конкурентность, повторы, интервал, возврат.",
+    note: "xrayParam.reality.spiderY",
   }),
 
   /* ── XHTTP ────────────────────────────────────────────────────────────── */
@@ -323,7 +323,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.path",
     generated: true,
     source: "transport_method.go: SplitHTTPConfig.Path",
-    note: "Клиент и сервер должны совпасть по пути, иначе запрос уходит в 404.",
+    note: "xrayParam.xhttp.path",
   }),
   p({
     key: "host",
@@ -333,7 +333,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.host",
     generated: true,
     source: "transport_method.go: priority host > serverName > address",
-    note: "Заголовок Host. Пустой — берётся адрес.",
+    note: "xrayParam.xhttp.host",
   }),
   p({
     key: "mode",
@@ -344,7 +344,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["auto", "packet-up", "stream-up", "stream-one"] },
     generated: true,
     source: "transport_method.go: unsupported mode is a hard error",
-    note: "v24.11.11 не знает stream-one.",
+    note: "xrayParam.xhttp.mode",
   }),
   p({
     key: "headers",
@@ -363,7 +363,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.paddingBytes",
     generated: true,
     source: "transport_method.go: xPaddingBytes cannot be disabled",
-    note: "Обе границы строго больше нуля — иначе ядро отказывается.",
+    note: "xrayParam.xhttp.xPaddingBytes",
   }),
   p({
     key: "xPaddingObfsMode",
@@ -382,7 +382,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["auto", "cookie", "header", "query", "queryInHeader"] },
     generated: true,
     source: "transport_method.go: default queryInHeader",
-    note: "Где едет паддинг. Обе стороны должны его там искать.",
+    note: "xrayParam.xhttp.xPaddingPlacement",
   }),
   p({
     key: "xPaddingKey",
@@ -392,7 +392,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.paddingKey",
     generated: true,
     source: "transport_method.go: default x_padding",
-    note: "Имя параметра паддинга. Дефолт узнаваем — своё значение менее типично.",
+    note: "xrayParam.xhttp.xPaddingKey",
   }),
   p({
     key: "xPaddingHeader",
@@ -412,7 +412,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["repeat-x", "tokenish"] },
     generated: true,
     source: "transport_method.go: default repeat-x",
-    note: "tokenish делает паддинг похожим на токен, а не на строку из «x».",
+    note: "xrayParam.xhttp.xPaddingMethod",
   }),
   p({
     key: "uplinkHTTPMethod",
@@ -432,7 +432,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["auto", "path", "cookie", "header", "query"] },
     generated: true,
     source: "transport_method.go: default path",
-    note: "До v26.6.22 поле называется sessionPlacement.",
+    note: "xrayParam.xhttp.sessionIDPlacement",
   }),
   p({
     key: "sessionIDLength",
@@ -442,7 +442,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.sessionIdLength",
     generated: true,
     source: "transport_method.go: checked against sessionIDTable room",
-    note: "Длина идентификатора сессии. Вместе с алфавитом задаёт, как он выглядит в URL.",
+    note: "xrayParam.xhttp.sessionIDLength",
   }),
   p({
     key: "sessionIDKey",
@@ -452,7 +452,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.sessionIdKey",
     generated: true,
     source: "transport_method.go: default x_session / X-Session",
-    note: "Имя параметра идентификатора сессии, когда он не в пути.",
+    note: "xrayParam.xhttp.sessionIDKey",
   }),
   p({
     key: "sessionIDTable",
@@ -462,7 +462,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.sessionIdTable",
     generated: true,
     source: "transport_method.go: ASCII only, room must exceed 2^31",
-    note: "Алфавит идентификатора сессии. Меняет то, как он выглядит в URL.",
+    note: "xrayParam.xhttp.sessionIDTable",
   }),
   p({
     key: "seqPlacement",
@@ -473,7 +473,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["path", "cookie", "header", "query"] },
     generated: true,
     source: "transport_method.go: default path",
-    note: "Где едет номер части. Обе стороны должны читать его из одного места.",
+    note: "xrayParam.xhttp.seqPlacement",
   }),
   p({
     key: "seqKey",
@@ -483,7 +483,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.seqKey",
     generated: true,
     source: "transport_method.go: default x_seq / X-Seq",
-    note: "Имя параметра для номера части, когда он не в пути.",
+    note: "xrayParam.xhttp.seqKey",
   }),
   p({
     key: "uplinkDataPlacement",
@@ -505,7 +505,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_method.go: default x_data / X-Data",
-    note: "Имя параметра, в котором едут данные восходящего потока.",
+    note: "xrayParam.xhttp.uplinkDataKey",
   }),
   p({
     key: "uplinkChunkSize",
@@ -523,7 +523,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.noGrpcHeader",
     generated: true,
     source: "transport_method.go: NoGRPCHeader",
-    note: "Убирает заголовок, по которому поток выглядит как gRPC.",
+    note: "xrayParam.xhttp.noGRPCHeader",
   }),
   p({
     key: "noSSEHeader",
@@ -533,7 +533,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.noSseHeader",
     generated: true,
     source: "transport_method.go: NoSSEHeader",
-    note: "Убирает заголовок, по которому поток выглядит как SSE.",
+    note: "xrayParam.xhttp.noSSEHeader",
   }),
   p({
     key: "scMaxEachPostBytes",
@@ -542,7 +542,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     scope: "sender",
     field: "xhttp.scMaxEachPostBytes",
     generated: true,
-    note: "Сколько байт уходит одним POST. Заметно влияет на форму трафика.",
+    note: "xrayParam.xhttp.scMaxEachPostBytes",
   }),
   p({
     key: "scMinPostsIntervalMs",
@@ -586,7 +586,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "xhttp.downloadSettings",
     generated: false,
     source: "transport_method.go: forbidden in stream-one mode",
-    note: "Отдельный транспорт под нисходящий поток.",
+    note: "xrayParam.xhttp.downloadSettings",
   }),
 
   /* ── XMUX ─────────────────────────────────────────────────────────────── */
@@ -659,7 +659,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "transportSettings.rawHttpHeader",
     generated: true,
     source: "transport_method.go: tcpHeaderLoader, none | http",
-    note: "HTTP-маскировка поверх RAW: своя мимикрия, отдельная от REALITY.",
+    note: "xrayParam.transport.header",
   }),
   p({
     key: "heartbeatPeriod",
@@ -687,7 +687,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "transportSettings.grpcMultiMode",
     generated: true,
     source: "transport_method.go: GRPCConfig.MultiMode",
-    note: "Обе стороны должны совпасть: односторонний multiMode ломает поток.",
+    note: "xrayParam.transport.multiMode",
   }),
   p({
     key: "hysteria",
@@ -698,7 +698,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "transportSettings.resolvedAuth",
     generated: true,
     source: "transport_method.go: HysteriaConfig, version must be 2",
-    note: "Транспорт Hysteria 2 с маскарадом. Версии ниже v26.1.13 его не знают.",
+    note: "xrayParam.transport.hysteria",
   }),
 
   /* ── sockopt and finalmask ────────────────────────────────────────────── */
@@ -712,7 +712,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_internet.go: SocketConfig.TcpCongestion",
-    note: "Управление перегрузкой. Видно снаружи по форме трафика, но алгоритма может не быть в ядре системы — поэтому выбирается вручную.",
+    note: "xrayParam.sockopt.tcpcongestion",
   }),
   p({
     key: "tcpKeepAliveIdle",
@@ -722,7 +722,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "sockopt.tcpKeepAliveIdle",
     generated: true,
     source: "transport_internet.go: SocketConfig.TcpKeepAliveIdle",
-    note: "Сколько секунд простоя до первой keepalive-пробы.",
+    note: "xrayParam.sockopt.tcpKeepAliveIdle",
   }),
   p({
     key: "tcpKeepAliveInterval",
@@ -732,7 +732,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "sockopt.tcpKeepAliveInterval",
     generated: true,
     source: "transport_internet.go: SocketConfig.TcpKeepAliveInterval",
-    note: "Интервал между пробами. Одинаковый у всех — это тайминг, который можно измерить.",
+    note: "xrayParam.sockopt.tcpKeepAliveInterval",
   }),
   p({
     key: "tcpUserTimeout",
@@ -761,7 +761,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_internet.go: SocketConfig.Tfo",
-    note: "Данные в SYN. Промежуточные узлы обрабатывают это по-разному, так что по умолчанию выключено.",
+    note: "xrayParam.sockopt.tcpFastOpen",
   }),
   p({
     key: "tcpMptcp",
@@ -772,7 +772,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_internet.go: SocketConfig.TcpMptcp",
-    note: "Multipath TCP. Нужна поддержка ядра с обеих сторон, иначе соединение не встаёт вовсе.",
+    note: "xrayParam.sockopt.tcpMptcp",
   }),
   p({
     key: "tcpMaxSeg",
@@ -804,7 +804,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_internet.go: SocketConfig.Mark",
-    note: "Метка маршрутизации. Зависит от конкретной машины, поэтому не подставляется.",
+    note: "xrayParam.sockopt.mark",
   }),
   p({
     key: "interface",
@@ -815,7 +815,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     generated: false,
     offered: true,
     source: "transport_internet.go: SocketConfig.Interface",
-    note: "Интерфейс, к которому привязан сокет. Угаданное имя даёт конфиг, который не стартует.",
+    note: "xrayParam.sockopt.interface",
   }),
   p({
     key: "finalmask",
@@ -829,7 +829,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     },
     generated: true,
     source: "transport_finalmask.go: tcpmaskLoader and udpmaskLoader",
-    note: "Собственная обфускация XRay поверх транспорта — ближайший аналог того, чем занимается AmneziaWG. Обе стороны должны выбрать одну и ту же маску.",
+    note: "xrayParam.finalmask.finalmask",
   }),
   p({
     key: "quicParams.congestion",
@@ -841,7 +841,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     bounds: { oneOf: ["", "bbr", "reno", "brutal"] },
     generated: true,
     source: "transport_internet.go: unknown congestion control is refused",
-    note: "Управление перегрузкой для транспортов поверх QUIC. У каждой стороны своё.",
+    note: "xrayParam.finalmask.quicParams.congestion",
   }),
   p({
     key: "finalmask.infrastructure",
@@ -852,7 +852,7 @@ export const XRAY_PARAMETERS: readonly XrayParam[] = [
     field: "finalMask.external",
     generated: false,
     source: "transport_finalmask.go: header-custom, xmc, xdns, xicmp, realm",
-    note: "Маски, которым нужна чужая инфраструктура: header-custom это язык скриптования пакетов, xmc требует хост Minecraft, xdns резолверы, xicmp адреса, realm URL и STUN-серверы. Генератор не может их выдумать.",
+    note: "xrayParam.finalmask.finalmask.infrastructure",
   }),
 ];
 

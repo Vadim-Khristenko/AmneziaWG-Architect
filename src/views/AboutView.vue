@@ -43,7 +43,6 @@ import { TIMELINE } from "@/data/changelog";
 import RichText from "@/components/RichText";
 
 const { locale, t } = useI18n();
-const isRu = computed(() => locale.value === "ru");
 
 const activeTimeline = ref<number | null>(null);
 const avatarFailed = ref(false);

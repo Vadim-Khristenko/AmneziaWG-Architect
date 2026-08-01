@@ -141,7 +141,14 @@ export interface ParamDescriptor {
    * later reader can check the claim instead of trusting it.
    */
   source?: string;
-  /** Why the parameter exists, for tooltips and the field guide. */
+  /**
+   * Catalogue key for why the parameter exists, shown in tooltips and the
+   * field guide.
+   *
+   * A key rather than the prose. These held Russian sentences, which is
+   * interface text sitting in an engine — and the XRay page being built next
+   * would have started life with sixty of them hard-coded in it.
+   */
   note?: string;
   /** Set when the protocol accepts an older spelling as well. */
   aliases?: readonly string[];

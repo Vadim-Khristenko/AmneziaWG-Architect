@@ -150,7 +150,7 @@ export function renderConfLines(
     ];
     const active = timers.filter(([, value]) => value !== "");
     if (active.length) {
-      lines.push(cm("# AWG 3.0 — рандомизация таймингов протокола"));
+      lines.push(cm(`# ${L.awg3Timers}`));
       for (const [key, value] of active) lines.push(kv(key, value));
     }
   }

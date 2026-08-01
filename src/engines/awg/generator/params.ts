@@ -57,7 +57,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
       scope: "shared",
       since: "1.0",
       field: `h${n}s`,
-      note: "Магический заголовок пакета. Один и тот же на обеих сторонах.",
+      note: "awgParam.header",
       source: "device/receive.go: DeterminePacketTypeAndPadding",
     }),
   ),
@@ -68,7 +68,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
       scope: "shared",
       since: "2.0",
       field: `h${n}`,
-      note: "Диапазон заголовков: значение выбирается случайно для каждого пакета.",
+      note: "awgParam.headerRange",
       source: "device/receive.go: header.Contains(...)",
     }),
   ),
@@ -80,7 +80,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "shared",
     since: "1.0",
     field: "s1",
-    note: "Случайный паддинг перед handshake initiation.",
+    note: "awgParam.S1",
     source: "device/receive.go: size == padding + MessageInitiationSize",
   },
   {
@@ -89,7 +89,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "shared",
     since: "1.0",
     field: "s2",
-    note: "Паддинг перед handshake response.",
+    note: "awgParam.S2",
     source: "device/receive.go: size == padding + MessageResponseSize",
   },
   {
@@ -98,7 +98,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "shared",
     since: "2.0",
     field: "s3",
-    note: "Паддинг перед cookie reply.",
+    note: "awgParam.S3",
     source: "device/receive.go: size == padding + MessageCookieReplySize",
   },
   {
@@ -108,7 +108,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     since: "2.0",
     field: "s4",
     bounds: { max: 32 },
-    note: "Паддинг транспортных пакетов. Протокол ограничивает его 32 байтами.",
+    note: "awgParam.S4",
     source: "amneziawg-tools src/config.c",
   },
 
@@ -119,7 +119,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "sender",
     since: "1.0",
     field: "jc",
-    note: "Сколько мусорных пакетов уходит перед рукопожатием.",
+    note: "awgParam.Jc",
     source: "device/send.go: peer.device.JunkPackets()",
   },
   {
@@ -128,7 +128,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "sender",
     since: "1.0",
     field: "jmin",
-    note: "Нижняя граница размера мусорного пакета.",
+    note: "awgParam.Jmin",
   },
   {
     key: "Jmax",
@@ -136,7 +136,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "sender",
     since: "1.0",
     field: "jmax",
-    note: "Верхняя граница размера мусорного пакета.",
+    note: "awgParam.Jmax",
   },
 
   // ── CPS chain ────────────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
       scope: "sender",
       since: "1.5",
       field: `i${n}`,
-      note: "Поддельный пакет, уходящий до рукопожатия. Получатель его не разбирает.",
+      note: "awgParam.cpsChain",
       source: "device/send.go: peer.device.ipackets",
     }),
   ),
@@ -159,7 +159,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "shared",
     since: "3.0",
     field: "awg3.headerProtectionKey",
-    note: "Ключ ChaCha20 для шифрования заголовков. Nonce берётся из первых 12 байт S-паддинга.",
+    note: "awgParam.HeaderProtectionKey",
     source: "noise-protocol.go: HeaderProtectionCipher",
   },
   {
@@ -168,7 +168,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
     scope: "sender",
     since: "3.0",
     field: "awg3.contentPaddingAddition",
-    note: "Случайный паддинг внутри шифрованной нагрузки. Получателю знать его не нужно.",
+    note: "awgParam.ContentPaddingAddition",
     source: "device/send.go: randomPaddingAddition",
   },
   ...(
@@ -186,7 +186,7 @@ export const AWG_PARAMETERS: readonly AWGParameter[] = [
       scope: "local",
       since: "3.0",
       field: `awg3.${field}`,
-      note: "Таймер протокола. У каждой стороны свой.",
+      note: "awgParam.timer",
       source: "device/timers.go",
     }),
   ),

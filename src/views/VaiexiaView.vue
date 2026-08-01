@@ -21,10 +21,10 @@ import {
     ShieldCheck,
     TriangleAlert,
 } from "lucide-vue-next";
-import { useI18n, pick } from "@/i18n";
+import { useI18n } from "@/i18n";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 
-const { locale } = useI18n();
+const { t } = useI18n();
 
 const MIRROR_URL = "https://git.vai-rice.space/amnezia-vpn";
 
@@ -36,77 +36,17 @@ const copyMirror = () => copy(MIRROR_KEY, MIRROR_URL);
 
 interface Feature {
     icon: typeof Server;
-    ru: { title: string; desc: string };
-    en: { title: string; desc: string };
+    /** Catalogue key stem; `.title` and `.desc` hang off it. */
+    key: string;
 }
 
 const features: Feature[] = [
-    {
-        icon: LayoutDashboard,
-        ru: {
-            title: "Веб-панель",
-            desc: "Единый интерфейс для сервера или целого кластера. Состояние, метрики и управление в одном месте, без беготни по SSH-сессиям.",
-        },
-        en: {
-            title: "Web panel",
-            desc: "One interface for a single server or a whole cluster. State, metrics and controls in one place instead of a scatter of SSH sessions.",
-        },
-    },
-    {
-        icon: Bot,
-        ru: {
-            title: "Telegram, Discord, Matrix",
-            desc: "Тот же контроль из мессенджера. Перезапустить сервис, выдать ключ или посмотреть нагрузку можно с телефона, не открывая ноутбук.",
-        },
-        en: {
-            title: "Telegram, Discord, Matrix",
-            desc: "The same control from your messenger. Restart a service, issue a key or check load from your phone without opening a laptop.",
-        },
-    },
-    {
-        icon: MousePointerClick,
-        ru: {
-            title: "Установка в один клик",
-            desc: "Пакеты и сервисы ставятся одним нажатием — без ручной сборки зависимостей и правки юнитов systemd.",
-        },
-        en: {
-            title: "One-click installs",
-            desc: "Packages and services deploy in a single click — no hand-built dependency chains, no hand-edited systemd units.",
-        },
-    },
-    {
-        icon: SlidersHorizontal,
-        ru: {
-            title: "Продвинутая настройка протоколов",
-            desc: "Тонкие параметры обфускации доступны прямо из панели, а не только в конфиге. Включая то, что генерирует этот Architect.",
-        },
-        en: {
-            title: "Advanced protocol settings",
-            desc: "Fine-grained obfuscation parameters are exposed in the panel, not buried in a config file — including everything this Architect generates.",
-        },
-    },
-    {
-        icon: Network,
-        ru: {
-            title: "Кластеры и мультисервер",
-            desc: "Несколько узлов управляются как один. Раскатка конфигурации на группу серверов вместо повторения одних и тех же шагов.",
-        },
-        en: {
-            title: "Clusters and multi-server",
-            desc: "Several nodes behave as one. Roll a configuration out to a group instead of repeating the same steps by hand.",
-        },
-    },
-    {
-        icon: Boxes,
-        ru: {
-            title: "Не только VPN",
-            desc: "Панель не привязана к одному протоколу или задаче — это общий инструмент управления вашей инфраструктурой.",
-        },
-        en: {
-            title: "More than VPN",
-            desc: "The panel is not tied to one protocol or one job — it is a general tool for running your own infrastructure.",
-        },
-    },
+    { icon: LayoutDashboard, key: "panel" },
+    { icon: Bot, key: "bots" },
+    { icon: MousePointerClick, key: "install" },
+    { icon: SlidersHorizontal, key: "protocols" },
+    { icon: Network, key: "clusters" },
+    { icon: Boxes, key: "beyond" },
 ];
 </script>
 
@@ -117,25 +57,17 @@ const features: Feature[] = [
             <header class="vx-hero">
                 <div class="badge badge-amber vx-badge">
                     <Sparkles :size="12" />
-                    {{ locale === "ru" ? "СКОРО" : "COMING SOON" }}
+                    {{ t("vaiexia.soon") }}
                 </div>
 
                 <h1 class="vx-title">VAIEXIA</h1>
 
                 <p class="vx-tagline">
-                    {{
-                        locale === "ru"
-                            ? "Веб-панель и Telegram / Discord / Matrix бот — и не только."
-                            : "A web panel and a Telegram / Discord / Matrix bot — and more."
-                    }}
+                    {{ t("vaiexia.lede") }}
                 </p>
 
                 <p class="vx-lede">
-                    {{
-                        locale === "ru"
-                            ? "Руководите своим сервером или кластером где угодно и как угодно. Установка пакетов в один клик — как и продвинутых настроек протоколов."
-                            : "Run your server or cluster from anywhere, any way you like. One-click package installs, and the advanced protocol settings to match."
-                    }}
+                    {{ t("vaiexia.desc") }}
                 </p>
             </header>
 
@@ -143,15 +75,19 @@ const features: Feature[] = [
             <section class="vx-grid">
                 <article
                     v-for="(f, i) in features"
-                    :key="pick(f, locale).title"
+                    :key="f.key"
                     class="vx-card"
                     :style="{ animationDelay: `${i * 70}ms` }"
                 >
                     <div class="vx-card-icon">
                         <component :is="f.icon" :size="20" />
                     </div>
-                    <h2 class="vx-card-title">{{ pick(f, locale).title }}</h2>
-                    <p class="vx-card-desc">{{ pick(f, locale).desc }}</p>
+                    <h2 class="vx-card-title">
+                        {{ t(`vaiexia.feature.${f.key}.title` as "vaiexia.feature.panel.title") }}
+                    </h2>
+                    <p class="vx-card-desc">
+                        {{ t(`vaiexia.feature.${f.key}.desc` as "vaiexia.feature.panel.desc") }}
+                    </p>
                 </article>
             </section>
 
@@ -160,20 +96,12 @@ const features: Feature[] = [
                 <div class="vx-mirror-head">
                     <GitBranch :size="18" />
                     <h2>
-                        {{
-                            locale === "ru"
-                                ? "GitHub недоступен?"
-                                : "GitHub blocked?"
-                        }}
+                        {{ t("vaiexia.mirror.title") }}
                     </h2>
                 </div>
 
                 <p class="vx-mirror-text">
-                    {{
-                        locale === "ru"
-                            ? "Если GitHub у вас не открывается, а приложения Amnezia нужны — попробуйте зеркало:"
-                            : "If GitHub will not open for you but you need the Amnezia apps, try the mirror:"
-                    }}
+                    {{ t("vaiexia.mirror.lede") }}
                 </p>
 
                 <div class="vx-mirror-row">
@@ -181,9 +109,7 @@ const features: Feature[] = [
                     <button
                         class="btn btn-ghost btn-icon"
                         :class="{ 'vx-copied': isCopied(MIRROR_KEY) }"
-                        :aria-label="
-                            locale === 'ru' ? 'Скопировать ссылку' : 'Copy link'
-                        "
+                        :aria-label="t('vaiexia.mirror.copy')"
                         @click="copyMirror"
                     >
                         <Check v-if="isCopied(MIRROR_KEY)" :size="16" />
@@ -196,18 +122,14 @@ const features: Feature[] = [
                         rel="noopener noreferrer"
                     >
                         <ExternalLink :size="15" />
-                        <span>{{ locale === "ru" ? "Открыть" : "Open" }}</span>
+                        <span>{{ t("vaiexia.mirror.open") }}</span>
                     </a>
                 </div>
 
                 <div class="alert alert-warn vx-mirror-note">
                     <TriangleAlert :size="16" class="alert-icon" />
                     <div class="alert-content">
-                        {{
-                            locale === "ru"
-                                ? "Это независимое зеркало, а не официальный сайт Amnezia. Сверяйте контрольные суммы и подписи релизов перед установкой — как и для любого стороннего источника."
-                                : "This is an independent mirror, not Amnezia's official site. Verify release checksums and signatures before installing, as you would with any third-party source."
-                        }}
+                        {{ t("vaiexia.mirror.warning") }}
                     </div>
                 </div>
             </section>
@@ -216,11 +138,7 @@ const features: Feature[] = [
             <section class="vx-status">
                 <ShieldCheck :size="16" />
                 <p>
-                    {{
-                        locale === "ru"
-                            ? "Проект в разработке. Эта страница — анонс: сроков пока нет, обещаний в кредит тоже."
-                            : "The project is in development. This page is an announcement — no dates promised, and no promises on credit."
-                    }}
+                    {{ t("vaiexia.wip") }}
                 </p>
             </section>
         </div>
