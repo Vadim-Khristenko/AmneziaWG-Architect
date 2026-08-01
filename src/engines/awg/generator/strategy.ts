@@ -16,7 +16,7 @@
  */
 
 import type { ParamDescriptor, ParamSet } from "@/types/protocol";
-import { rnd, rRange } from "./utils";
+import { rnd, rRange, RANGE_MAX_WIDTH } from "./utils";
 import type { AWGVersion, Intensity } from "./types";
 import type { AwgClientLimits } from "./clients";
 
@@ -78,11 +78,28 @@ type HeaderKey = keyof ReturnType<typeof headerZones>;
 const isHeaderKey = (key: string): key is HeaderKey =>
   key === "H1" || key === "H2" || key === "H3" || key === "H4";
 
-/** A ranged header: a window inside the parameter's own zone. */
+/**
+ * A ranged header: a window inside the parameter's own zone.
+ *
+ * The base is drawn with room left for what `rRange` adds on top of it. It
+ * used to be drawn across the whole zone, and the spread and the window width
+ * then carried the range past the zone's top — on a client capped at 2^31 the
+ * zones are close enough together that the range landed in the next one, the
+ * validator refused the config, and generation threw where nothing catches
+ * it. Roughly one click in forty thousand did nothing at all.
+ *
+ * Leaving the room also stops the last zone's range ending exactly on the
+ * client's ceiling, which it did in one config out of six: an upper bound of
+ * 2147483647 is not a random number, it is a signature.
+ */
 const drawHeaderRange: Draw = (ctx, param) => {
   if (!isHeaderKey(param.key)) return 0;
   const zone = headerZones(ctx.client, ctx.extreme)[param.key];
-  return rRange(rnd(zone.min, zone.max), zone.spread, ctx.client.maxHValue);
+
+  const headroom = zone.spread + RANGE_MAX_WIDTH;
+  const top = Math.max(zone.min, zone.max - headroom);
+
+  return rRange(rnd(zone.min, top), zone.spread, ctx.client.maxHValue);
 };
 
 /**
@@ -108,6 +125,31 @@ const drawHeaderSingle: Draw = (ctx, param) => {
 
 /** Router mode keeps handshake padding small; the link is the bottleneck. */
 const ROUTER_S_MAX = 20;
+
+/**
+ * What router mode allows the junk train to be.
+ *
+ * Ranges rather than ceilings that always win. The previous version wrote
+ * `Math.min(jmin, 40)` against a draw whose lowest possible value was 64, so
+ * the minimum always won and every router-mode config this tool has ever
+ * produced carried the same three numbers — Jc 3, Jmin 40, Jmax 128 — across
+ * every version, intensity, junk level and client. Three constants is not a
+ * light configuration, it is a fingerprint that names the tool and the mode.
+ */
+const ROUTER_JC_MAX = 3;
+
+/*
+ * The two ranges are chosen together, not separately. `resolveJmax` lifts a
+ * Jmax that leaves Jmin less than 64 bytes of room — a correct rule, and one
+ * that knows nothing about router mode, so a badly chosen pair let it
+ * overshoot the cap. With Jmin topping out at 31 the floor never reaches 96,
+ * and the repair has nothing to repair.
+ *
+ * The ceilings are the ones router mode always had — 40 and 128. What it did
+ * not have was any room underneath them.
+ */
+const ROUTER_JMIN: [number, number] = [16, 31];
+const ROUTER_JMAX: [number, number] = [96, 128];
 
 const drawS1S2: Draw = (ctx) =>
   rnd(1, ctx.routerMode ? ROUTER_S_MAX : 150);
@@ -148,7 +190,10 @@ const drawJc: Draw = (ctx) => {
 
   let jc = ctx.junkLevel;
   if (ctx.version === "1.0") {
-    jc = Math.max(4, jc);
+    // The ceiling applies here too. This branch used to skip it, so a level
+    // above what the client accepts went straight through — the health check
+    // only warns, so the config shipped.
+    jc = Math.min(ceiling, Math.max(4, jc));
   } else if (jc > 0) {
     jc = Math.max(1, Math.min(ceiling, jc + rnd(-1, 1)));
   }
@@ -158,22 +203,23 @@ const drawJc: Draw = (ctx) => {
   }
 
   if (ctx.routerMode) {
-    const floor = ctx.version === "1.0" ? 4 : 3;
-    jc = Math.max(floor, Math.min(jc, Math.min(2, ctx.client.maxJc)));
+    // A cap, applied to whatever was drawn. Zero stays zero: a user who
+    // turned the junk train off asked for it off, and router mode used to
+    // hand them three packets anyway.
+    const cap = Math.min(ctx.version === "1.0" ? 4 : ROUTER_JC_MAX, ctx.client.maxJc);
+    jc = jc === 0 ? 0 : Math.min(jc, cap);
   }
   return jc;
 };
 
 const drawJmin: Draw = (ctx) => {
-  const [lo, hi] = JMIN_BY_INTENSITY[ctx.intensity];
-  const jmin = rnd(lo, hi);
-  return ctx.routerMode ? Math.min(jmin, 40) : jmin;
+  const [lo, hi] = ctx.routerMode ? ROUTER_JMIN : JMIN_BY_INTENSITY[ctx.intensity];
+  return rnd(lo, hi);
 };
 
 const drawJmax: Draw = (ctx) => {
-  const [lo, hi] = JMAX_BY_INTENSITY[ctx.intensity];
-  const jmax = rnd(lo, hi);
-  return ctx.routerMode ? Math.min(jmax, 128) : jmax;
+  const [lo, hi] = ctx.routerMode ? ROUTER_JMAX : JMAX_BY_INTENSITY[ctx.intensity];
+  return rnd(lo, hi);
 };
 
 /* ── The registry ─────────────────────────────────────────────────────────── */

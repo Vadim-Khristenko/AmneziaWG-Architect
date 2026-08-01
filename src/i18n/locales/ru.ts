@@ -918,6 +918,7 @@ export const ru = {
   "gen.preview.waiting": "// Ожидание генерации…",
   "gen.fp.yandexDesktop": "Яндекс Браузер Desktop ⚠",
   "gen.fp.yandexMobile": "Яндекс Браузер Mobile ⚠",
+  "log.generateFailed": "Не удалось собрать конфиг: {error}",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

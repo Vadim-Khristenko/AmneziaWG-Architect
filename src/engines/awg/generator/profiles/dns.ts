@@ -88,7 +88,11 @@ export function mkDNS(input: GeneratorInput, iv: number): string {
   // Padding is only claimed when the tag that produces it is on: otherwise the
   // OPT record would advertise bytes that never arrive, which is the same
   // mismatch in the other direction.
-  const wanted = rnd(64, Math.min(512, input.mtu - 20));
+  // The MTU comes from a number field, and a browser does not enforce
+  // `min` on a typed value. Below about 83 the upper bound fell under the
+  // lower one and the draw threw, which killed the Generate button silently.
+  const ceiling = Math.min(512, input.mtu - 20);
+  const wanted = ceiling <= 64 ? Math.max(0, ceiling) : rnd(64, ceiling);
   const room =
     input.mtu - DNS_HEADER - questionBytes - OPT_FIXED - PAD_OPTION_HEADER;
   const padding = input.useTagR

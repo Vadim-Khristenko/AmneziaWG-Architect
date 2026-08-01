@@ -201,7 +201,22 @@ export function useGenerator() {
       isGenerating.value = false;
     }, 650);
 
-    currentAwg.value = genCfg(buildInput());
+    // `genCfg` refuses a config it cannot make valid, and it refuses by
+    // throwing. Unhandled, that left the previous config on screen with no
+    // message: the user pressed Generate and nothing whatsoever happened.
+    // Rare, but a button that silently does nothing is worse than one that
+    // says why.
+    try {
+      currentAwg.value = genCfg(buildInput());
+    } catch (error) {
+      addLog(
+        translate("log.generateFailed", {
+          error: error instanceof Error ? error.message : String(error),
+        }),
+        "bad",
+      );
+      return;
+    }
 
     const label = PROFILE_LABELS[config.profile] ?? config.profile;
     addLog(translate("log.generated", { profile: label }), "info");

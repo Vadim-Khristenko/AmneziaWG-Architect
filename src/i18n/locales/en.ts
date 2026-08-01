@@ -905,6 +905,7 @@ export const en: Catalog = {
   "gen.preview.waiting": "// Waiting for a generation…",
   "gen.fp.yandexDesktop": "Yandex Browser Desktop ⚠",
   "gen.fp.yandexMobile": "Yandex Browser Mobile ⚠",
+  "log.generateFailed": "The config could not be built: {error}",
 };
 
 export default en;

@@ -89,8 +89,17 @@ export function assertEvenHex(hex: string, label = "?"): string {
  * rRange(base, spread?, maxEnd?) — генерирует строку-диапазон "start-end" для H1–H4.
  * Если передан maxEnd, конец диапазона не превысит его.
  */
+/**
+ * The widest window `rRange` will open.
+ *
+ * Exported because a caller drawing the base has to leave room for it: the
+ * range runs `spread + width` above whatever base it is given, and a base
+ * drawn right up to the top of its zone puts the range in the next one.
+ */
+export const RANGE_MAX_WIDTH = 50_000;
+
 export function rRange(base: number, spread = 500_000, maxEnd?: number): string {
-  const width = rnd(1000, 50_000);
+  const width = rnd(1000, RANGE_MAX_WIDTH);
   let start = base + rnd(0, spread);
 
   if (maxEnd !== undefined) {

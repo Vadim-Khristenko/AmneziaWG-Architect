@@ -52,7 +52,14 @@ export interface AwgRuleOptions {
  * The kernel module accepts 1–128; above 64 the handshake takes noticeably
  * longer because every junk packet goes out before the initiation does.
  */
-const JC_MIN = 1;
+/**
+ * Zero is allowed.
+ *
+ * The generator offers "0 — Off" and produces `Jc = 0` for it, and this rule
+ * called that a hard error — the tool refusing a config it had just written.
+ * No junk train is an ordinary choice, not a broken one.
+ */
+const JC_MIN = 0;
 const JC_MAX = 128;
 const JC_SLOW = 64;
 
