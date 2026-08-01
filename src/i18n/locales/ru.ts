@@ -908,6 +908,8 @@ export const ru = {
   "history.import": "Загрузить историю из файла",
   "history.imported": "Импорт: добавлено {added}, пропущено {skipped}",
   "history.noMatch": "Ничего не нашлось. Попробуйте другой запрос.",
+  "history.note": "Заметка",
+  "history.notePlaceholder": "Чем эта запись отличается",
 } as const satisfies Record<string, MessageValue>;
 
 export type MessageKey = keyof typeof ru;

@@ -12,6 +12,11 @@ import "@fontsource-variable/jetbrains-mono/index.css";
 
 import "../assets/main.css";
 
+// Tooltips render in one element on the body rather than as a pseudo-element
+// on each trigger, so nothing that scrolls can clip them. See utils/tooltip.
+import { installTooltips } from "./utils/tooltip";
+
 const app = createApp(App);
 app.use(router);
 app.mount("#app");
+installTooltips();

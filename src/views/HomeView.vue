@@ -55,6 +55,7 @@ import {
     Pin,
     Search,
     Upload,
+    StickyNote,
 } from "lucide-vue-next";
 import { useGenerator } from "@/composables/useGenerator";
 import { downloadText } from "@/utils/download";
@@ -283,6 +284,28 @@ const {
     searchText: (entry) =>
         [entry.version, entry.intensity, entry.profile].join(" "),
 });
+
+/** Which entry has its note field open. Entries with a note always show it. */
+const noteOpen = ref<number | null>(null);
+const noteInputs = new Map<number, HTMLInputElement>();
+
+function registerNoteInput(id: number, el: unknown) {
+    if (el instanceof HTMLInputElement) noteInputs.set(id, el);
+    else noteInputs.delete(id);
+}
+
+/**
+ * Open the note field, and put the cursor in it.
+ *
+ * Opening a field the user then has to click into is two actions where they
+ * asked for one.
+ */
+function toggleNote(entry: HistoryEntry) {
+    noteOpen.value = noteOpen.value === entry.id ? null : entry.id;
+    if (noteOpen.value === entry.id) {
+        void nextTick(() => noteInputs.get(entry.id)?.focus());
+    }
+}
 
 /** Save the history to a file the user keeps or moves to another browser. */
 function exportHistory() {
@@ -773,6 +796,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 :class="{ pinned: entry.pinned }"
                             >
                                 <div class="he-info">
+                                    <div class="he-time-row">
                                     <button
                                         class="he-pin"
                                         :class="{ on: entry.pinned }"
@@ -794,6 +818,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     <span class="he-time">{{
                                         formatTime(entry.timestamp)
                                     }}</span>
+                                    </div>
                                     <span class="he-tags">
                                         <span class="he-tag">{{
                                             entry.version
@@ -832,6 +857,14 @@ const paramGroups = computed((): ParamGroup[] => {
                                     </span>
                                 </div>
                                 <div class="he-actions">
+                                    <button
+                                        class="btn btn-ghost btn-icon sm"
+                                        :class="{ on: noteOpen === entry.id }"
+                                        @click="toggleNote(entry)"
+                                        :data-tooltip='t("history.note")'
+                                    >
+                                        <StickyNote :size="14" />
+                                    </button>
                                     <button
                                         class="btn btn-ghost btn-icon sm"
                                         :class="{
@@ -877,6 +910,35 @@ const paramGroups = computed((): ParamGroup[] => {
                                     >
                                         <X :size="14" />
                                     </button>
+                                </div>
+
+                                <!-- Below the row rather than in it: a note
+                                     is a sentence, and a sentence in a cell
+                                     squeezes everything else out. -->
+                                <div
+                                    v-if="noteOpen === entry.id || entry.note"
+                                    class="he-note"
+                                >
+                                    <input
+                                        :ref="
+                                            (el) => registerNoteInput(entry.id, el)
+                                        "
+                                        :value="entry.note ?? ''"
+                                        type="text"
+                                        class="input-field"
+                                        :placeholder='t("history.notePlaceholder")'
+                                        :aria-label='t("history.note")'
+                                        @change="
+                                            setHistoryNote(
+                                                entry.id,
+                                                ($event.target as HTMLInputElement)
+                                                    .value,
+                                            )
+                                        "
+                                        @keyup.enter="
+                                            ($event.target as HTMLInputElement).blur()
+                                        "
+                                    />
                                 </div>
                             </div>
                         </transition-group>
@@ -2309,9 +2371,10 @@ const paramGroups = computed((): ParamGroup[] => {
 }
 
 .history-entry {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(150px, auto) 1fr auto;
     align-items: center;
-    gap: 16px;
+    gap: 10px 16px;
     padding: 10px 14px;
     background: var(--bg3);
     border: 1px solid var(--border3);
@@ -2358,11 +2421,13 @@ const paramGroups = computed((): ParamGroup[] => {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-width: 140px;
+    min-width: 0;
 }
 
-.he-info .he-pin {
-    align-self: flex-start;
+.he-time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .he-time {
@@ -2424,6 +2489,33 @@ const paramGroups = computed((): ParamGroup[] => {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
+}
+
+/* Spans every column: a note is a sentence, and a sentence in a cell
+   squeezes the parameters into nothing. */
+.he-note {
+    grid-column: 1 / -1;
+}
+
+.he-note .input-field {
+    width: 100%;
+    font-size: 0.75rem;
+    padding: 5px 9px;
+}
+
+/*
+ * On a narrow screen the three columns stack. Parameters wrap either way, so
+ * the row was already the tallest thing in the panel; what it could not do was
+ * keep the action buttons on screen.
+ */
+@media (max-width: 640px) {
+    .history-entry {
+        grid-template-columns: 1fr;
+    }
+
+    .he-actions {
+        justify-content: flex-end;
+    }
 }
 
 /* ── Main Grid ────────────────────────────────────────────────────────── */

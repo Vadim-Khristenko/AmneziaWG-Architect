@@ -895,6 +895,8 @@ export const en: Catalog = {
   "history.import": "Load a history from a file",
   "history.imported": "Imported: {added} added, {skipped} skipped",
   "history.noMatch": "Nothing matched. Try a different query.",
+  "history.note": "Note",
+  "history.notePlaceholder": "What makes this one different",
 };
 
 export default en;
