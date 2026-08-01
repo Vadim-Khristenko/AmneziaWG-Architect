@@ -80,8 +80,8 @@ const statCards = computed(() => [
 <template>
     <div class="about-wrap">
         <!-- ── Hero ────────────────────────────────────────────────────── -->
-        <header class="about-hero a-stagger-1">
-            <div class="hero-badge badge badge-amber">
+        <header class="about-hero stagger-1">
+            <div class="hero-badge badge badge-amber badge-glow">
                 <Info :size="12" /> {{ t("about.badge") }}
             </div>
             <h1 class="hero-title">
@@ -96,7 +96,7 @@ const statCards = computed(() => [
         </header>
 
         <!-- ── Legal Disclaimer ─────────────────────────────────────────── -->
-        <section class="about-section legal-section a-stagger-0">
+        <section class="about-section legal-section stagger-0">
             <div class="legal-card">
                 <div class="legal-icon">
                     <Shield :size="28" />
@@ -126,7 +126,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Stats Strip ─────────────────────────────────────────────── -->
-        <div class="stats-strip a-stagger-2">
+        <div class="stats-strip stagger-2">
             <div v-for="(s, i) in statCards" :key="i" class="stat-card">
                 <component :is="s.icon" :size="18" class="stat-icon" />
                 <span class="stat-value">{{ s.value }}</span>
@@ -135,7 +135,7 @@ const statCards = computed(() => [
         </div>
 
         <!-- ── What is this? ───────────────────────────────────────────── -->
-        <section class="about-section a-stagger-3">
+        <section class="about-section stagger-3">
             <div class="section-icon-wrap">
                 <Sparkles :size="22" />
             </div>
@@ -144,28 +144,28 @@ const statCards = computed(() => [
             <p>{{ t("about.what.p2") }}</p>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <CheckCircle :size="18" class="fc-icon" />
+                    <CheckCircle :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.feature.profiles.title") }}</b>
                         <span>{{ t("about.feature.profiles.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
-                    <Zap :size="18" class="fc-icon" />
+                    <Zap :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.feature.smart.title") }}</b>
                         <span>{{ t("about.feature.smart.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
-                    <ShieldCheck :size="18" class="fc-icon" />
+                    <ShieldCheck :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.feature.check.title") }}</b>
                         <span>{{ t("about.feature.check.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
-                    <Code :size="18" class="fc-icon" />
+                    <Code :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.feature.advanced.title") }}</b>
                         <span>{{ t("about.feature.advanced.desc") }}</span>
@@ -175,7 +175,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Evolution Timeline ──────────────────────────────────────── -->
-        <section class="about-section timeline-section a-stagger-4">
+        <section class="about-section timeline-section stagger-4">
             <div class="section-icon-wrap">
                 <History :size="22" />
             </div>
@@ -189,25 +189,25 @@ const statCards = computed(() => [
                     v-for="(ev, idx) in timelineEvents"
                     :key="idx"
                     class="timeline-item"
-                    :class="{ open: activeTimeline === idx }"
+                    :class="{ 'is-open': activeTimeline === idx }"
                     :style="{ animationDelay: `${idx * 80 + 200}ms` }"
                 >
-                    <div class="tl-dot" :class="`tl-dot-${ev.color}`">
+                    <div class="timeline-dot" :class="`timeline-dot-${ev.color}`">
                         <component :is="ev.icon" :size="14" />
                     </div>
-                    <div class="tl-content" @click="toggleTimeline(idx)">
-                        <div class="tl-head">
-                            <span class="tl-version">v{{ ev.version }}</span>
-                            <span class="tl-date">{{ ev.date }}</span>
-                            <span class="tl-title">{{ ev.title }}</span>
+                    <div class="timeline-content" @click="toggleTimeline(idx)">
+                        <div class="timeline-head">
+                            <span class="timeline-version">v{{ ev.version }}</span>
+                            <span class="timeline-date">{{ ev.date }}</span>
+                            <span class="timeline-title">{{ ev.title }}</span>
                             <ChevronDown
                                 :size="14"
-                                class="tl-arrow"
+                                class="timeline-arrow"
                                 :class="{ rotated: activeTimeline === idx }"
                             />
                         </div>
                         <transition name="expand">
-                            <div v-if="activeTimeline === idx" class="tl-body">
+                            <div v-if="activeTimeline === idx" class="timeline-body">
                                 <RichText :text="ev.desc" />
                             </div>
                         </transition>
@@ -217,7 +217,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── MergeKeys ───────────────────────────────────────────────── -->
-        <section class="about-section a-stagger-5">
+        <section class="about-section stagger-5">
             <div class="section-icon-wrap section-icon-green">
                 <Combine :size="22" />
             </div>
@@ -227,14 +227,14 @@ const statCards = computed(() => [
             </p>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <Zap :size="18" class="fc-icon" />
+                    <Zap :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.mergekeys.update.title") }}</b>
                         <span>{{ t("about.mergekeys.update.desc") }}</span>
                     </div>
                 </div>
                 <div class="feature-card">
-                    <GitMerge :size="18" class="fc-icon" />
+                    <GitMerge :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.mergekeys.merge.title") }}</b>
                         <span>{{ t("about.mergekeys.merge.desc") }}</span>
@@ -260,7 +260,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Privacy Manifesto ───────────────────────────────────────── -->
-        <section class="about-section privacy-section a-stagger-6">
+        <section class="about-section privacy-section stagger-6">
             <div class="section-icon-wrap section-icon-green">
                 <Lock :size="22" />
             </div>
@@ -311,7 +311,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Open Source ──────────────────────────────────────────────── -->
-        <section class="about-section a-stagger-7">
+        <section class="about-section stagger-7">
             <div class="section-icon-wrap">
                 <FileCode :size="22" />
             </div>
@@ -321,7 +321,7 @@ const statCards = computed(() => [
             </p>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <Github :size="18" class="fc-icon" />
+                    <Github :size="18" class="feature-card-icon" />
                     <div>
                         <b>GitHub</b>
                         <span
@@ -330,7 +330,7 @@ const statCards = computed(() => [
                     </div>
                 </div>
                 <div class="feature-card">
-                    <Shield :size="18" class="fc-icon" />
+                    <Shield :size="18" class="feature-card-icon" />
                     <div>
                         <b>{{ t("about.oss.audit.title") }}</b>
                         <span>{{ t("about.oss.audit.desc") }}</span>
@@ -352,7 +352,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Developer & Contact ─────────────────────────────────────── -->
-        <section class="about-section dev-section a-stagger-8">
+        <section class="about-section dev-section stagger-8">
             <div class="section-icon-wrap section-icon-blue">
                 <Users :size="22" />
             </div>
@@ -384,7 +384,7 @@ const statCards = computed(() => [
             </div>
 
             <div class="contact-card">
-                <Bug :size="18" class="fc-icon" />
+                <Bug :size="18" class="feature-card-icon" />
                 <div>
                     <b>{{ t("about.dev.feedback.title") }}</b>
                     <p>{{ t("about.dev.feedback.desc") }}</p>
@@ -397,7 +397,7 @@ const statCards = computed(() => [
         </section>
 
         <!-- ── Support / Donation ──────────────────────────────────────── -->
-        <SupportSection class="a-stagger-9" />
+        <SupportSection class="stagger-9" />
     </div>
 </template>
 
@@ -430,26 +430,9 @@ const statCards = computed(() => [
 }
 
 /* Composited opacity pulse (see HomeView for rationale). */
-.hero-badge::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.15);
-    opacity: 0;
-    pointer-events: none;
-    animation: badgePulse 3s ease-in-out infinite;
-}
+/* Shared: see `.badge-glow` in main.css. */
 
-@keyframes badgePulse {
-    0%,
-    100% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-}
+
 
 @media (prefers-reduced-motion: reduce) {
     .hero-badge::after {
@@ -652,7 +635,7 @@ const statCards = computed(() => [
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.fc-icon {
+.feature-card-icon {
     color: var(--accent-ink);
     flex-shrink: 0;
     margin-top: 2px;
@@ -720,7 +703,7 @@ const statCards = computed(() => [
     }
 }
 
-.tl-dot {
+.timeline-dot {
     position: absolute;
     left: -40px;
     top: 12px;
@@ -732,17 +715,42 @@ const statCards = computed(() => [
     justify-content: center;
     z-index: 2;
     transition: all 0.3s var(--ease);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--text3);
 }
 
+/*
+ * Every changelog entry carries a colour, and until now none of them showed:
+ * the template builds `timeline-dot-${ev.color}` and no rule of that name has
+ * ever existed, so all thirty dots rendered identically and the field was
+ * decoration in the data file. Three releases, three meanings — a feature, a
+ * fix, a removal.
+ */
+.timeline-dot-amber {
+    background: rgb(var(--accent-rgb) / 0.14);
+    border-color: rgb(var(--accent-rgb) / 0.35);
+    color: var(--accent-ink);
+}
 
+.timeline-dot-green {
+    background: var(--green-bg);
+    border-color: var(--gd);
+    color: var(--green);
+}
 
+.timeline-dot-red {
+    background: var(--red-bg);
+    border-color: var(--rd);
+    color: var(--red);
+}
 
-.timeline-item.open .tl-dot {
+.timeline-item.is-open .timeline-dot {
     transform: scale(1.15);
     box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.25);
 }
 
-.tl-content {
+.timeline-content {
     background: var(--bg3);
     border: 1px solid var(--border3);
     border-radius: var(--radius);
@@ -751,23 +759,23 @@ const statCards = computed(() => [
     transition: all 0.25s var(--ease);
 }
 
-.tl-content:hover {
+.timeline-content:hover {
     border-color: var(--border);
 }
 
-.timeline-item.open .tl-content {
+.timeline-item.is-open .timeline-content {
     border-color: rgb(var(--accent-rgb) / 0.25);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.tl-head {
+.timeline-head {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
 }
 
-.tl-version {
+.timeline-version {
     font-family: var(--fm);
     font-size: 0.7rem;
     font-weight: 800;
@@ -779,69 +787,69 @@ const statCards = computed(() => [
     flex-shrink: 0;
 }
 
-.tl-date {
+.timeline-date {
     font-size: 0.7rem;
     color: var(--text3);
     font-family: var(--fm);
     flex-shrink: 0;
 }
 
-.tl-title {
+.timeline-title {
     font-size: 0.88rem;
     font-weight: 600;
     color: var(--text);
     flex: 1;
 }
 
-.tl-arrow {
+.timeline-arrow {
     color: var(--text3);
     transition: transform 0.25s var(--ease);
     flex-shrink: 0;
 }
 
-.tl-arrow.rotated {
+.timeline-arrow.rotated {
     transform: rotate(180deg);
 }
 
-.tl-body {
+.timeline-body {
     padding: 0 16px 14px;
 }
 
-.tl-body p {
+.timeline-body p {
     font-size: 0.85rem;
     line-height: 1.65;
     margin: 0 0 10px;
 }
 
-.tl-body p:last-child {
+.timeline-body p:last-child {
     margin-bottom: 0;
 }
 
-.tl-body h2,
-.tl-body h3 {
+.timeline-body h2,
+.timeline-body h3 {
     margin: 14px 0 6px;
     font-size: 0.83rem;
     font-weight: 650;
     color: var(--text);
 }
 
-.tl-body h2:first-child,
-.tl-body h3:first-child {
+.timeline-body h2:first-child,
+.timeline-body h3:first-child {
     margin-top: 0;
 }
 
-.tl-body strong {
+.timeline-body strong {
     color: var(--text);
     font-weight: 650;
 }
 
 /* The italic alone carries the demotion — dimming it too would drop this
    below the contrast floor. */
-.tl-body em {
+.timeline-body em {
     font-style: italic;
 }
 
-.tl-body code {
+.timeline-body code {
     font-family: var(--fm);
     font-size: 0.86em;
     padding: 1px 5px;
@@ -851,7 +859,7 @@ const statCards = computed(() => [
     white-space: nowrap;
 }
 
-.tl-body a {
+.timeline-body a {
     color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 2px;
@@ -1254,31 +1262,31 @@ const statCards = computed(() => [
 }
 
 /* ── Stagger Animations ───────────────────────────────────────────────── */
-.a-stagger-1 {
+.stagger-1 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.05s both;
 }
-.a-stagger-2 {
+.stagger-2 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.1s both;
 }
-.a-stagger-3 {
+.stagger-3 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.15s both;
 }
-.a-stagger-4 {
+.stagger-4 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.2s both;
 }
-.a-stagger-5 {
+.stagger-5 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.25s both;
 }
-.a-stagger-6 {
+.stagger-6 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.3s both;
 }
-.a-stagger-7 {
+.stagger-7 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.35s both;
 }
-.a-stagger-8 {
+.stagger-8 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.4s both;
 }
-.a-stagger-9 {
+.stagger-9 {
     animation: fadeSlideUp 0.5s var(--ease-snap) 0.45s both;
 }
 
@@ -1343,7 +1351,7 @@ const statCards = computed(() => [
         padding-left: 34px;
     }
 
-    .tl-dot {
+    .timeline-dot {
         left: -34px;
         width: 24px;
         height: 24px;
@@ -1353,12 +1361,12 @@ const statCards = computed(() => [
         left: -23px;
     }
 
-    .tl-head {
+    .timeline-head {
         flex-wrap: wrap;
         gap: 6px;
     }
 
-    .tl-title {
+    .timeline-title {
         flex-basis: 100%;
         font-size: 0.82rem;
     }

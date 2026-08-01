@@ -71,18 +71,18 @@ watch(locale, formatBuild);
                 <!-- Points at the About page's support section rather than a
                      single payment provider, so every method is on offer. -->
                 <router-link :to="supportLink" class="donate-card">
-                    <div class="dc-icon">
+                    <div class="donate-icon">
                         <Heart :size="20" fill="currentColor" />
                     </div>
-                    <div class="dc-content">
-                        <span class="dc-title">{{
+                    <div class="donate-content">
+                        <span class="donate-title">{{
                             t("footer.donate.title")
                         }}</span>
-                        <span class="dc-desc">{{
+                        <span class="donate-desc">{{
                             t("footer.donate.methods")
                         }}</span>
                     </div>
-                    <ChevronRight class="dc-arrow" :size="18" />
+                    <ChevronRight class="donate-arrow" :size="18" />
                 </router-link>
             </div>
 
@@ -284,7 +284,7 @@ watch(locale, formatBuild);
     box-shadow: 0 12px 24px rgb(var(--accent-rgb) / 0.1);
 }
 
-.dc-icon {
+.donate-icon {
     width: 44px;
     height: 44px;
     background: var(--accent);
@@ -296,30 +296,30 @@ watch(locale, formatBuild);
     box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.3);
 }
 
-.dc-content {
+.donate-content {
     display: flex;
     flex-direction: column;
 }
 
-.dc-title {
+.donate-title {
     font-family: var(--fu);
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text);
 }
 
-.dc-desc {
+.donate-desc {
     font-size: 0.75rem;
     color: var(--text3);
 }
 
-.dc-arrow {
+.donate-arrow {
     color: var(--text3);
     margin-left: 8px;
     transition: transform 0.3s;
 }
 
-.donate-card:hover .dc-arrow {
+.donate-card:hover .donate-arrow {
     transform: translateX(4px);
     color: var(--accent-ink);
 }

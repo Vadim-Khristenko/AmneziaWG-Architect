@@ -54,61 +54,61 @@ const features: Feature[] = [
     <div class="vaiexia-page fade-in">
         <div class="container">
             <!-- ── Hero ────────────────────────────────────────────────── -->
-            <header class="vx-hero">
-                <div class="badge badge-amber vx-badge">
+            <header class="vaiexia-hero">
+                <div class="badge badge-amber vaiexia-badge">
                     <Sparkles :size="12" />
                     {{ t("vaiexia.soon") }}
                 </div>
 
-                <h1 class="vx-title">VAIEXIA</h1>
+                <h1 class="vaiexia-title">VAIEXIA</h1>
 
-                <p class="vx-tagline">
+                <p class="vaiexia-tagline">
                     {{ t("vaiexia.lede") }}
                 </p>
 
-                <p class="vx-lede">
+                <p class="vaiexia-lede">
                     {{ t("vaiexia.desc") }}
                 </p>
             </header>
 
             <!-- ── Features ────────────────────────────────────────────── -->
-            <section class="vx-grid">
+            <section class="vaiexia-grid">
                 <article
                     v-for="(f, i) in features"
                     :key="f.key"
-                    class="vx-card"
+                    class="vaiexia-card"
                     :style="{ animationDelay: `${i * 70}ms` }"
                 >
-                    <div class="vx-card-icon">
+                    <div class="vaiexia-card-icon">
                         <component :is="f.icon" :size="20" />
                     </div>
-                    <h2 class="vx-card-title">
+                    <h2 class="vaiexia-card-title">
                         {{ t(`vaiexia.feature.${f.key}.title` as "vaiexia.feature.panel.title") }}
                     </h2>
-                    <p class="vx-card-desc">
+                    <p class="vaiexia-card-desc">
                         {{ t(`vaiexia.feature.${f.key}.desc` as "vaiexia.feature.panel.desc") }}
                     </p>
                 </article>
             </section>
 
             <!-- ── GitHub mirror ───────────────────────────────────────── -->
-            <section class="vx-mirror">
-                <div class="vx-mirror-head">
+            <section class="vaiexia-mirror">
+                <div class="vaiexia-mirror-head">
                     <GitBranch :size="18" />
                     <h2>
                         {{ t("vaiexia.mirror.title") }}
                     </h2>
                 </div>
 
-                <p class="vx-mirror-text">
+                <p class="vaiexia-mirror-text">
                     {{ t("vaiexia.mirror.lede") }}
                 </p>
 
-                <div class="vx-mirror-row">
-                    <code class="vx-mirror-url">{{ MIRROR_URL }}</code>
+                <div class="vaiexia-mirror-row">
+                    <code class="vaiexia-mirror-url">{{ MIRROR_URL }}</code>
                     <button
                         class="btn btn-ghost btn-icon"
-                        :class="{ 'vx-copied': isCopied(MIRROR_KEY) }"
+                        :class="{ 'vaiexia-copied': isCopied(MIRROR_KEY) }"
                         :aria-label="t('vaiexia.mirror.copy')"
                         @click="copyMirror"
                     >
@@ -126,7 +126,7 @@ const features: Feature[] = [
                     </a>
                 </div>
 
-                <div class="alert alert-warn vx-mirror-note">
+                <div class="alert alert-warn vaiexia-mirror-note">
                     <TriangleAlert :size="16" class="alert-icon" />
                     <div class="alert-content">
                         {{ t("vaiexia.mirror.warning") }}
@@ -135,7 +135,7 @@ const features: Feature[] = [
             </section>
 
             <!-- ── Status ──────────────────────────────────────────────── -->
-            <section class="vx-status">
+            <section class="vaiexia-status">
                 <ShieldCheck :size="16" />
                 <p>
                     {{ t("vaiexia.wip") }}
@@ -151,20 +151,20 @@ const features: Feature[] = [
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
-.vx-hero {
+.vaiexia-hero {
     text-align: center;
     max-width: 720px;
     margin: 0 auto 3rem;
 }
 
-.vx-badge {
+.vaiexia-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 1.25rem;
 }
 
-.vx-title {
+.vaiexia-title {
     font-family: var(--fu);
     font-weight: 900;
     font-size: clamp(2.5rem, 9vw, 4.5rem);
@@ -177,7 +177,7 @@ const features: Feature[] = [
     color: transparent;
 }
 
-.vx-tagline {
+.vaiexia-tagline {
     font-family: var(--fw);
     font-weight: 700;
     font-size: clamp(1rem, 3.2vw, 1.3rem);
@@ -187,7 +187,7 @@ const features: Feature[] = [
     text-wrap: balance;
 }
 
-.vx-lede {
+.vaiexia-lede {
     font-size: 0.95rem;
     line-height: 1.65;
     color: var(--text2);
@@ -196,30 +196,30 @@ const features: Feature[] = [
 }
 
 /* ── Feature grid ─────────────────────────────────────────────────────── */
-.vx-grid {
+.vaiexia-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
     gap: 14px;
     margin-bottom: 3rem;
 }
 
-.vx-card {
+.vaiexia-card {
     padding: 20px;
     background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: var(--radius-lg);
-    animation: vx-rise 0.5s var(--ease) backwards;
+    animation: vaiexia-rise 0.5s var(--ease) backwards;
     transition:
         border-color var(--trans-fast),
         transform var(--trans-fast);
 }
 
-.vx-card:hover {
+.vaiexia-card:hover {
     border-color: var(--amber-dim);
     transform: translateY(-2px);
 }
 
-@keyframes vx-rise {
+@keyframes vaiexia-rise {
     from {
         opacity: 0;
         transform: translateY(12px);
@@ -231,15 +231,15 @@ const features: Feature[] = [
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .vx-card {
+    .vaiexia-card {
         animation: none;
     }
-    .vx-card:hover {
+    .vaiexia-card:hover {
         transform: none;
     }
 }
 
-.vx-card-icon {
+.vaiexia-card-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -251,7 +251,7 @@ const features: Feature[] = [
     color: var(--accent-ink);
 }
 
-.vx-card-title {
+.vaiexia-card-title {
     font-family: var(--fw);
     font-weight: 800;
     font-size: 0.98rem;
@@ -259,7 +259,7 @@ const features: Feature[] = [
     margin: 0 0 7px;
 }
 
-.vx-card-desc {
+.vaiexia-card-desc {
     font-size: 0.85rem;
     line-height: 1.6;
     color: var(--text2);
@@ -268,7 +268,7 @@ const features: Feature[] = [
 }
 
 /* ── Mirror ───────────────────────────────────────────────────────────── */
-.vx-mirror {
+.vaiexia-mirror {
     padding: 22px;
     background: var(--bg2);
     border: 1px solid var(--border2);
@@ -276,7 +276,7 @@ const features: Feature[] = [
     margin-bottom: 2rem;
 }
 
-.vx-mirror-head {
+.vaiexia-mirror-head {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -284,14 +284,14 @@ const features: Feature[] = [
     margin-bottom: 10px;
 }
 
-.vx-mirror-head h2 {
+.vaiexia-mirror-head h2 {
     font-family: var(--fw);
     font-weight: 800;
     font-size: 1rem;
     margin: 0;
 }
 
-.vx-mirror-text {
+.vaiexia-mirror-text {
     font-size: 0.88rem;
     line-height: 1.6;
     color: var(--text2);
@@ -299,7 +299,7 @@ const features: Feature[] = [
     text-wrap: pretty;
 }
 
-.vx-mirror-row {
+.vaiexia-mirror-row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -307,7 +307,7 @@ const features: Feature[] = [
     margin-bottom: 14px;
 }
 
-.vx-mirror-url {
+.vaiexia-mirror-url {
     flex: 1;
     min-width: 0;
     padding: 10px 12px;
@@ -321,16 +321,16 @@ const features: Feature[] = [
     white-space: nowrap;
 }
 
-.vx-copied {
+.vaiexia-copied {
     color: var(--green);
 }
 
-.vx-mirror-note {
+.vaiexia-mirror-note {
     margin: 0;
 }
 
 /* ── Status ───────────────────────────────────────────────────────────── */
-.vx-status {
+.vaiexia-status {
     display: flex;
     align-items: flex-start;
     gap: 9px;
@@ -341,13 +341,13 @@ const features: Feature[] = [
     color: var(--text2);
 }
 
-.vx-status svg {
+.vaiexia-status svg {
     flex-shrink: 0;
     margin-top: 2px;
     color: var(--accent-ink);
 }
 
-.vx-status p {
+.vaiexia-status p {
     margin: 0;
     font-size: 0.85rem;
     line-height: 1.6;
@@ -358,11 +358,11 @@ const features: Feature[] = [
     .vaiexia-page {
         padding: 1.5rem 0 3rem;
     }
-    .vx-grid {
+    .vaiexia-grid {
         grid-template-columns: 1fr;
     }
-    .vx-mirror,
-    .vx-card {
+    .vaiexia-mirror,
+    .vaiexia-card {
         padding: 16px;
     }
 }

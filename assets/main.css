@@ -789,7 +789,7 @@ pre {
     transition: opacity var(--trans-fast), transform var(--trans-fast);
 }
 
-.tooltip-layer.visible {
+.tooltip-layer.is-visible {
     opacity: 1;
     transform: translateY(0) scale(1);
 }
@@ -798,7 +798,7 @@ pre {
     transform: translateY(-2px) scale(0.96);
 }
 
-.tooltip-layer.below.visible {
+.tooltip-layer.below.is-visible {
     transform: translateY(0) scale(1);
 }
 
@@ -807,9 +807,9 @@ pre {
         transition: none;
         transform: none;
     }
-    .tooltip-layer.visible,
+    .tooltip-layer.is-visible,
     .tooltip-layer.below,
-    .tooltip-layer.below.visible {
+    .tooltip-layer.below.is-visible {
         transform: none;
     }
 }
@@ -873,5 +873,68 @@ pre {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SHARED PIECES
+   ══════════════════════════════════════════════════════════════════════════
+
+   Rules that were written out identically in two or three components. Nothing
+   here is a utility class in the Tailwind sense — each one is a single named
+   thing that happens to appear in more than one view, and keeping one copy is
+   what stops the copies drifting.
+
+   The naming scheme, for anything added later:
+
+     .block            a component or region       .timeline, .menu-list
+     .block-element    a part of it                .timeline-dot, .menu-item
+     .is-* / .has-*    a state, never a bare word  .is-open, .is-active
+
+   The last rule is the one worth holding to. `.open` and `.active` give a
+   reader nothing to distinguish a state from a block, and the app had fifteen
+   of one and eight of the other sitting beside `.is-scrolled` and `.has-wide`.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The chevron that turns when something opens. Three components, one rule. */
+.chevron {
+    flex-shrink: 0;
+    color: var(--text3);
+    transition: transform var(--trans-fast);
+}
+
+/*
+ * The badge glow, on a pseudo-element so the animation is opacity — which the
+ * compositor handles — rather than box-shadow, which forces a main-thread
+ * repaint every frame, and did so during the critical load window.
+ */
+.badge-glow {
+    position: relative;
+}
+
+.badge-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.15);
+    opacity: 0;
+    pointer-events: none;
+    animation: badge-pulse 3s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .badge-glow::after {
+        animation: none;
     }
 }

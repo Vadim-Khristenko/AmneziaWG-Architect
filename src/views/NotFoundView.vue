@@ -43,36 +43,36 @@ const suggestions = computed(() => [
 </script>
 
 <template>
-    <div class="nf-wrap fade-in">
-        <div class="nf-card">
+    <div class="notfound-wrap fade-in">
+        <div class="notfound-card">
             <!-- Corner brackets, matching the link-preview artwork -->
-            <span class="nf-bracket nf-bracket-tl"></span>
-            <span class="nf-bracket nf-bracket-br"></span>
+            <span class="notfound-bracket notfound-bracket-tl"></span>
+            <span class="notfound-bracket notfound-bracket-br"></span>
 
-            <div class="nf-badge">{{ t("nf.badge") }}</div>
+            <div class="notfound-badge">{{ t("nf.badge") }}</div>
 
-            <div class="nf-code" aria-hidden="true">404</div>
+            <div class="notfound-code" aria-hidden="true">404</div>
 
             <!-- A junk train with a gap where the packet should have been -->
-            <div class="nf-train" aria-hidden="true">
+            <div class="notfound-train" aria-hidden="true">
                 <i style="--w: 14px"></i>
                 <i style="--w: 22px"></i>
                 <i style="--w: 11px"></i>
-                <i class="nf-gap"></i>
+                <i class="notfound-gap"></i>
                 <i style="--w: 26px"></i>
                 <i style="--w: 17px"></i>
                 <i style="--w: 30px"></i>
             </div>
 
-            <h1 class="nf-title">{{ t("nf.title") }}</h1>
-            <p class="nf-desc">{{ t("nf.desc") }}</p>
+            <h1 class="notfound-title">{{ t("nf.title") }}</h1>
+            <p class="notfound-desc">{{ t("nf.desc") }}</p>
 
-            <div class="nf-path">
-                <span class="nf-path-label">{{ t("nf.requested") }}</span>
+            <div class="notfound-path">
+                <span class="notfound-path-label">{{ t("nf.requested") }}</span>
                 <code>{{ requestedPath }}</code>
             </div>
 
-            <div class="nf-actions">
+            <div class="notfound-actions">
                 <button class="btn btn-primary" @click="goHome">
                     <Home :size="16" />
                     {{ t("nf.home") }}
@@ -83,17 +83,17 @@ const suggestions = computed(() => [
                 </button>
             </div>
 
-            <div class="nf-suggest">
-                <span class="nf-suggest-label">{{ t("nf.elsewhere") }}</span>
+            <div class="notfound-suggest">
+                <span class="notfound-suggest-label">{{ t("nf.elsewhere") }}</span>
                 <router-link
                     v-for="s in suggestions"
                     :key="s.to"
                     :to="s.to"
-                    class="nf-suggest-link"
+                    class="notfound-suggest-link"
                 >
                     <component :is="s.icon" :size="15" />
                     <span>{{ s.label }}</span>
-                    <ArrowRight :size="14" class="nf-suggest-arrow" />
+                    <ArrowRight :size="14" class="notfound-suggest-arrow" />
                 </router-link>
             </div>
         </div>
@@ -101,7 +101,7 @@ const suggestions = computed(() => [
 </template>
 
 <style scoped>
-.nf-wrap {
+.notfound-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -109,7 +109,7 @@ const suggestions = computed(() => [
     padding: 48px 20px;
 }
 
-.nf-card {
+.notfound-card {
     position: relative;
     width: 100%;
     max-width: 560px;
@@ -128,7 +128,7 @@ const suggestions = computed(() => [
 }
 
 /* ── Corner brackets ──────────────────────────────────────────────────── */
-.nf-bracket {
+.notfound-bracket {
     position: absolute;
     width: 34px;
     height: 34px;
@@ -137,7 +137,7 @@ const suggestions = computed(() => [
     pointer-events: none;
 }
 
-.nf-bracket-tl {
+.notfound-bracket-tl {
     top: 14px;
     left: 14px;
     border-top: 2px solid;
@@ -145,7 +145,7 @@ const suggestions = computed(() => [
     border-top-left-radius: 4px;
 }
 
-.nf-bracket-br {
+.notfound-bracket-br {
     right: 14px;
     bottom: 14px;
     border-right: 2px solid;
@@ -154,7 +154,7 @@ const suggestions = computed(() => [
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
-.nf-badge {
+.notfound-badge {
     display: inline-block;
     margin-bottom: 18px;
     padding: 6px 14px;
@@ -168,7 +168,7 @@ const suggestions = computed(() => [
     letter-spacing: 0.16em;
 }
 
-.nf-code {
+.notfound-code {
     font-family: var(--fu);
     font-size: clamp(4rem, 16vw, 6rem);
     font-weight: 900;
@@ -181,7 +181,7 @@ const suggestions = computed(() => [
 }
 
 /* ── Junk train with a hole in it ─────────────────────────────────────── */
-.nf-train {
+.notfound-train {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -189,7 +189,7 @@ const suggestions = computed(() => [
     margin: 18px 0 26px;
 }
 
-.nf-train i {
+.notfound-train i {
     width: var(--w, 20px);
     height: 10px;
     border-radius: 3px;
@@ -198,7 +198,7 @@ const suggestions = computed(() => [
 }
 
 /* The dropped one: outline only, so the absence reads as deliberate. */
-.nf-train .nf-gap {
+.notfound-train .notfound-gap {
     width: 30px;
     height: 10px;
     background: transparent;
@@ -207,7 +207,7 @@ const suggestions = computed(() => [
 }
 
 /* ── Body ─────────────────────────────────────────────────────────────── */
-.nf-title {
+.notfound-title {
     margin: 0 0 12px;
     font-family: var(--fu);
     font-size: clamp(1.25rem, 4.5vw, 1.6rem);
@@ -215,7 +215,7 @@ const suggestions = computed(() => [
     color: var(--text);
 }
 
-.nf-desc {
+.notfound-desc {
     margin: 0 auto 22px;
     max-width: 44ch;
     font-size: 0.92rem;
@@ -224,7 +224,7 @@ const suggestions = computed(() => [
     text-wrap: pretty;
 }
 
-.nf-path {
+.notfound-path {
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -236,21 +236,21 @@ const suggestions = computed(() => [
     text-align: left;
 }
 
-.nf-path-label {
+.notfound-path-label {
     font-size: 0.68rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text3);
 }
 
-.nf-path code {
+.notfound-path code {
     font-family: var(--fm);
     font-size: 0.82rem;
     color: var(--accent-ink-lift);
     word-break: break-all;
 }
 
-.nf-actions {
+.notfound-actions {
     display: flex;
     gap: 12px;
     justify-content: center;
@@ -258,7 +258,7 @@ const suggestions = computed(() => [
 }
 
 /* ── Suggestions ──────────────────────────────────────────────────────── */
-.nf-suggest {
+.notfound-suggest {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -268,7 +268,7 @@ const suggestions = computed(() => [
     text-align: left;
 }
 
-.nf-suggest-label {
+.notfound-suggest-label {
     margin-bottom: 6px;
     font-size: 0.72rem;
     letter-spacing: 0.06em;
@@ -276,7 +276,7 @@ const suggestions = computed(() => [
     color: var(--text3);
 }
 
-.nf-suggest-link {
+.notfound-suggest-link {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -288,17 +288,17 @@ const suggestions = computed(() => [
     transition: all var(--trans-fast);
 }
 
-.nf-suggest-link:hover {
+.notfound-suggest-link:hover {
     background: var(--bg4);
     color: var(--text);
 }
 
-.nf-suggest-link svg:first-child {
+.notfound-suggest-link svg:first-child {
     flex-shrink: 0;
     color: var(--accent-ink);
 }
 
-.nf-suggest-arrow {
+.notfound-suggest-arrow {
     margin-left: auto;
     flex-shrink: 0;
     opacity: 0;
@@ -306,27 +306,27 @@ const suggestions = computed(() => [
     transition: all var(--trans-fast);
 }
 
-.nf-suggest-link:hover .nf-suggest-arrow {
+.notfound-suggest-link:hover .notfound-suggest-arrow {
     opacity: 0.7;
     transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .nf-suggest-arrow {
+    .notfound-suggest-arrow {
         transition: none;
     }
 }
 
 @media (max-width: 480px) {
-    .nf-card {
+    .notfound-card {
         padding: 34px 20px 26px;
     }
 
-    .nf-actions {
+    .notfound-actions {
         flex-direction: column;
     }
 
-    .nf-actions .btn {
+    .notfound-actions .btn {
         width: 100%;
         justify-content: center;
     }

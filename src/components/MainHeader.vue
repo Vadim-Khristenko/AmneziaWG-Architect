@@ -341,12 +341,12 @@ onUnmounted(() => {
                         :key="link.href"
                         :to="link.href"
                         class="mobile-item"
-                        :class="{ active: isActive(link.href) }"
+                        :class="{ 'is-active': isActive(link.href) }"
                         @click="toggleMenu"
                     >
-                        <component :is="link.icon" :size="20" class="m-icon" />
-                        <span class="m-text">{{ link.label }}</span>
-                        <ChevronRight :size="16" class="m-arrow" />
+                        <component :is="link.icon" :size="20" class="mobile-item-icon" />
+                        <span class="mobile-item-text">{{ link.label }}</span>
+                        <ChevronRight :size="16" class="mobile-item-arrow" />
                     </router-link>
                 </div>
 
@@ -360,7 +360,7 @@ onUnmounted(() => {
                             v-for="opt in themeOptions"
                             :key="opt.value"
                             class="mobile-lang-opt"
-                            :class="{ active: theme === opt.value }"
+                            :class="{ 'is-active': theme === opt.value }"
                             :aria-pressed="theme === opt.value"
                             @click="setTheme(opt.value)"
                         >
@@ -380,7 +380,7 @@ onUnmounted(() => {
                             v-for="loc in LOCALES"
                             :key="loc"
                             class="mobile-lang-opt"
-                            :class="{ active: loc === locale }"
+                            :class="{ 'is-active': loc === locale }"
                             @click="
                                 switchLocale(loc);
                                 toggleMenu();
@@ -560,11 +560,7 @@ onUnmounted(() => {
     border: 1px solid transparent;
 }
 
-.gh-link:hover {
-    color: var(--accent-ink);
-    background: var(--bg2);
-    border-color: var(--border);
-}
+
 
 /* ── Language switcher ────────────────────────────────────────────────── */
 /* ── Header dropdowns: theme and language ─────────────────────────────── */
@@ -598,7 +594,8 @@ onUnmounted(() => {
 }
 
 .menu-btn:hover,
-.menu-btn[aria-expanded="true"] {
+.menu-btn[aria-expanded="true"],
+.gh-link:hover {
     color: var(--accent-ink);
     background: var(--bg2);
     border-color: var(--border);
@@ -730,7 +727,7 @@ onUnmounted(() => {
     transition: all 0.15s;
 }
 
-.mobile-lang-opt.active {
+.mobile-lang-opt.is-active {
     background: var(--amber);
     border-color: var(--amber);
     color: var(--on-accent);
@@ -814,21 +811,21 @@ onUnmounted(() => {
 }
 
 .mobile-item:hover,
-.mobile-item.active {
+.mobile-item.is-active {
     background: rgb(var(--accent-rgb) / 0.08);
     color: var(--accent-ink);
 }
 
-.m-icon {
+.mobile-item-icon {
     opacity: 0.7;
 }
 
-.mobile-item.active .m-icon {
+.mobile-item.is-active .mobile-item-icon {
     opacity: 1;
     color: var(--accent-ink);
 }
 
-.m-arrow {
+.mobile-item-arrow {
     margin-left: auto;
     opacity: 0.3;
 }

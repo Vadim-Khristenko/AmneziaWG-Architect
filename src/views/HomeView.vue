@@ -496,7 +496,7 @@ const paramGroups = computed((): ParamGroup[] => {
         <div class="container">
             <!-- ── Hero ────────────────────────────────────────────────── -->
             <header class="hero">
-                <div class="hero-badge badge badge-amber">
+                <div class="hero-badge badge badge-amber badge-glow">
                     <Sparkles :size="12" /> AWG 3.0 READY
                 </div>
                 <h1 class="hero-title">
@@ -516,7 +516,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         :key="ver.id"
                         class="ver-tab"
                         :class="{
-                            active: version === ver.id,
+                            'is-active': version === ver.id,
                             'ver-tab-new': ver.isNewest,
                         }"
                         @click="setVersion(ver.id)"
@@ -530,7 +530,7 @@ const paramGroups = computed((): ParamGroup[] => {
 
                 <button
                     class="history-toggle btn btn-ghost btn-icon"
-                    :class="{ active: showHistory }"
+                    :class="{ 'is-active': showHistory }"
                     @click="showHistory = !showHistory"
                     :data-tooltip='t("history.title")'
                 >
@@ -969,7 +969,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                 <div class="mtu-presets">
                                     <button
                                         class="preset-btn"
-                                        :class="{ active: config.mtu === 1500 }"
+                                        :class="{ 'is-active': config.mtu === 1500 }"
                                         @click="
                                             config.mtu = 1500;
                                             generate();
@@ -979,7 +979,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     </button>
                                     <button
                                         class="preset-btn"
-                                        :class="{ active: config.mtu === 1420 }"
+                                        :class="{ 'is-active': config.mtu === 1420 }"
                                         @click="
                                             config.mtu = 1420;
                                             generate();
@@ -989,7 +989,7 @@ const paramGroups = computed((): ParamGroup[] => {
                                     </button>
                                     <button
                                         class="preset-btn"
-                                        :class="{ active: config.mtu === 1280 }"
+                                        :class="{ 'is-active': config.mtu === 1280 }"
                                         @click="
                                             config.mtu = 1280;
                                             generate();
@@ -1011,21 +1011,21 @@ const paramGroups = computed((): ParamGroup[] => {
                             <div class="intensity-bar">
                                 <button
                                     class="int-btn"
-                                    :class="{ active: intensity === 'low' }"
+                                    :class="{ 'is-active': intensity === 'low' }"
                                     @click="setIntensity('low' as Intensity)"
                                 >
                                     LOW
                                 </button>
                                 <button
                                     class="int-btn"
-                                    :class="{ active: intensity === 'medium' }"
+                                    :class="{ 'is-active': intensity === 'medium' }"
                                     @click="setIntensity('medium' as Intensity)"
                                 >
                                     MED
                                 </button>
                                 <button
                                     class="int-btn"
-                                    :class="{ active: intensity === 'high' }"
+                                    :class="{ 'is-active': intensity === 'high' }"
                                     @click="setIntensity('high' as Intensity)"
                                 >
                                     HIGH
@@ -1503,7 +1503,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <b>{{ t("kb.fields.title") }}</b>
                         <small>{{ t("kb.fields.short") }}</small>
                     </span>
-                    <ArrowRight :size="15" class="help-link-arrow" />
+                    <ArrowRight :size="15" class="chevron help-link-arrow" />
                 </router-link>
 
                 <router-link :to="faqPath" class="help-link">
@@ -1512,7 +1512,7 @@ const paramGroups = computed((): ParamGroup[] => {
                         <b>{{ t("kb.title") }}</b>
                         <small>{{ t("kb.short") }}</small>
                     </span>
-                    <ArrowRight :size="15" class="help-link-arrow" />
+                    <ArrowRight :size="15" class="chevron help-link-arrow" />
                 </router-link>
             </nav>
         </div>
@@ -1620,26 +1620,9 @@ const paramGroups = computed((): ParamGroup[] => {
 /* Glow lives on a pseudo-element so we animate opacity (GPU-composited)
    instead of box-shadow (forces a main-thread repaint every frame during
    the critical load window). */
-.hero-badge::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: 0 0 16px 2px rgb(var(--accent-rgb) / 0.15);
-    opacity: 0;
-    pointer-events: none;
-    animation: badgePulse 3s ease-in-out infinite;
-}
+/* Shared: see `.badge-glow` in main.css. */
 
-@keyframes badgePulse {
-    0%,
-    100% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-}
+
 
 @media (prefers-reduced-motion: reduce) {
     .hero-badge::after {
@@ -1721,7 +1704,7 @@ const paramGroups = computed((): ParamGroup[] => {
     color: var(--text2);
 }
 
-.ver-tab.active {
+.ver-tab.is-active {
     background: var(--amber);
     color: var(--on-accent);
     box-shadow: 0 2px 8px rgb(var(--accent-rgb) / 0.25);
@@ -1739,7 +1722,7 @@ const paramGroups = computed((): ParamGroup[] => {
     line-height: 1;
 }
 
-.ver-tab.active .ver-tag {
+.ver-tab.is-active .ver-tag {
     background: light-dark(rgb(255 255 255 / 0.3), rgb(10 8 6 / 0.22));
     color: var(--on-accent);
 }
@@ -1869,7 +1852,7 @@ const paramGroups = computed((): ParamGroup[] => {
     display: none;
 }
 
-.history-toggle.active {
+.history-toggle.is-active {
     color: var(--accent-ink);
     background: var(--surface-active);
 }
@@ -2111,7 +2094,7 @@ const paramGroups = computed((): ParamGroup[] => {
     border-color: var(--border);
 }
 
-.preset-btn.active {
+.preset-btn.is-active {
     background: var(--surface-active);
     color: var(--accent-ink);
     border-color: rgb(var(--accent-rgb) / 0.3);
@@ -2145,7 +2128,7 @@ const paramGroups = computed((): ParamGroup[] => {
     color: var(--text2);
 }
 
-.int-btn.active {
+.int-btn.is-active {
     background: var(--bg);
     color: var(--accent-ink);
     box-shadow: var(--shadow-sm);
@@ -2903,11 +2886,7 @@ const paramGroups = computed((): ParamGroup[] => {
     color: var(--text2);
 }
 
-.help-link-arrow {
-    flex-shrink: 0;
-    color: var(--text3);
-    transition: transform var(--trans-fast);
-}
+/* Shared: see `.chevron` in main.css. */
 
 .help-link:hover .help-link-arrow {
     color: var(--accent-ink);
@@ -2980,11 +2959,11 @@ const paramGroups = computed((): ParamGroup[] => {
         gap: 8px;
     }
 
-    .he-info {
+    .history-entry-info {
         min-width: auto;
     }
 
-    .he-actions {
+    .history-entry-actions {
         align-self: flex-end;
     }
 

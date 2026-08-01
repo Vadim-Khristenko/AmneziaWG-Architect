@@ -348,7 +348,7 @@ const stats = computed(() => {
                                 <tr
                                     v-for="p in sim?.packets"
                                     :key="p.id"
-                                    :class="{ active: selectedPacket?.id === p.id }"
+                                    :class="{ 'is-active': selectedPacket?.id === p.id }"
                                     @click="selectPacket(p)"
                                 >
                                     <td>{{ p.step }}</td>
@@ -492,7 +492,7 @@ const stats = computed(() => {
     transition: var(--trans-fast);
 }
 .packet-row:hover,
-.packet-row.active {
+.packet-row.is-active {
     background: var(--bg2);
 }
 .packet-row.right {
@@ -622,7 +622,7 @@ const stats = computed(() => {
     transition: var(--trans-fast);
 }
 .sim-table-inner tbody tr:hover,
-.sim-table-inner tbody tr.active {
+.sim-table-inner tbody tr.is-active {
     background: var(--panel-2);
 }
 .kind-badge {

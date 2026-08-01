@@ -137,7 +137,7 @@ watch(
     <div class="mk-tabs">
       <button
         class="mk-tab-btn"
-        :class="{ active: activeTab === 'editor' }"
+        :class="{ 'is-active': activeTab === 'editor' }"
         @click="switchTab('editor')"
       >
         <FileCode2 :size="14" />
@@ -145,7 +145,7 @@ watch(
       </button>
       <button
         class="mk-tab-btn"
-        :class="{ active: activeTab === 'merge' }"
+        :class="{ 'is-active': activeTab === 'merge' }"
         @click="switchTab('merge')"
       >
         <GitMerge :size="14" />
@@ -172,7 +172,7 @@ watch(
     ═══════════════════════════════════════════════════════════ -->
     <div v-show="activeTab === 'merge'" class="mk-pane visible">
       <!-- How-it-works -->
-      <div class="mk-how" :class="{ open: howMergeOpen }">
+      <div class="mk-how" :class="{ 'is-open': howMergeOpen }">
         <div class="mk-how-head" @click="toggleHowMerge">
           <HelpCircle :size="14" class="icon-amber" />
           <span class="mk-how-title">{{ t("mk.how.title") }}</span>
@@ -549,7 +549,7 @@ watch(
 .mk-tab-btn:hover {
   color: var(--text);
 }
-.mk-tab-btn.active {
+.mk-tab-btn.is-active {
   background: var(--bg4);
   color: var(--accent-ink);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
@@ -983,7 +983,7 @@ watch(
   transition: transform 0.25s;
   display: flex;
 }
-.mk-how.open .mk-how-arrow {
+.mk-how.is-open .mk-how-arrow {
   transform: rotate(180deg);
 }
 .mk-how-body {
@@ -997,7 +997,7 @@ watch(
     max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.mk-how.open .mk-how-body {
+.mk-how.is-open .mk-how-body {
   max-height: 9999px;
   padding: 10px 18px 18px;
 }

@@ -199,17 +199,17 @@ function copyValue(key: string, value: string) {
 </script>
 
 <template>
-    <section id="client-fields" class="cfg-guide" :class="{ open }">
+    <section id="client-fields" class="guide-root" :class="{ 'is-open': open }">
         <!-- Collapsed by default: the full form is sixteen cards tall. -->
         <button
-            class="cfg-toggle"
+            class="guide-toggle"
             type="button"
             :aria-expanded="open"
             aria-controls="client-fields-body"
             @click="open = !open"
         >
-            <span class="cfg-toggle-icon"><LayoutGrid :size="18" /></span>
-            <span class="cfg-toggle-text">
+            <span class="guide-toggle-icon"><LayoutGrid :size="18" /></span>
+            <span class="guide-toggle-text">
                 <b>{{ t("clientFields.toggle.title") }}</b>
                 <small>
                     {{
@@ -219,30 +219,30 @@ function copyValue(key: string, value: string) {
                     }}
                 </small>
             </span>
-            <ChevronDown :size="18" class="cfg-toggle-arrow" />
+            <ChevronDown :size="18" class="chevron guide-toggle-arrow" />
         </button>
 
-        <div v-show="open" id="client-fields-body" class="cfg-body">
-        <header class="cfg-head">
+        <div v-show="open" id="client-fields-body" class="guide-body">
+        <header class="guide-head">
             <p>{{ t("clientFields.intro") }}</p>
 
-            <div class="cfg-state" :class="{ live: hasConfig }">
+            <div class="guide-state" :class="{ live: hasConfig }">
                 <Info :size="14" />
                 <span v-if="hasConfig">{{ t("clientFields.state.filled") }}</span>
                 <span v-else>{{ t("clientFields.state.empty") }}</span>
             </div>
         </header>
 
-        <div class="cfg-groups">
-            <div v-for="g in groups" :key="g.key" class="cfg-group">
-                <h3 class="cfg-group-title">{{ g.title }}</h3>
+        <div class="guide-groups">
+            <div v-for="g in groups" :key="g.key" class="guide-group">
+                <h3 class="guide-group-title">{{ g.title }}</h3>
 
-                <div class="cfg-fields">
+                <div class="guide-fields">
                     <!-- One card per client field, mirroring the app's layout -->
                     <button
                         v-for="f in g.fields"
                         :key="f.key"
-                        class="cfg-field"
+                        class="guide-field"
                         :class="{
                             filled: hasConfig && !f.value().startsWith('—<'),
                             copied: copied === f.key,
@@ -250,12 +250,12 @@ function copyValue(key: string, value: string) {
                         type="button"
                         @click="copyValue(f.key, f.value())"
                     >
-                        <span class="cfg-field-label">
+                        <span class="guide-field-label">
                             {{ f.label }}
                             <em v-if="f.hint">— {{ f.hint }}</em>
                         </span>
-                        <span class="cfg-field-value">{{ f.value() }}</span>
-                        <span class="cfg-field-copy" aria-hidden="true">
+                        <span class="guide-field-value">{{ f.value() }}</span>
+                        <span class="guide-field-copy" aria-hidden="true">
                             <Check v-if="copied === f.key" :size="15" />
                             <Copy v-else :size="15" />
                         </span>
@@ -268,7 +268,7 @@ function copyValue(key: string, value: string) {
 </template>
 
 <style scoped>
-.cfg-guide {
+.guide-root {
     margin: 1.75rem 0;
     background: var(--bg2);
     border: 1px solid var(--border2);
@@ -278,12 +278,12 @@ function copyValue(key: string, value: string) {
     transition: border-color var(--trans-fast);
 }
 
-.cfg-guide.open {
+.guide-root.is-open {
     border-color: var(--amber-dim);
 }
 
 /* ── Toggle ───────────────────────────────────────────────────────────── */
-.cfg-toggle {
+.guide-toggle {
     display: flex;
     align-items: center;
     gap: 14px;
@@ -296,11 +296,11 @@ function copyValue(key: string, value: string) {
     transition: background var(--trans-fast);
 }
 
-.cfg-toggle:hover {
+.guide-toggle:hover {
     background: var(--bg3);
 }
 
-.cfg-toggle-icon {
+.guide-toggle-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -312,7 +312,7 @@ function copyValue(key: string, value: string) {
     color: var(--accent-ink);
 }
 
-.cfg-toggle-text {
+.guide-toggle-text {
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -320,35 +320,31 @@ function copyValue(key: string, value: string) {
     min-width: 0;
 }
 
-.cfg-toggle-text b {
+.guide-toggle-text b {
     font-family: var(--fw);
     font-weight: 800;
     font-size: 0.95rem;
     color: var(--text);
 }
 
-.cfg-toggle-text small {
+.guide-toggle-text small {
     font-size: 0.78rem;
     color: var(--text2);
 }
 
-.cfg-toggle-arrow {
-    flex-shrink: 0;
-    color: var(--text3);
-    transition: transform var(--trans-fast);
-}
+/* Shared: see `.chevron` in main.css. */
 
-.cfg-guide.open .cfg-toggle-arrow {
+.guide-root.is-open .guide-toggle-arrow {
     transform: rotate(180deg);
     color: var(--accent-ink);
 }
 
-.cfg-body {
+.guide-body {
     padding: 4px 22px 24px;
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
-.cfg-head p {
+.guide-head p {
     margin: 0 0 14px;
     font-size: 0.9rem;
     line-height: 1.6;
@@ -356,7 +352,7 @@ function copyValue(key: string, value: string) {
     text-wrap: pretty;
 }
 
-.cfg-state {
+.guide-state {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -370,28 +366,28 @@ function copyValue(key: string, value: string) {
     color: var(--text2);
 }
 
-.cfg-state svg {
+.guide-state svg {
     flex-shrink: 0;
     margin-top: 2px;
     color: var(--text3);
 }
 
-.cfg-state.live {
+.guide-state.live {
     border-left-color: var(--green);
 }
 
-.cfg-state.live svg {
+.guide-state.live svg {
     color: var(--green);
 }
 
 /* ── Groups ───────────────────────────────────────────────────────────── */
-.cfg-groups {
+.guide-groups {
     display: flex;
     flex-direction: column;
     gap: 26px;
 }
 
-.cfg-group-title {
+.guide-group-title {
     margin: 0 0 10px;
     font-family: var(--fw);
     font-weight: 800;
@@ -401,14 +397,14 @@ function copyValue(key: string, value: string) {
     color: var(--accent-ink);
 }
 
-.cfg-fields {
+.guide-fields {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
 /* ── Field card — the client's own shape, in this site's palette ──────── */
-.cfg-field {
+.guide-field {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -425,32 +421,32 @@ function copyValue(key: string, value: string) {
         background var(--trans-fast);
 }
 
-.cfg-field:hover {
+.guide-field:hover {
     border-color: var(--border3);
     background: var(--bg4);
 }
 
-.cfg-field.filled {
+.guide-field.filled {
     border-color: var(--amber-dim);
 }
 
-.cfg-field.copied {
+.guide-field.copied {
     border-color: var(--green);
 }
 
-.cfg-field-label {
+.guide-field-label {
     font-family: var(--fw);
     font-size: 0.78rem;
     color: var(--text2);
 }
 
 /* The gloss sits behind the English name, never in place of it. */
-.cfg-field-label em {
+.guide-field-label em {
     font-style: normal;
     color: var(--text3);
 }
 
-.cfg-field-value {
+.guide-field-value {
     font-family: var(--fm);
     font-size: 0.98rem;
     line-height: 1.45;
@@ -460,11 +456,11 @@ function copyValue(key: string, value: string) {
     word-break: break-all;
 }
 
-.cfg-field:not(.filled) .cfg-field-value {
+.guide-field:not(.filled) .guide-field-value {
     color: var(--text3);
 }
 
-.cfg-field-copy {
+.guide-field-copy {
     position: absolute;
     top: 15px;
     right: 15px;
@@ -474,35 +470,35 @@ function copyValue(key: string, value: string) {
     transition: opacity var(--trans-fast);
 }
 
-.cfg-field:hover .cfg-field-copy,
-.cfg-field.copied .cfg-field-copy {
+.guide-field:hover .guide-field-copy,
+.guide-field.copied .guide-field-copy {
     opacity: 1;
 }
 
-.cfg-field.copied .cfg-field-copy {
+.guide-field.copied .guide-field-copy {
     color: var(--green);
 }
 
-.cfg-field:not(.filled) .cfg-field-copy {
+.guide-field:not(.filled) .guide-field-copy {
     display: none;
 }
 
 @media (max-width: 480px) {
-    .cfg-toggle {
+    .guide-toggle {
         padding: 15px 16px;
         gap: 12px;
     }
 
-    .cfg-body {
+    .guide-body {
         padding: 2px 16px 20px;
     }
 
-    .cfg-field {
+    .guide-field {
         padding: 13px 14px;
     }
 
     /* No hover on touch, so the copy affordance would never show. */
-    .cfg-field-copy {
+    .guide-field-copy {
         opacity: 1;
         top: 13px;
         right: 12px;

@@ -95,7 +95,7 @@ const isInternal = (url: string) => url.startsWith("/");
                         <code class="crypto-addr">{{ w.address }}</code>
                         <button
                             class="crypto-copy"
-                            :class="{ done: copiedId === w.id }"
+                            :class="{ 'is-done': copiedId === w.id }"
                             :aria-label="`${t('donate.copyAddress')} — ${w.name}`"
                             @click="copyAddress(w.id, w.address)"
                         >
@@ -214,11 +214,8 @@ const isInternal = (url: string) => url.startsWith("/");
     transition: all var(--trans-fast);
 }
 
-.fiat-card:hover {
-    border-color: var(--amber-dim);
-    background: var(--bg4);
-    transform: translateY(-2px);
-}
+.fiat-card:hover,
+
 
 .fiat-label {
     font-family: var(--fw);
@@ -352,7 +349,7 @@ const isInternal = (url: string) => url.startsWith("/");
     border-color: var(--border3);
 }
 
-.crypto-copy.done {
+.crypto-copy.is-done {
     color: var(--green);
     border-color: var(--green);
 }
@@ -384,11 +381,7 @@ const isInternal = (url: string) => url.startsWith("/");
     transition: all var(--trans-fast);
 }
 
-.project-card:hover {
-    border-color: var(--amber-dim);
-    background: var(--bg4);
-    transform: translateY(-2px);
-}
+
 
 .project-title {
     display: flex;

@@ -333,7 +333,7 @@ function onJcSlider(ev: Event) {
                 <div class="mk-ed-toggle">
                     <button
                         class="mk-ed-toggle-btn"
-                        :class="{ active: viewMode === 'code' }"
+                        :class="{ 'is-active': viewMode === 'code' }"
                         @click="viewMode = 'code'"
                     >
                         <FileCode2 :size="12" />
@@ -341,7 +341,7 @@ function onJcSlider(ev: Event) {
                     </button>
                     <button
                         class="mk-ed-toggle-btn"
-                        :class="{ active: viewMode === 'fields' }"
+                        :class="{ 'is-active': viewMode === 'fields' }"
                         @click="
                             viewMode = 'fields';
                             syncFieldsFromText();
@@ -379,7 +379,7 @@ function onJcSlider(ev: Event) {
                     <span class="mk-ed-convert-label">{{ t("mk.editor.showAs") }}</span>
                     <button
                         class="mk-ed-convert-btn"
-                        :class="{ active: format === 'vpn' }"
+                        :class="{ 'is-active': format === 'vpn' }"
                         @click="convertTo('vpn')"
                     >
                         <KeyRound :size="12" />
@@ -387,7 +387,7 @@ function onJcSlider(ev: Event) {
                     </button>
                     <button
                         class="mk-ed-convert-btn"
-                        :class="{ active: format === 'json' }"
+                        :class="{ 'is-active': format === 'json' }"
                         @click="convertTo('json')"
                     >
                         <Braces :size="12" />
@@ -395,7 +395,7 @@ function onJcSlider(ev: Event) {
                     </button>
                     <button
                         class="mk-ed-convert-btn"
-                        :class="{ active: format === 'conf' }"
+                        :class="{ 'is-active': format === 'conf' }"
                         :disabled="!canExportConf"
                         :title="
                             !canExportConf ? t('mk.editor.noAwgContainer') : ''
@@ -608,7 +608,7 @@ function onJcSlider(ev: Event) {
                 <div class="mk-ed-health-head">
                     <button
                         class="mk-ed-health-toggle"
-                        :class="{ active: showHealth }"
+                        :class="{ 'is-active': showHealth }"
                         @click="showHealth = !showHealth"
                     >
                         <ShieldCheck :size="13" />
@@ -871,7 +871,7 @@ function onJcSlider(ev: Event) {
     color: var(--text);
     background: var(--surface-hover);
 }
-.mk-ed-toggle-btn.active {
+.mk-ed-toggle-btn.is-active {
     color: var(--on-accent);
     background: var(--amber2);
 }
@@ -966,7 +966,7 @@ function onJcSlider(ev: Event) {
     color: var(--text);
     border-color: var(--amber-deep);
 }
-.mk-ed-convert-btn.active {
+.mk-ed-convert-btn.is-active {
     color: var(--on-accent);
     background: var(--amber2);
     border-color: var(--amber2);
@@ -1213,7 +1213,7 @@ function onJcSlider(ev: Event) {
     transition: var(--trans-fast);
 }
 .mk-ed-health-toggle:hover,
-.mk-ed-health-toggle.active {
+.mk-ed-health-toggle.is-active {
     background: var(--green2);
     color: var(--on-accent);
     border-color: var(--green2);
@@ -1241,7 +1241,7 @@ function onJcSlider(ev: Event) {
     font-family: var(--fm);
     font-size: 0.76rem;
 }
-.mk-ed-findings .error {
+.mk-ed-findings .is-error {
     color: var(--red2);
 }
 .mk-ed-findings .warn {

@@ -182,11 +182,11 @@ function formatTime(ts: number): string {
                                 class="history-entry"
                                 :class="{ pinned: entry.pinned }"
                             >
-                                <div class="he-info">
-                                    <div class="he-time-row">
+                                <div class="history-entry-info">
+                                    <div class="history-entry-time-row">
                                     <button
-                                        class="he-pin"
-                                        :class="{ on: entry.pinned }"
+                                        class="history-entry-pin"
+                                        :class="{ 'is-on': entry.pinned }"
                                         type="button"
                                         :data-tooltip="
                                             entry.pinned
@@ -199,37 +199,37 @@ function formatTime(ts: number): string {
                                     >
                                         <Pin :size="13" />
                                     </button>
-                                    <span class="he-time">{{
+                                    <span class="history-entry-time">{{
                                         formatTime(entry.timestamp)
                                     }}</span>
                                     </div>
-                                    <span class="he-tags">
-                                        <span class="he-tag">{{
+                                    <span class="history-entry-tags">
+                                        <span class="history-entry-tag">{{
                                             entry.version
                                         }}</span>
-                                        <span class="he-tag">{{
+                                        <span class="history-entry-tag">{{
                                             entry.intensity
                                         }}</span>
-                                        <span class="he-tag">{{
+                                        <span class="history-entry-tag">{{
                                             entry.profile
                                         }}</span>
                                     </span>
                                 </div>
-                                <div class="he-params">
+                                <div class="history-entry-params">
                                     <span
                                         v-for="(val, key) in entry.params"
                                         :key="key"
-                                        class="he-param"
+                                        class="history-entry-param"
                                         :class="{
-                                            'he-param-wide':
+                                            'history-entry-param-wide':
                                                 String(val).length > 20,
                                         }"
                                     >
-                                        <span class="he-param-k">{{
+                                        <span class="history-entry-param-k">{{
                                             key
                                         }}</span>
                                         <span
-                                            class="he-param-v"
+                                            class="history-entry-param-v"
                                             :title="String(val)"
                                             >{{
                                                 String(val).length > 30
@@ -240,10 +240,10 @@ function formatTime(ts: number): string {
                                         >
                                     </span>
                                 </div>
-                                <div class="he-actions">
+                                <div class="history-entry-actions">
                                     <button
                                         class="btn btn-ghost btn-icon sm"
-                                        :class="{ on: noteOpen === entry.id }"
+                                        :class="{ 'is-on': noteOpen === entry.id }"
                                         @click="toggleNote(entry)"
                                         :data-tooltip='t("history.note")'
                                     >
@@ -301,7 +301,7 @@ function formatTime(ts: number): string {
                                      squeezes everything else out. -->
                                 <div
                                     v-if="noteOpen === entry.id || entry.note"
-                                    class="he-note"
+                                    class="history-entry-note"
                                 >
                                     <input
                                         :ref="
@@ -465,7 +465,7 @@ function formatTime(ts: number): string {
     background: color-mix(in srgb, var(--amber, var(--accent)) 6%, var(--bg3));
 }
 
-.he-pin {
+.history-entry-pin {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -480,40 +480,40 @@ function formatTime(ts: number): string {
     transition: color var(--trans-fast), background var(--trans-fast);
 }
 
-.he-pin:hover {
+.history-entry-pin:hover {
     color: var(--text2);
     background: var(--bg2);
 }
 
-.he-pin.on {
+.history-entry-pin.is-on {
     color: var(--amber, var(--accent));
 }
 
-.he-info {
+.history-entry-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
 }
 
-.he-time-row {
+.history-entry-time-row {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.he-time {
+.history-entry-time {
     font-family: var(--fm);
     font-size: 0.72rem;
     color: var(--text3);
 }
 
-.he-tags {
+.history-entry-tags {
     display: flex;
     gap: 4px;
 }
 
-.he-tag {
+.history-entry-tag {
     font-size: 0.6rem;
     font-family: var(--fm);
     padding: 1px 6px;
@@ -531,7 +531,7 @@ function formatTime(ts: number): string {
  * and a header-protection key, and with every long value claiming a row of
  * its own a single entry filled the entire panel.
  */
-.he-params {
+.history-entry-params {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
@@ -544,7 +544,7 @@ function formatTime(ts: number): string {
     mask-image: linear-gradient(to bottom, #000 60%, transparent);
 }
 
-.he-param {
+.history-entry-param {
     display: flex;
     gap: 3px;
     font-family: var(--fm);
@@ -553,16 +553,16 @@ function formatTime(ts: number): string {
 }
 
 /* A long value gets more room, not a row to itself. */
-.he-param-wide {
+.history-entry-param-wide {
     max-width: 260px;
 }
 
-.he-param-k {
+.history-entry-param-k {
     color: var(--text3);
     flex-shrink: 0;
 }
 
-.he-param-v {
+.history-entry-param-v {
     color: var(--accent-ink);
     font-weight: 600;
     overflow: hidden;
@@ -570,7 +570,7 @@ function formatTime(ts: number): string {
     white-space: nowrap;
 }
 
-.he-actions {
+.history-entry-actions {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
@@ -578,11 +578,11 @@ function formatTime(ts: number): string {
 
 /* Spans every column: a note is a sentence, and a sentence in a cell
    squeezes the parameters into nothing. */
-.he-note {
+.history-entry-note {
     grid-column: 1 / -1;
 }
 
-.he-note .input-field {
+.history-entry-note .input-field {
     width: 100%;
     font-size: 0.75rem;
     padding: 5px 9px;
@@ -598,7 +598,7 @@ function formatTime(ts: number): string {
         grid-template-columns: 1fr;
     }
 
-    .he-actions {
+    .history-entry-actions {
         justify-content: flex-end;
     }
 }

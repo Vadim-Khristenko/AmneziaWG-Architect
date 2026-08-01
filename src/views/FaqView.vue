@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
             <div class="faq-cats" role="tablist">
                 <button
                     class="faq-cat"
-                    :class="{ active: activeCategory === 'all' }"
+                    :class="{ 'is-active': activeCategory === 'all' }"
                     role="tab"
                     :aria-selected="activeCategory === 'all'"
                     @click="activeCategory = 'all'"
@@ -225,7 +225,7 @@ onBeforeUnmount(() => {
                     v-for="cat in FAQ_CATEGORIES"
                     :key="cat.id"
                     class="faq-cat"
-                    :class="{ active: activeCategory === cat.id }"
+                    :class="{ 'is-active': activeCategory === cat.id }"
                     role="tab"
                     :aria-selected="activeCategory === cat.id"
                     @click="activeCategory = cat.id"
@@ -251,7 +251,7 @@ onBeforeUnmount(() => {
                     :id="entry.id"
                     :key="entry.id"
                     class="faq-item"
-                    :class="{ open: isOpen(entry.id) }"
+                    :class="{ 'is-open': isOpen(entry.id) }"
                 >
                     <h2 class="faq-q-wrap">
                         <button
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
                             @click="toggle(entry.id)"
                         >
                             <span>{{ pick(entry.question, locale) }}</span>
-                            <ChevronDown :size="17" class="faq-chevron" />
+                            <ChevronDown :size="17" class="chevron faq-chevron" />
                         </button>
                     </h2>
 
@@ -436,7 +436,7 @@ onBeforeUnmount(() => {
     border-color: var(--border3);
 }
 
-.faq-cat.active {
+.faq-cat.is-active {
     background: var(--amber);
     border-color: var(--amber);
     color: var(--on-accent);
@@ -470,7 +470,7 @@ onBeforeUnmount(() => {
     scroll-margin-top: 90px;
 }
 
-.faq-item.open {
+.faq-item.is-open {
     border-color: var(--amber-dim);
 }
 
@@ -502,13 +502,9 @@ onBeforeUnmount(() => {
     color: var(--accent-ink);
 }
 
-.faq-chevron {
-    flex-shrink: 0;
-    color: var(--text3);
-    transition: transform var(--trans-fast);
-}
+/* Shared: see `.chevron` in main.css. */
 
-.faq-item.open .faq-chevron {
+.faq-item.is-open .faq-chevron {
     transform: rotate(180deg);
     color: var(--accent-ink);
 }
