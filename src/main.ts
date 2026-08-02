@@ -14,6 +14,9 @@ import "@fontsource-variable/jetbrains-mono/index.css";
 // variable that is defined after it in the cascade.
 import "../assets/theme.css";
 import "../assets/main.css";
+// The kit: every primitive the interface is built from. After main.css so a
+// primitive can override a base element rule rather than the other way round.
+import "../assets/kit.css";
 
 // Tooltips render in one element on the body rather than as a pseudo-element
 // on each trigger, so nothing that scrolls can clip them. See utils/tooltip.

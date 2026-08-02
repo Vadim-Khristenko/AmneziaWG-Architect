@@ -1,0 +1,1822 @@
+/**
+ * Any Tech ARCHITECT — the kit.
+ *
+ * Every primitive the interface is built from, in one place, so a new page is
+ * assembled rather than invented. theme.css holds the tokens; this holds the
+ * things made out of them. Nothing here knows about a particular page: the
+ * accent arrives through `--accent-rgb` and a component looks like the page it
+ * happens to be on.
+ *
+ * THE HOUSE STYLE
+ *
+ * A working drawing of a packet. Hairline rules, dimension lines with tick
+ * terminators, leader lines, hatch for what is unavailable, revision letters,
+ * a title block. The name of the product is the brief.
+ *
+ * The rule that stops this being a costume: every motif carries data. A range
+ * is drawn as a dimension line because that is what a dimension line is for.
+ * Hatching means a client does not support the thing under it. A revision chip
+ * is a protocol version. Anything that exists only to look technical is not in
+ * here.
+ *
+ * NAMING
+ *
+ *   .k-block            a primitive              .k-btn, .k-field
+ *   .k-block-element    a part of one            .k-panel-head
+ *   .k-block--variant   a variant of one         .k-btn--ghost
+ *   .is-* / .has-*      a state                  .is-active, .is-loading
+ *
+ * The `k-` prefix keeps the kit separable from the twenty-nine components that
+ * predate it, which still carry their own names.
+ *
+ * Everything is checked in both schemes and on all six accents by the
+ * styleguide (`bun run kit`), which is not part of the production build.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1 · SURFACES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A sheet is the paper. A panel is a framed area on it. A card is a panel you
+ * can click. Nesting a card inside a card is always wrong; nesting a panel
+ * inside a sheet is the normal case.
+ */
+
+.k-sheet {
+    position: relative;
+    background: var(--ground-2);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-3);
+}
+
+/* The drawing grid, as a surface rather than as a page background. */
+.k-sheet--gridded {
+    background-image:
+        linear-gradient(var(--grid-major) var(--rule), transparent var(--rule)),
+        linear-gradient(90deg, var(--grid-major) var(--rule), transparent var(--rule)),
+        linear-gradient(var(--grid-minor) var(--rule), transparent var(--rule)),
+        linear-gradient(90deg, var(--grid-minor) var(--rule), transparent var(--rule));
+    background-size:
+        96px 96px,
+        96px 96px,
+        16px 16px,
+        16px 16px;
+}
+
+.k-panel {
+    background: var(--ground-2);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-3);
+    overflow: hidden;
+}
+
+.k-panel-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: var(--rule) solid var(--line-faint);
+    background: var(--surface);
+}
+
+.k-panel-title {
+    font-family: var(--fu);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--accent-ink);
+}
+
+/* Pushed to the right of a head: counts, actions, status. */
+.k-panel-aside {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.k-panel-body {
+    padding: var(--sp-4);
+}
+
+.k-panel-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-top: var(--rule) solid var(--line-faint);
+}
+
+.k-card {
+    display: block;
+    position: relative;
+    padding: var(--sp-5);
+    background: var(--ground-2);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-3);
+    color: inherit;
+    text-decoration: none;
+    transition:
+        border-color var(--trans-fast),
+        background-color var(--trans-fast),
+        transform var(--trans-fast);
+}
+
+a.k-card:hover,
+button.k-card:hover {
+    border-color: var(--line);
+    background: var(--ground-3);
+    transform: translateY(-2px);
+}
+
+a.k-card:focus-visible,
+button.k-card:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/*
+ * The title block: the stamp in the corner of a drawing sheet. Fields in a
+ * fixed order, each labelled, each a fact about the thing being drawn.
+ */
+.k-titleblock {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    border: var(--rule) solid var(--line);
+    border-radius: var(--r-1);
+    overflow: hidden;
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+}
+
+.k-titleblock-cell {
+    padding: var(--sp-2) var(--sp-3);
+    border-right: var(--rule) solid var(--line-faint);
+}
+
+.k-titleblock-cell:last-child {
+    border-right: none;
+}
+
+.k-titleblock-key {
+    display: block;
+    color: var(--ink-3);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    font-size: var(--t-2xs);
+}
+
+.k-titleblock-val {
+    display: block;
+    margin-top: 2px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2 · BUTTONS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: 0 var(--sp-4);
+    height: 38px;
+    border: var(--rule) solid transparent;
+    border-radius: var(--r-2);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--fw);
+    font-size: var(--t-sm);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background-color var(--dur-2) var(--ease-out-quart),
+        border-color var(--dur-2) var(--ease-out-quart),
+        color var(--dur-2) var(--ease-out-quart);
+}
+
+.k-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Primary: the accent as a fill, so its text is the on-accent ink, always. */
+.k-btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+}
+
+.k-btn--primary:hover:not(:disabled) {
+    background: var(--accent-lift);
+    border-color: var(--accent-lift);
+}
+
+.k-btn--secondary {
+    background: var(--ground-2);
+    border-color: var(--line);
+    color: var(--ink);
+}
+
+.k-btn--secondary:hover:not(:disabled) {
+    background: var(--ground-3);
+    border-color: var(--accent-deep);
+}
+
+.k-btn--ghost {
+    color: var(--ink-2);
+}
+
+.k-btn--ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--accent-ink);
+}
+
+.k-btn--danger {
+    background: var(--red-bg);
+    border-color: var(--rd);
+    color: var(--red);
+}
+
+.k-btn--danger:hover:not(:disabled) {
+    background: var(--rd);
+}
+
+.k-btn--sm {
+    height: 30px;
+    padding: 0 var(--sp-3);
+    font-size: var(--t-xs);
+}
+
+.k-btn--lg {
+    height: 46px;
+    padding: 0 var(--sp-5);
+    font-size: var(--t-base);
+}
+
+.k-btn--icon {
+    width: 38px;
+    padding: 0;
+}
+
+.k-btn--icon.k-btn--sm {
+    width: 30px;
+}
+
+.k-btn--icon.k-btn--lg {
+    width: 46px;
+}
+
+/* Full width in a stack; the common mobile case. */
+.k-btn--block {
+    display: flex;
+    width: 100%;
+}
+
+/*
+ * Disabled is hatched rather than faded. A faded control asks whether it is
+ * disabled or just low-contrast; a hatched one is unambiguous, and it is the
+ * same mark the kit uses everywhere else for "not available".
+ */
+.k-btn:disabled,
+.k-btn.is-disabled {
+    cursor: not-allowed;
+    color: var(--ink-3);
+    background-color: var(--ground-3);
+    background-image: var(--hatch);
+    border-color: var(--line-faint);
+}
+
+.k-btn.is-loading {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+}
+
+.k-btn.is-loading::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentcolor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: k-spin 620ms linear infinite;
+    /* The label is transparent, so the spinner borrows the button's own ink. */
+    color: var(--ink-2);
+}
+
+.k-btn--primary.is-loading::after {
+    color: var(--on-accent);
+}
+
+@keyframes k-spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+/* A row of buttons welded into one control. */
+.k-btngroup {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    background: var(--ground-3);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+}
+
+.k-btngroup .k-btn {
+    height: 30px;
+    padding: 0 var(--sp-3);
+    font-size: var(--t-xs);
+    border-radius: var(--r-1);
+}
+
+.k-btngroup .k-btn.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3 · FORM CONTROLS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A field is a label, a control, and an explanation of what went wrong. The
+ * three are one unit because shipping them separately is how a form ends up
+ * with a red border and no reason attached to it.
+ */
+.k-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.k-label {
+    font-family: var(--fw);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--ink-2);
+}
+
+.k-label-req {
+    color: var(--red);
+    margin-left: 2px;
+}
+
+.k-hint {
+    font-size: var(--t-xs);
+    line-height: var(--lh-snug);
+    color: var(--ink-3);
+}
+
+.k-error {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-1);
+    font-size: var(--t-xs);
+    line-height: var(--lh-snug);
+    color: var(--red);
+}
+
+.k-input,
+.k-select,
+.k-textarea {
+    width: 100%;
+    padding: 0 var(--sp-3);
+    height: 38px;
+    background: var(--ground);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+    color: var(--ink);
+    font-family: var(--fw);
+    font-size: var(--t-base);
+    transition:
+        border-color var(--trans-fast),
+        background-color var(--trans-fast);
+}
+
+.k-textarea {
+    height: auto;
+    min-height: 96px;
+    padding: var(--sp-3);
+    line-height: var(--lh-body);
+    resize: vertical;
+}
+
+/* Anything holding a key, a hex string or a config is set in the mono face. */
+.k-input--mono,
+.k-textarea--mono {
+    font-family: var(--fm);
+    font-size: var(--t-sm);
+    letter-spacing: var(--track-mono);
+}
+
+.k-input::placeholder,
+.k-textarea::placeholder {
+    /* Measured, not guessed: this tier clears 4.5:1 in both schemes. */
+    color: var(--ink-3);
+}
+
+.k-input:hover,
+.k-select:hover,
+.k-textarea:hover {
+    border-color: var(--line);
+}
+
+.k-input:focus,
+.k-select:focus,
+.k-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: var(--focus-ring-tight);
+}
+
+.k-input:disabled,
+.k-select:disabled,
+.k-textarea:disabled {
+    cursor: not-allowed;
+    color: var(--ink-3);
+    background-color: var(--ground-3);
+    background-image: var(--hatch);
+}
+
+.k-input.is-invalid,
+.k-select.is-invalid,
+.k-textarea.is-invalid {
+    border-color: var(--red);
+}
+
+.k-select {
+    appearance: none;
+    padding-right: var(--sp-7);
+    cursor: pointer;
+    /* The chevron is drawn rather than shipped, so it follows the ink colour. */
+    background-image:
+        linear-gradient(45deg, transparent 50%, currentcolor 50%),
+        linear-gradient(135deg, currentcolor 50%, transparent 50%);
+    background-position:
+        calc(100% - 20px) 17px,
+        calc(100% - 15px) 17px;
+    background-size:
+        5px 5px,
+        5px 5px;
+    background-repeat: no-repeat;
+}
+
+/* An input with something welded to its left or right: a unit, a button. */
+.k-inputgroup {
+    display: flex;
+    align-items: stretch;
+}
+
+.k-inputgroup > .k-input:not(:first-child),
+.k-inputgroup > .k-select:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.k-inputgroup > .k-input:not(:last-child),
+.k-inputgroup > .k-select:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.k-inputgroup > .k-btn:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: calc(var(--rule) * -1);
+}
+
+.k-affix {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--sp-3);
+    background: var(--ground-3);
+    border: var(--rule) solid var(--line-soft);
+    color: var(--ink-3);
+    font-family: var(--fm);
+    font-size: var(--t-xs);
+    white-space: nowrap;
+}
+
+.k-affix:first-child {
+    border-right: none;
+    border-radius: var(--r-2) 0 0 var(--r-2);
+}
+
+.k-affix:last-child {
+    border-left: none;
+    border-radius: 0 var(--r-2) var(--r-2) 0;
+}
+
+/* ── Checkbox, radio, switch ──────────────────────────────────────────────── */
+
+/*
+ * The box is the native input, restyled with `appearance: none`, so keyboard
+ * behaviour, form association and the indeterminate state are the browser's
+ * and not a div's approximation of them.
+ */
+.k-check {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    cursor: pointer;
+    font-size: var(--t-base);
+    color: var(--ink-2);
+}
+
+.k-check input[type="checkbox"],
+.k-check input[type="radio"] {
+    appearance: none;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    background: var(--ground);
+    border: var(--rule) solid var(--line);
+    border-radius: var(--r-1);
+    cursor: pointer;
+    transition:
+        background-color var(--dur-1) var(--ease-out-quart),
+        border-color var(--dur-1) var(--ease-out-quart);
+}
+
+.k-check input[type="radio"] {
+    border-radius: 50%;
+}
+
+.k-check input:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/*
+ * The tick is an SVG rather than two crossed gradients, which is what it was
+ * and which draws an ✗. An input is a replaced element, so `::after` is not
+ * dependable — the mark has to be a background.
+ *
+ * The stroke is a fixed near-black because `--on-accent` is a fixed near-black
+ * in both schemes: the accent is a mid-light colour either way, so what reads
+ * on top of it does not change.
+ */
+.k-check input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.4 4.6 9 10 3.2' fill='none' stroke='%230b0a0a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-size: 12px 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.k-check input[type="checkbox"]:indeterminate {
+    background: var(--accent);
+    border-color: var(--accent);
+    background-image: linear-gradient(
+        var(--on-accent) 0 0
+    );
+    background-size: 9px 2px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.k-check input[type="radio"]:checked {
+    background-image: radial-gradient(
+        circle,
+        var(--on-accent) 0 3.5px,
+        transparent 3.5px
+    );
+}
+
+.k-check input:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+.k-check input:disabled {
+    cursor: not-allowed;
+    background-color: var(--ground-3);
+    background-image: var(--hatch);
+    border-color: var(--line-faint);
+}
+
+.k-check:has(input:disabled) {
+    cursor: not-allowed;
+    color: var(--ink-3);
+}
+
+/*
+ * The switch is a real checkbox with the track drawn in a sibling element.
+ *
+ * It was the input itself, styled with `appearance: none` and a `::after` for
+ * the knob — and an input is a replaced element, so its pseudo-elements are at
+ * the engine's discretion. The knob rendered and then would not move: the
+ * track was amber and the handle still on the left, which is a switch that
+ * says both things at once.
+ *
+ * A sibling has no such ambiguity, and the input keeps every native behaviour
+ * — label association, keyboard, form submission, `:checked`.
+ */
+.k-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    cursor: pointer;
+    font-size: var(--t-base);
+    color: var(--ink-2);
+}
+
+.k-switch input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.k-switch-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+    background: var(--ground-4);
+    border: var(--rule) solid var(--line);
+    border-radius: var(--r-pill);
+    transition:
+        background-color var(--dur-2) var(--ease-out-quart),
+        border-color var(--dur-2) var(--ease-out-quart);
+}
+
+.k-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--ink-2);
+    border-radius: 50%;
+    transition:
+        transform var(--dur-2) var(--ease-out-quart),
+        background-color var(--dur-2) var(--ease-out-quart);
+}
+
+.k-switch input:checked + .k-switch-track {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.k-switch input:checked + .k-switch-track::after {
+    background: var(--on-accent);
+    transform: translateX(16px);
+}
+
+.k-switch input:focus-visible + .k-switch-track {
+    box-shadow: var(--focus-ring);
+}
+
+.k-switch input:disabled + .k-switch-track {
+    cursor: not-allowed;
+    background-color: var(--ground-3);
+    background-image: var(--hatch);
+    border-color: var(--line-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .k-switch-track,
+    .k-switch-track::after {
+        transition-duration: 1ms;
+    }
+}
+
+/* ── Range ────────────────────────────────────────────────────────────────── */
+
+.k-range {
+    width: 100%;
+    height: 22px;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.k-range::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--ground-4);
+    border-radius: var(--r-pill);
+}
+
+.k-range::-moz-range-track {
+    height: 4px;
+    background: var(--ground-4);
+    border-radius: var(--r-pill);
+}
+
+.k-range::-webkit-slider-thumb {
+    appearance: none;
+    margin-top: -6px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border: var(--rule-heavy) solid var(--ground-2);
+    border-radius: 50%;
+}
+
+.k-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border: var(--rule-heavy) solid var(--ground-2);
+    border-radius: 50%;
+}
+
+.k-range:focus-visible {
+    outline: none;
+}
+
+.k-range:focus-visible::-webkit-slider-thumb {
+    box-shadow: var(--focus-ring-tight);
+}
+
+/* Segmented control: one choice from a short, fixed set. */
+.k-segment {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    background: var(--ground-3);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+}
+
+.k-segment-opt {
+    padding: var(--sp-2) var(--sp-4);
+    border: none;
+    border-radius: var(--r-1);
+    background: transparent;
+    color: var(--ink-3);
+    font-family: var(--fw);
+    font-size: var(--t-xs);
+    font-weight: 700;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+        background-color var(--dur-2) var(--ease-out-quart),
+        color var(--dur-2) var(--ease-out-quart);
+}
+
+.k-segment-opt:hover {
+    color: var(--ink);
+}
+
+.k-segment-opt.is-active {
+    background: var(--ground-2);
+    color: var(--accent-ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.k-segment-opt:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-tight);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4 · MARKS — badges, chips, revisions, keys
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 3px var(--sp-2);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-1);
+    background: var(--surface);
+    color: var(--accent-ink);
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    font-weight: 700;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.k-badge--ok {
+    background: var(--green-bg);
+    border-color: var(--gd);
+    color: var(--green);
+}
+
+.k-badge--warn {
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--accent-ink);
+}
+
+.k-badge--bad {
+    background: var(--red-bg);
+    border-color: var(--rd);
+    color: var(--red);
+}
+
+.k-badge--info {
+    background: var(--cyan-bg);
+    border-color: var(--cyan-line);
+    color: var(--cyan);
+}
+
+.k-badge--quiet {
+    background: transparent;
+    border-color: var(--line-faint);
+    color: var(--ink-3);
+}
+
+/*
+ * A revision letter, from the corner of a drawing. Used for a protocol
+ * version, which is exactly what a revision is: the same object, later.
+ */
+.k-rev {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 var(--sp-1);
+    border: var(--rule) solid var(--draw);
+    border-radius: var(--r-1);
+    background: var(--ground);
+    color: var(--accent-ink);
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.k-rev.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+}
+
+/* A keyboard key. Physical, because that is what it is describing. */
+.k-kbd {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--sp-2);
+    border: var(--rule) solid var(--line);
+    border-bottom-width: var(--rule-heavy);
+    border-radius: var(--r-1);
+    background: var(--ground-3);
+    color: var(--ink-2);
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    line-height: 1.4;
+}
+
+.k-code {
+    padding: 2px 5px;
+    border-radius: var(--r-1);
+    background: var(--code-bg);
+    border: var(--rule) solid var(--line-faint);
+    color: var(--accent-ink);
+    font-family: var(--fm);
+    font-size: 0.9em;
+}
+
+.k-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    flex-shrink: 0;
+}
+
+.k-dot--ok {
+    background: var(--green);
+}
+
+.k-dot--bad {
+    background: var(--red);
+}
+
+.k-dot--live {
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.6);
+    animation: k-pulse 2.4s var(--ease-out-quart) infinite;
+}
+
+@keyframes k-pulse {
+    70%,
+    100% {
+        box-shadow: 0 0 0 7px rgb(var(--accent-rgb) / 0);
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5 · DRAWING MOTIFS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A dimension line: a rule with tick terminators and a value in the middle.
+ * This is how a range is drawn on a technical drawing, and a range is what the
+ * generator produces for Jmin–Jmax and for each of H1–H4. It replaces writing
+ * `1605374704-1605414583` as a bare string, which is a number pair pretending
+ * to be a word.
+ */
+.k-dim {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--sp-2);
+    font-family: var(--fm);
+    font-size: var(--t-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+}
+
+.k-dim-end {
+    color: var(--accent-ink);
+    white-space: nowrap;
+}
+
+/* The rule itself, with a tick at each end. */
+.k-dim-line {
+    position: relative;
+    height: 9px;
+}
+
+.k-dim-line::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: var(--rule);
+    background: var(--draw);
+}
+
+.k-dim-line::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-left: var(--rule) solid var(--draw);
+    border-right: var(--rule) solid var(--draw);
+}
+
+/* The measurement, sitting on the line. */
+.k-dim-span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0 var(--sp-2);
+    background: var(--ground-2);
+    color: var(--ink-3);
+    font-size: var(--t-2xs);
+    white-space: nowrap;
+}
+
+/*
+ * The octet ruler: the bit-numbering strip that sits above a packet diagram in
+ * every RFC. Here it labels which byte of a header a value lands in.
+ */
+.k-ruler {
+    display: flex;
+    height: 14px;
+    border-bottom: var(--rule) solid var(--draw-soft);
+}
+
+.k-ruler-tick {
+    flex: 1;
+    position: relative;
+    border-right: var(--rule) solid var(--draw-soft);
+}
+
+.k-ruler-tick:last-child {
+    border-right: none;
+}
+
+.k-ruler-tick > span {
+    position: absolute;
+    bottom: 1px;
+    left: 3px;
+    font-family: var(--fm);
+    font-size: 9px;
+    line-height: 1;
+    color: var(--ink-3);
+}
+
+/* Every eighth tick is a major one — an octet boundary. */
+.k-ruler-tick--major {
+    border-right-color: var(--draw);
+}
+
+/*
+ * A field map: the packet, drawn as the boxes it is made of. Widths are set
+ * inline from the real byte counts, so the picture is the data.
+ */
+/*
+ * Widths come from the real byte counts, so the picture is the data. But a
+ * one-byte field given one forty-eighth of the row is four pixels wide, and a
+ * label nobody can read is worse than a proportion nobody can measure — so
+ * every field keeps enough room for its name and the row scrolls if the sum
+ * does not fit. Proportion is preserved above that floor, which is where it
+ * carries information.
+ */
+.k-fieldmap {
+    display: flex;
+    border: var(--rule) solid var(--draw);
+    border-radius: var(--r-1);
+    overflow-x: auto;
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+}
+
+.k-fieldmap-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 62px;
+    padding: var(--sp-2) var(--sp-2);
+    border-right: var(--rule) solid var(--draw-soft);
+    background: var(--ground-2);
+    text-align: center;
+    overflow: hidden;
+}
+
+.k-fieldmap-field:last-child {
+    border-right: none;
+}
+
+.k-fieldmap-name {
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.k-fieldmap-size {
+    color: var(--ink-3);
+    font-size: 9px;
+}
+
+/* The field this tool actually writes, as opposed to the ones it copies. */
+.k-fieldmap-field--ours {
+    background: var(--surface-active);
+}
+
+.k-fieldmap-field--ours .k-fieldmap-name {
+    color: var(--accent-ink);
+}
+
+/* Reserved, or not supported by the selected client. */
+.k-fieldmap-field--void {
+    background-image: var(--hatch);
+}
+
+/*
+ * A leader: a line from a label to the thing it names. Two segments, the way
+ * one is drawn by hand — out, then along.
+ */
+.k-leader {
+    position: relative;
+    padding-left: var(--sp-5);
+    font-family: var(--fm);
+    font-size: var(--t-xs);
+    color: var(--ink-3);
+}
+
+.k-leader::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: var(--sp-4);
+    height: var(--rule);
+    background: var(--draw);
+}
+
+.k-leader::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-2px, -2px);
+}
+
+/* A labelled separator: a rule with a word set into it. */
+.k-rule {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    color: var(--ink-3);
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+}
+
+.k-rule::before,
+.k-rule::after {
+    content: "";
+    flex: 1;
+    height: var(--rule);
+    background: var(--line-soft);
+}
+
+.k-rule--start::before {
+    display: none;
+}
+
+.k-divider {
+    height: var(--rule);
+    background: var(--line-faint);
+    border: none;
+}
+
+/* An area that is deliberately not available. */
+.k-void {
+    background-image: var(--hatch);
+    border: var(--rule) dashed var(--line-soft);
+    border-radius: var(--r-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6 · READOUTS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A readout is a labelled number the user will copy. Tabular figures, so a
+ * column of them lines up and a changed digit is visible in place.
+ */
+.k-readout {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--sp-3);
+    background: var(--surface);
+    border: var(--rule) solid var(--line-faint);
+    border-radius: var(--r-2);
+}
+
+.k-readout-key {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.k-readout-val {
+    font-family: var(--fm);
+    font-size: var(--t-md);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-ink);
+    overflow-wrap: anywhere;
+}
+
+.k-readout--wide .k-readout-val {
+    font-size: var(--t-sm);
+    font-weight: 500;
+}
+
+.k-readout-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    gap: var(--sp-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7 · MESSAGES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A note is bordered on all four sides, not striped down one. A coloured bar
+ * on the left edge is the single most common way an alert is drawn and it
+ * carries no information the background tint does not already carry.
+ */
+.k-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+    background: var(--surface);
+    font-size: var(--t-sm);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+}
+
+.k-note-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--accent-ink);
+}
+
+.k-note-title {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.k-note--ok {
+    background: var(--green-bg);
+    border-color: var(--gd);
+}
+
+.k-note--ok .k-note-icon {
+    color: var(--green);
+}
+
+.k-note--bad {
+    background: var(--red-bg);
+    border-color: var(--rd);
+}
+
+.k-note--bad .k-note-icon {
+    color: var(--red);
+}
+
+.k-note--info {
+    background: var(--cyan-bg);
+    border-color: var(--cyan-line);
+}
+
+.k-note--info .k-note-icon {
+    color: var(--cyan);
+}
+
+/*
+ * An empty state says what would be here and how to make it appear. A drawn
+ * frame rather than an illustration: this is a sheet with nothing on it yet.
+ */
+.k-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-8) var(--sp-5);
+    border: var(--rule) dashed var(--line-soft);
+    border-radius: var(--r-3);
+    background-image: var(--hatch);
+    text-align: center;
+}
+
+.k-empty-title {
+    font-family: var(--fu);
+    font-size: var(--t-md);
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.k-empty-desc {
+    max-width: var(--measure-narrow);
+    font-size: var(--t-sm);
+    line-height: var(--lh-body);
+    color: var(--ink-3);
+    text-wrap: pretty;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8 · PROGRESS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-progress {
+    height: 6px;
+    border-radius: var(--r-pill);
+    background: var(--ground-4);
+    overflow: hidden;
+}
+
+.k-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: inherit;
+    transition: width var(--dur-3) var(--ease-out-quart);
+}
+
+.k-progress--indeterminate .k-progress-bar {
+    width: 35%;
+    animation: k-slide 1.3s var(--ease-out-quart) infinite;
+}
+
+@keyframes k-slide {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(340%);
+    }
+}
+
+/*
+ * A skeleton is a shape, not a shimmer. The sweep is a single translated
+ * gradient so it composites; animating background-position does not.
+ */
+.k-skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--ground-3);
+    border-radius: var(--r-1);
+}
+
+.k-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgb(var(--accent-rgb) / 0.09),
+        transparent
+    );
+    transform: translateX(-100%);
+    animation: k-sweep 1.4s var(--ease-out-quart) infinite;
+}
+
+@keyframes k-sweep {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+.k-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: k-spin 620ms linear infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9 · TABLES AND LISTS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--t-sm);
+}
+
+.k-table th {
+    padding: var(--sp-2) var(--sp-3);
+    border-bottom: var(--rule) solid var(--line);
+    text-align: left;
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    font-weight: 700;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+}
+
+.k-table td {
+    padding: var(--sp-3);
+    border-bottom: var(--rule) solid var(--line-faint);
+    color: var(--ink-2);
+    vertical-align: top;
+}
+
+.k-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.k-table tbody tr:hover td {
+    background: var(--surface);
+}
+
+.k-table td.k-num {
+    font-family: var(--fm);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* A wide table scrolls inside its own box; the page never scrolls sideways. */
+.k-tablewrap {
+    overflow-x: auto;
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+}
+
+.k-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.k-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border-bottom: var(--rule) solid var(--line-faint);
+}
+
+.k-list-item:last-child {
+    border-bottom: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10 · DISCLOSURE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-tabs {
+    display: flex;
+    gap: var(--sp-1);
+    border-bottom: var(--rule) solid var(--line-soft);
+}
+
+.k-tab {
+    position: relative;
+    padding: var(--sp-3) var(--sp-4);
+    border: none;
+    background: transparent;
+    color: var(--ink-3);
+    font-family: var(--fw);
+    font-size: var(--t-sm);
+    font-weight: 700;
+    cursor: pointer;
+    transition: color var(--dur-2) var(--ease-out-quart);
+}
+
+.k-tab:hover {
+    color: var(--ink);
+}
+
+.k-tab.is-active {
+    color: var(--accent-ink);
+}
+
+/* The underline is a drawn rule that lands on the section boundary. */
+.k-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: var(--sp-3);
+    right: var(--sp-3);
+    bottom: calc(var(--rule) * -1);
+    height: var(--rule-heavy);
+    background: var(--accent);
+}
+
+.k-tab:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-tight);
+}
+
+.k-accordion {
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+    overflow: hidden;
+}
+
+.k-accordion-item {
+    border-bottom: var(--rule) solid var(--line-faint);
+}
+
+.k-accordion-item:last-child {
+    border-bottom: none;
+}
+
+.k-accordion-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--fw);
+    font-size: var(--t-base);
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.k-accordion-head:hover {
+    background: var(--surface);
+}
+
+.k-accordion-head:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring-tight);
+}
+
+.k-accordion-body {
+    padding: 0 var(--sp-4) var(--sp-4);
+    font-size: var(--t-sm);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11 · OVERLAYS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-menu {
+    min-width: 180px;
+    padding: var(--sp-1);
+    margin: 0;
+    list-style: none;
+    background: var(--ground-2);
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+}
+
+.k-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    padding: var(--sp-2) var(--sp-3);
+    border: none;
+    border-radius: var(--r-1);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--fw);
+    font-size: var(--t-sm);
+    text-align: left;
+    cursor: pointer;
+}
+
+.k-menu-item:hover {
+    background: var(--ground-4);
+    color: var(--ink);
+}
+
+.k-menu-item.is-on {
+    color: var(--accent-ink);
+}
+
+.k-menu-sep {
+    height: var(--rule);
+    margin: var(--sp-1) 0;
+    background: var(--line-faint);
+}
+
+/*
+ * The dialog is the native element, so the top layer, the backdrop, focus
+ * trapping and Escape are the browser's job rather than a div's imitation of
+ * them — and it cannot be clipped by an ancestor's overflow.
+ */
+.k-dialog {
+    width: min(560px, calc(100vw - var(--sp-6)));
+    padding: 0;
+    border: var(--rule) solid var(--line-soft);
+    border-radius: var(--r-4);
+    background: var(--ground-2);
+    color: var(--ink);
+    box-shadow: var(--shadow-lg);
+}
+
+.k-dialog::backdrop {
+    background: light-dark(rgb(30 28 24 / 0.34), rgb(0 0 0 / 0.62));
+    backdrop-filter: blur(2px);
+}
+
+.k-dialog-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: var(--rule) solid var(--line-faint);
+}
+
+.k-dialog-title {
+    font-family: var(--fu);
+    font-size: var(--t-md);
+    font-weight: 700;
+    letter-spacing: var(--track-tight);
+}
+
+.k-dialog-body {
+    padding: var(--sp-5);
+    font-size: var(--t-base);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+}
+
+.k-dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+    padding: var(--sp-4) var(--sp-5);
+    border-top: var(--rule) solid var(--line-faint);
+}
+
+.k-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--ground-2);
+    border: var(--rule) solid var(--line);
+    border-radius: var(--r-2);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--t-sm);
+    color: var(--ink);
+    z-index: var(--z-toast);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12 · TYPE AND LAYOUT HELPERS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.k-display {
+    font-family: var(--fu);
+    font-size: var(--t-display);
+    font-weight: 800;
+    line-height: var(--lh-tight);
+    letter-spacing: var(--track-display);
+    text-wrap: balance;
+}
+
+.k-display--lg {
+    font-size: var(--t-display-lg);
+}
+
+.k-display--sm {
+    font-size: var(--t-display-sm);
+}
+
+.k-h2 {
+    font-family: var(--fu);
+    font-size: var(--t-xl);
+    font-weight: 700;
+    line-height: var(--lh-snug);
+    letter-spacing: var(--track-tight);
+    text-wrap: balance;
+}
+
+.k-h3 {
+    font-family: var(--fw);
+    font-size: var(--t-md);
+    font-weight: 800;
+    line-height: var(--lh-snug);
+    text-wrap: balance;
+}
+
+.k-lede {
+    max-width: var(--measure);
+    font-size: var(--t-md);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+    text-wrap: pretty;
+}
+
+.k-prose {
+    max-width: var(--measure);
+    font-size: var(--t-base);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+    text-wrap: pretty;
+}
+
+/* A short label in the mono face: the annotation voice of the drawing. */
+.k-note-label {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.k-mono {
+    font-family: var(--fm);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--track-mono);
+}
+
+.k-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.k-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+}
+
+/* Breakpoint-free: the columns decide for themselves when to wrap. */
+.k-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--sp-4);
+}
+
+.k-grid--wide {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   13 · MOTION
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A reveal enhances something already visible. It never gates visibility on a
+ * class, because a transition that has not run leaves the section blank — on a
+ * hidden tab, in a headless renderer, in a pane that is not compositing.
+ */
+.k-rise {
+    animation: k-rise var(--dur-5) var(--ease-out-expo) backwards;
+}
+
+@keyframes k-rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+.k-stagger > * {
+    animation: k-rise var(--dur-5) var(--ease-out-expo) backwards;
+}
+
+.k-stagger > :nth-child(1) { animation-delay: 40ms; }
+.k-stagger > :nth-child(2) { animation-delay: 90ms; }
+.k-stagger > :nth-child(3) { animation-delay: 140ms; }
+.k-stagger > :nth-child(4) { animation-delay: 190ms; }
+.k-stagger > :nth-child(5) { animation-delay: 240ms; }
+.k-stagger > :nth-child(6) { animation-delay: 290ms; }
+
+/*
+ * A line that draws itself. Used once, on the landing, where the packet is
+ * being assembled in front of the reader — not as a decoration on every rule.
+ */
+.k-draw-in {
+    animation: k-draw var(--dur-5) var(--ease-out-quart) backwards;
+}
+
+@keyframes k-draw {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .k-rise,
+    .k-stagger > *,
+    .k-draw-in {
+        animation: none;
+    }
+
+    .k-dot--live,
+    .k-skeleton::after,
+    .k-progress--indeterminate .k-progress-bar {
+        animation: none;
+    }
+
+    .k-btn.is-loading::after,
+    .k-spinner {
+        animation-duration: 2s;
+    }
+}
+
+/* Icon slots, so an icon never stretches or shifts the line it sits on. */
+.k-toast-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--green);
+}
+
+.k-card-go {
+    flex-shrink: 0;
+    color: var(--ink-3);
+    transition: transform var(--trans-fast);
+}
+
+a.k-card:hover .k-card-go,
+button.k-card:hover .k-card-go {
+    transform: translateX(3px);
+    color: var(--accent-ink);
+}

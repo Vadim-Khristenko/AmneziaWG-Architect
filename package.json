@@ -15,7 +15,8 @@
     "typecheck": "bun run vue-tsc --noEmit --skipLibCheck",
     "og": "bun scripts/og/generate.mjs",
     "domains": "bun scripts/domains.ts",
-    "configs": "bun scripts/configs.ts"
+    "configs": "bun scripts/configs.ts",
+    "kit": "bun run vite --config vite.kit.config.ts"
   },
   "engines": {
     "node": ">=18.0.0",

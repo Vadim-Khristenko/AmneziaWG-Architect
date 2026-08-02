@@ -200,16 +200,22 @@ watch(locale, formatBuild);
 </template>
 
 <style scoped>
+/*
+ * The footer is the floor of the page, so it darkens downward from the ground
+ * it stands on — not a band of its own colour laid across the bottom.
+ *
+ * It has been that band twice. First as a literal `rgba(14, 11, 7, 0.6)`, a
+ * grey slab under every light page. Then as `--bg4 → --bg2`, which starts a
+ * step above the page and ends at the panel colour — lighter at the bottom
+ * than at the top, so in the dark scheme the page appeared to end and a
+ * separate lighter block to begin. Starting from the page itself means there
+ * is no seam to notice.
+ */
 .footer {
     position: relative;
     margin-top: auto;
-    /* A deepening of the ground, not a dark wash. The literal it replaces
-       painted `rgba(14, 11, 7, 0.6)` across the top of the footer, which on a
-       pastel page read as a grey slab under every view. */
-    background: linear-gradient(to bottom, var(--bg4) 0%, var(--bg2) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border2);
+    background: linear-gradient(to bottom, var(--bg) 0%, var(--bg3) 100%);
+    border-top: 1px solid var(--border3);
     padding: 64px 0 40px;
     z-index: 10;
 }

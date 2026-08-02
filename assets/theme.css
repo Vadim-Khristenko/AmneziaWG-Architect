@@ -23,6 +23,138 @@
  * dark.
  */
 
+/* ── Shape, space, type, motion, depth ────────────────────────────────────── */
+
+/*
+ * The half of the kit that does not change with the page or the scheme.
+ *
+ * All of it is here rather than in main.css, where it used to sit, because a
+ * token set split across two files gets extended on one side only. The names
+ * the app already uses are kept exactly; what is new is that each of them is
+ * now one step of a scale rather than a value someone typed.
+ */
+:root {
+    /*
+     * A drawing sheet is mostly square. The radii stay small on the things
+     * that hold data — a panel, an input, a readout — and only the objects
+     * that are meant to read as physical controls get rounder.
+     */
+    --r-0: 0;
+    --r-1: 3px;
+    --r-2: 6px;
+    --r-3: 10px;
+    --r-4: 14px;
+    --r-5: 20px;
+    --r-pill: 999px;
+
+    /* The names in use across the app, mapped onto the scale. */
+    --radius-sm: var(--r-2);
+    --radius: var(--r-3);
+    --radius-lg: var(--r-4);
+    --radius-xl: var(--r-5);
+
+    /*
+     * Space, on a four-pixel base. Steps 1–4 are within a component, 5–7
+     * between them, 8–10 between regions. Section spacing is fluid because a
+     * gap that reads as generous at 1440 reads as broken at 390.
+     */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+    --sp-7: 40px;
+    --sp-8: 56px;
+    --sp-9: 80px;
+    --sp-10: 112px;
+    --sp-section: clamp(56px, 8vw, 112px);
+    --sp-gutter: clamp(16px, 4vw, 32px);
+
+    /* Self-hosted variable faces (bundled via @fontsource-variable in main.ts)
+       with metric-matched fallbacks (see @font-face in main.css), so a font
+       swap causes ~0 reflow. */
+    --fw: "Manrope Variable", "Manrope Fallback", sans-serif;
+    --fu: "Unbounded Variable", "Unbounded Fallback", sans-serif;
+    --fm: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono",
+        "Segoe UI Mono", "Liberation Mono", monospace;
+
+    /*
+     * Type, at a ratio near 1.25. A flatter scale reads as uncommitted: if two
+     * steps are a tenth apart, nothing on the page is clearly more important
+     * than anything else.
+     *
+     * The display sizes are fluid and capped. Above about six rem a heading is
+     * shouting rather than leading, and the tracking floor is -0.035em because
+     * tighter than that and the letters of a geometric face touch.
+     */
+    --t-2xs: 0.6875rem;
+    --t-xs: 0.75rem;
+    --t-sm: 0.8125rem;
+    --t-base: 0.9375rem;
+    --t-md: 1.0625rem;
+    --t-lg: 1.3125rem;
+    --t-xl: 1.625rem;
+    --t-2xl: 2.0625rem;
+    --t-display-sm: clamp(1.75rem, 3.4vw, 2.5rem);
+    --t-display: clamp(2.25rem, 5.4vw, 3.75rem);
+    --t-display-lg: clamp(2.75rem, 8vw, 5.5rem);
+
+    --lh-tight: 1.06;
+    --lh-snug: 1.25;
+    --lh-body: 1.6;
+    --lh-loose: 1.75;
+
+    --track-display: -0.035em;
+    --track-tight: -0.015em;
+    --track-label: 0.08em;
+    --track-mono: 0.02em;
+
+    /* Prose stays inside a comfortable measure wherever it is placed. */
+    --measure: 68ch;
+    --measure-narrow: 46ch;
+
+    /*
+     * Motion. Exponential ease-out only — nothing here bounces, because a
+     * technical instrument that springs reads as a toy.
+     */
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Kept because components still name it; new work should not reach for it. */
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    --dur-1: 90ms;
+    --dur-2: 150ms;
+    --dur-3: 250ms;
+    --dur-4: 400ms;
+    --dur-5: 650ms;
+
+    --trans-fast: var(--dur-2) var(--ease);
+    --trans-norm: var(--dur-3) var(--ease);
+    --trans-slow: var(--dur-4) var(--ease);
+
+    /*
+     * Stacking order, named. Every layer that can overlap another has a step
+     * here, so nothing has to be guessed at and no rule needs a 9999.
+     */
+    --z-under: -1;
+    --z-base: 0;
+    --z-raised: 10;
+    --z-sticky: 100;
+    --z-header: 200;
+    --z-dropdown: 300;
+    --z-backdrop: 400;
+    --z-modal: 500;
+    --z-toast: 600;
+    --z-tooltip: 700;
+
+    /* The width of a drawn line. A rule is one device pixel wherever it lands. */
+    --rule: 1px;
+    --rule-heavy: 2px;
+}
+
 /* ── The accent, per page ─────────────────────────────────────────────────── */
 
 /*
@@ -144,12 +276,12 @@
      */
     --ground: light-dark(
         color-mix(in oklab, rgb(var(--accent-rgb)) var(--tint), #fbfbfd),
-        color-mix(in oklab, rgb(var(--accent-rgb)) 5%, #07070a)
+        color-mix(in oklab, rgb(var(--accent-rgb)) 4%, #030304)
     );
     /* Panels: pure white on the pastel page, lifted from black in the dark. */
     --ground-2: light-dark(
         #ffffff,
-        color-mix(in oklab, rgb(var(--accent-rgb)) 6%, #0e0d11)
+        color-mix(in oklab, rgb(var(--accent-rgb)) 5%, #0a090c)
     );
     /*
      * The elevated tiers deepen the page rather than being mixed from white
@@ -159,15 +291,15 @@
      */
     --ground-3: light-dark(
         color-mix(in oklab, rgb(var(--accent-deep-rgb)) 5%, var(--ground)),
-        color-mix(in oklab, rgb(var(--accent-rgb)) 7%, #15141a)
+        color-mix(in oklab, rgb(var(--accent-rgb)) 6%, #100f14)
     );
     --ground-4: light-dark(
         color-mix(in oklab, rgb(var(--accent-deep-rgb)) 10%, var(--ground)),
-        color-mix(in oklab, rgb(var(--accent-rgb)) 8%, #1c1b22)
+        color-mix(in oklab, rgb(var(--accent-rgb)) 7%, #17161c)
     );
     --ground-5: light-dark(
         color-mix(in oklab, rgb(var(--accent-deep-rgb)) 16%, var(--ground)),
-        color-mix(in oklab, rgb(var(--accent-rgb)) 9%, #24232b)
+        color-mix(in oklab, rgb(var(--accent-rgb)) 8%, #1e1d25)
     );
 
     /*
@@ -387,6 +519,53 @@
     --code-str: var(--green2);
     --code-kw: var(--red2);
     --code-comment: var(--ink-3);
+}
+
+/* ── The drawing ──────────────────────────────────────────────────────────── */
+
+/*
+ * The house style is a working drawing, and these are its materials.
+ *
+ * The rule that keeps this from being costume: every motif carries data. A
+ * dimension line is how a parameter range is drawn, because a range is what a
+ * range is. Hatching marks what a client does not support. A revision letter
+ * is a protocol version. A motif that is only there to look technical does not
+ * get a token.
+ */
+:root {
+    /* Graphite: the colour a line is drawn in, distinct from the ink of text. */
+    --draw: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.55),
+        rgb(var(--accent-rgb) / 0.42)
+    );
+    --draw-soft: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.26),
+        rgb(var(--accent-rgb) / 0.2)
+    );
+
+    /* 45°, for an area that is unavailable rather than merely inactive. */
+    --hatch: repeating-linear-gradient(
+        45deg,
+        var(--draw-soft) 0 1px,
+        transparent 1px 7px
+    );
+
+    /* The sheet grid. Two densities: minor squares inside a major one. */
+    --grid-minor: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.055),
+        rgb(var(--accent-rgb) / 0.045)
+    );
+    --grid-major: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.11),
+        rgb(var(--accent-rgb) / 0.09)
+    );
+
+    /*
+     * The focus ring is two rings: the ground first, so it stays visible on a
+     * control whose own background is already the accent.
+     */
+    --focus-ring: 0 0 0 2px var(--ground), 0 0 0 4px rgb(var(--accent-rgb) / 0.7);
+    --focus-ring-tight: 0 0 0 2px rgb(var(--accent-rgb) / 0.7);
 }
 
 /* ── The background layer ─────────────────────────────────────────────────── */
