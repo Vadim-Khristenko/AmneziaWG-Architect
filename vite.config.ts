@@ -32,6 +32,8 @@ interface RouteStub {
  */
 const STUB_ROUTES = [
   { name: "home", path: "" },
+  { name: "amneziawg", path: "amneziawg" },
+  { name: "xray", path: "xray" },
   { name: "mergekeys", path: "mergekeys" },
   { name: "simulator", path: "simulator" },
   { name: "about", path: "about" },

@@ -32,7 +32,7 @@ function goBack() {
 const requestedPath = computed(() => route.fullPath);
 
 const suggestions = computed(() => [
-    { to: localizePath("/", locale.value), icon: Layers, label: t("nf.link.generator") },
+    { to: localizePath("/amneziawg", locale.value), icon: Layers, label: t("nf.link.generator") },
     { to: localizePath("/faq", locale.value), icon: HelpCircle, label: t("nf.link.faq") },
     {
         to: localizePath("/mergekeys", locale.value),

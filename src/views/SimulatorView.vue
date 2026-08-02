@@ -92,7 +92,7 @@ function runSim() {
 }
 
 function goBack() {
-    router.push(localizePath("/", locale.value));
+    router.push(localizePath("/amneziawg", locale.value));
 }
 
 function selectPacket(p: SimPacket) {

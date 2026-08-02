@@ -61,7 +61,24 @@ interface BaseRoute {
 }
 
 const BASE_ROUTES: BaseRoute[] = [
-  { path: "/", name: "home", component: () => import("@/views/HomeView.vue") },
+  // The root is the landing. The generator moved to a path of its own when a
+  // second engine arrived: "/" had been one of the two tools, which left the
+  // other one looking like a subpage of it.
+  {
+    path: "/",
+    name: "home",
+    component: () => import("@/views/LandingView.vue"),
+  },
+  {
+    path: "/amneziawg",
+    name: "amneziawg",
+    component: () => import("@/views/HomeView.vue"),
+  },
+  {
+    path: "/xray",
+    name: "xray",
+    component: () => import("@/views/XrayView.vue"),
+  },
   {
     path: "/mergekeys",
     name: "mergekeys",

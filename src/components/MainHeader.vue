@@ -14,6 +14,7 @@ import {
     Check,
     ChevronRight,
     ChevronDown,
+    Network,
     Monitor,
     Sun,
     Moon,
@@ -66,7 +67,8 @@ function toggleHeaderMenu(which: HeaderMenu): void {
 const faviconUrl = `${import.meta.env.BASE_URL}assets/favicon.svg`;
 
 const navLinks: NavLink[] = [
-    { labelKey: "nav.generator", to: "/", icon: Layers },
+    { labelKey: "nav.awg", to: "/amneziawg", icon: Layers },
+    { labelKey: "nav.xray", to: "/xray", icon: Network },
     { labelKey: "nav.mergekeys", to: "/mergekeys", icon: Download },
     { labelKey: "nav.faq", to: "/faq", icon: HelpCircle },
     { labelKey: "nav.vaiexia", to: "/vaiexia", icon: Rocket },
@@ -191,8 +193,8 @@ onUnmounted(() => {
                     <img :src="faviconUrl" alt="AWG Logo" />
                 </div>
                 <div class="brand-info">
-                    <span class="brand-title">AmneziaWG</span>
-                    <span class="brand-subtitle">Architect</span>
+                    <span class="brand-title">{{ t("brand.pre") }}</span>
+                    <span class="brand-subtitle">{{ t("brand.main") }}</span>
                 </div>
             </router-link>
 
@@ -472,20 +474,22 @@ onUnmounted(() => {
 }
 
 .brand-title {
-    font-family: var(--fu);
-    font-weight: 800;
-    font-size: 1.05rem;
-    color: var(--text);
+    font-family: var(--fm);
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--text3);
     line-height: 1;
-    letter-spacing: -0.02em;
 }
 
 .brand-subtitle {
-    font-family: var(--fm);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--text3);
+    font-family: var(--fu);
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1;
     margin-top: 3px;
 }
 

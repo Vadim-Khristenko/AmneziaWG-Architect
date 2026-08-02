@@ -283,8 +283,15 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                                     'k-fieldmap-field--void': f.void,
                                 }"
                                 :style="{
+                                    /*
+                                     * Grow carries the proportion, basis is
+                                     * zero. As a percentage it competed with
+                                     * the min-width each field needs to keep
+                                     * its label, and the widest field came out
+                                     * among the narrowest.
+                                     */
                                     flexGrow: Math.max(f.bytes, 1),
-                                    flexBasis: `${(Math.max(f.bytes, 1) / totalBytes) * 100}%`,
+                                    flexBasis: 0,
                                 }"
                             >
                                 <span class="k-fieldmap-name">{{ f.name }}</span>

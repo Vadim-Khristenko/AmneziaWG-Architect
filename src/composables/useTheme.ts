@@ -43,6 +43,8 @@ export const theme = ref<ThemeChoice>("system");
 /** Route name (without a locale prefix) to the colour that page wears. */
 const PAGE_ACCENT: Record<string, Accent> = {
   home: "amber",
+  amneziawg: "amber",
+  xray: "blue",
   faq: "teal",
   about: "gold",
   mergekeys: "green",

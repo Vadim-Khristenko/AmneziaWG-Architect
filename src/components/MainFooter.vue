@@ -57,7 +57,8 @@ watch(locale, formatBuild);
             <div class="footer-top">
                 <div class="footer-brand">
                     <div class="brand-title">
-                        AmneziaWG <span class="brand-sub">Architect</span>
+                        <span class="brand-pre">{{ t("brand.pre") }}</span>
+                        <span class="brand-name">{{ t("brand.main") }}</span>
                     </div>
                     <div class="brand-slogan">
                         {{ t("footer.slogan.lead") }}
@@ -173,7 +174,7 @@ watch(locale, formatBuild);
                 <div class="copy-block">
                     <div class="copy-row">
                         &copy; 2026
-                        <span class="copy-hl">AmneziaWG Architect</span>
+                        <span class="copy-hl">Any Tech ARCHITECT</span>
                     </div>
                     <div class="copy-sub">
                         {{ t("footer.madeWith") }}
@@ -243,23 +244,33 @@ watch(locale, formatBuild);
     gap: 12px;
 }
 
+/*
+ * "Any Tech" is a qualifier and sits above at label size; ARCHITECT is the
+ * name and carries the weight.
+ */
 .brand-title {
-    font-family: var(--fu);
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--accent-ink);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     line-height: 1;
 }
-
-.brand-sub {
+.brand-pre {
     font-family: var(--fm);
-    font-size: 0.75rem;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.25em;
-    margin-left: 8px;
+    font-size: 0.7rem;
     font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--text3);
 }
+.brand-name {
+    font-family: var(--fu);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--accent-ink);
+}
+
+
 
 .brand-slogan {
     font-size: 0.95rem;

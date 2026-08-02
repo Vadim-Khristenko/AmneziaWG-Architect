@@ -10,6 +10,9 @@ import type { Catalog } from "./ru";
 export const en: Catalog = {
   /* ── Navigation ───────────────────────────────────────────────────────── */
   "nav.generator": "Generator",
+  "nav.awg": "AmneziaWG",
+  "nav.xray": "XRay",
+  "nav.home": "Home",
   "nav.mergekeys": "MergeKeys",
   "nav.simulator": "Simulator",
   "nav.about": "About",
@@ -23,6 +26,78 @@ export const en: Catalog = {
   /* ── Language switcher ────────────────────────────────────────────────── */
   "lang.label": "Language",
   "lang.switch": "Change language",
+
+  /* ── Landing ──────────────────────────────────────────────────────────── */
+  "brand.pre": "Any Tech",
+  "brand.main": "ARCHITECT",
+
+  "landing.lede":
+    "This builds obfuscation parameters and explains every number in them. Not generate-and-hope — a drawing: what the packet is made of, and why it looks the way it does.",
+  "landing.sheet": "Sheet",
+  "landing.drawing": "QUIC Initial · RFC 9000 §17.2.2",
+  "landing.scale": "Scale",
+  "landing.scale.value": "1 square = 1 byte",
+  "landing.rev": "Rev.",
+
+  "landing.hero.cta": "Open the AmneziaWG generator",
+  "landing.hero.second": "What this actually is",
+
+  "landing.tools.title": "Two engines",
+  "landing.tools.lede":
+    "One method, two protocols. Parameters are computed in your browser and sent nowhere — not here, not there.",
+
+  "landing.awg.name": "AmneziaWG",
+  "landing.awg.desc":
+    "Junk trains, header ranges, size padding and CPS signature chains. Eleven mimicry profiles built from the RFCs rather than by eye. Versions 1.0–3.0, ten clients, each with its own ceilings.",
+  "landing.awg.status": "Working",
+  "landing.awg.go": "To the generator",
+
+  "landing.xray.name": "XRay / REALITY",
+  "landing.xray.desc":
+    "REALITY, the VLESS encryption DSL, XHTTP transports, browser fingerprints and FinalMask. The engine is written and tested against released cores; the interface to it is still being built.",
+  "landing.xray.status": "Engine done, interface in progress",
+  "landing.xray.go": "What is ready",
+
+  "landing.profiles.title": "What it can look like",
+  "landing.profiles.lede":
+    "Every profile is built from the text of the standard — field lengths, order, variants — so a third-party stack parsing it does not trip.",
+
+  "landing.trust.title": "Why you can believe it",
+  "landing.trust.local.title": "Nowhere to leak to",
+  "landing.trust.local.desc":
+    "There is no server. Keys and parameters are computed in this tab and stay in it — there is nowhere to take them from and nobody to take them.",
+  "landing.trust.refuse.title": "It refuses a bad config",
+  "landing.trust.refuse.desc":
+    "The tool knows the rules: S1–S4 at least 12 with header protection on, H1–H4 ranges that do not overlap, a ceiling per client. What fails the check is not emitted.",
+  "landing.trust.open.title": "Checked, not claimed",
+  "landing.trust.open.desc":
+    "Mimicry profiles are parsed back as real packets and parameters are drawn tens of thousands of times against invariants. That is how two QUIC length defects turned up that reading the code had missed.",
+
+  "landing.more.title": "What else is here",
+  "landing.more.mergekeys":
+    "Refresh the obfuscation in an existing vpn:// key, or merge several keys into one container.",
+  "landing.more.simulator":
+    "Walk through what the handshake looks like with the parameters you chose.",
+  "landing.more.faq":
+    "Forty-four answers: what each parameter does, and what to check when the tunnel will not come up.",
+  "landing.more.about": "How this differs from the generate button in your client.",
+
+  /* ── XRay page ────────────────────────────────────────────────────────── */
+  "xray.badge": "In progress",
+  "xray.title": "XRay / REALITY",
+  "xray.lede":
+    "The engine is written: parameters, config rendering, parsing and checks. The interface to it is still being built, and this page arrives with it.",
+  "xray.ready.title": "Already done",
+  "xray.ready.reality": "REALITY: X25519 keys, shortIds, ML-DSA-65, server verification",
+  "xray.ready.vless": "The VLESS encryption DSL, and connection-string parsing",
+  "xray.ready.xhttp": "XHTTP transports in every mode, xmux and sockopt",
+  "xray.ready.fp": "Browser fingerprints and FinalMask",
+  "xray.ready.tests":
+    "Tested against released Xray cores in Docker — one core per version",
+  "xray.left.title": "What is missing",
+  "xray.left.desc":
+    "The interface. Four parameters cannot yet be expressed in the current model: inbound fallbacks, mldsa65Verify, XHTTP downloadSettings, and FinalMask infrastructure.",
+  "xray.meanwhile": "Meanwhile, you can build an AmneziaWG config",
 
   /* ── Theme switcher ───────────────────────────────────────────────────── */
   "theme.label": "Theme",

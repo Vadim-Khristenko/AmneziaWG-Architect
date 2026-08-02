@@ -23,7 +23,36 @@ export interface RouteSeo {
 export type SeoTable = Record<string, Localised<RouteSeo>>;
 
 export const ROUTE_SEO: SeoTable = {
+  /*
+   * The root is the landing now, so its metadata describes the project rather
+   * than the AmneziaWG generator — that copy moved to `amneziawg` below,
+   * unchanged, along with the page it was written for.
+   */
   home: {
+    ru: {
+      title: "Any Tech ARCHITECT — конструктор параметров обфускации",
+      description:
+        "Конструктор параметров обфускации для AmneziaWG и XRay/REALITY. Junk-поезда, диапазоны заголовков, подписи CPS и одиннадцать профилей мимикрии, собранных по RFC. Всё считается в браузере — ключи и параметры не покидают устройство.",
+      ogTitle: "Any Tech ARCHITECT",
+      ogDescription:
+        "Собирает параметры обфускации и объясняет каждое число. AmneziaWG 1.0–3.0 сегодня, XRay/REALITY следом. Ничего не уходит из браузера.",
+      ogImage: "og-image.png",
+      keywords:
+        "Any Tech Architect, AmneziaWG, XRay, REALITY, обход блокировок, DPI, обфускация, генератор конфигов, VPN",
+    },
+    en: {
+      title: "Any Tech ARCHITECT — an obfuscation parameter workbench",
+      description:
+        "A workbench for the obfuscation parameters of AmneziaWG and XRay/REALITY. Junk trains, header ranges, CPS signature chains and eleven mimicry profiles built from the RFCs. Everything is computed in your browser — keys and parameters never leave the device.",
+      ogTitle: "Any Tech ARCHITECT",
+      ogDescription:
+        "Builds obfuscation parameters and explains every number in them. AmneziaWG 1.0–3.0 today, XRay/REALITY next. Nothing leaves the browser.",
+      ogImage: "og-image-en.png",
+      keywords:
+        "Any Tech Architect, AmneziaWG, XRay, REALITY, censorship circumvention, DPI, obfuscation, config generator, VPN",
+    },
+  },
+  amneziawg: {
     ru: {
       title: "AmneziaWG Architect — генератор конфигураций AmneziaWG 3.0",
       description:
@@ -45,6 +74,28 @@ export const ROUTE_SEO: SeoTable = {
       ogImage: "og-image-en.png",
       keywords:
         "AmneziaWG, AmneziaWG 3.0, DPI bypass, WireGuard, obfuscation, config generator, VPN, censorship circumvention, HeaderProtectionKey",
+    },
+  },
+  xray: {
+    ru: {
+      title: "XRay / REALITY — Any Tech ARCHITECT",
+      description:
+        "Движок XRay/REALITY: ключи X25519 и shortIds, ML-DSA-65, DSL шифрования VLESS, транспорты XHTTP, отпечатки браузеров и FinalMask. Проверен против выпущенных ядер Xray. Интерфейс собирается.",
+      ogTitle: "XRay / REALITY — в работе",
+      ogDescription:
+        "Движок написан и покрыт тестами против выпущенных ядер. Интерфейс к нему ещё собирается — здесь видно, что уже готово, а чего пока нет.",
+      ogImage: "og-image.png",
+      keywords: "XRay, REALITY, VLESS, XHTTP, ML-DSA-65, fingerprint, обход блокировок",
+    },
+    en: {
+      title: "XRay / REALITY — Any Tech ARCHITECT",
+      description:
+        "The XRay/REALITY engine: X25519 keys and shortIds, ML-DSA-65, the VLESS encryption DSL, XHTTP transports, browser fingerprints and FinalMask. Tested against released Xray cores. The interface is being built.",
+      ogTitle: "XRay / REALITY — in progress",
+      ogDescription:
+        "The engine is written and tested against released cores. The interface to it is still being built; this page states what is done and what is not.",
+      ogImage: "og-image-en.png",
+      keywords: "XRay, REALITY, VLESS, XHTTP, ML-DSA-65, fingerprint, censorship circumvention",
     },
   },
 
