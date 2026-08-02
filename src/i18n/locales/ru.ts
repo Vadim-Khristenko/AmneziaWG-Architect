@@ -579,6 +579,11 @@ export const ru = {
   "footer.forCommunity": "для сообщества AmneziaVPN",
   "footer.build": "Последняя сборка",
   "footer.local": "100% локально: данные не покидают браузер",
+  "footer.stamp.project": "Проект",
+  "footer.stamp.build": "Сборка",
+  "footer.stamp.data": "Данные",
+  "footer.stamp.dataValue": "не покидают браузер",
+  "footer.stamp.source": "Исходник",
 
   /* ── Common ───────────────────────────────────────────────────────────── */
   "common.and": "и",

@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+/**
+ * The footer, as the title block of the sheet.
+ *
+ * The old one was a gradient band of its own colour with three link columns in
+ * it — a component that happened to be at the bottom of the page rather than
+ * the end of the drawing. This closes the sheet the way a drawing is closed:
+ * the links first, then a stamp of the facts that identify what you have been
+ * looking at.
+ *
+ * Every rule that draws it lives in kit/shell.css. What is here is content.
+ */
+
+import { ref, computed, onMounted, watch } from "vue";
 import {
     Github,
     GitBranch,
@@ -8,13 +20,14 @@ import {
     Shield,
     Heart,
     ChevronRight,
-    Lock,
+    ExternalLink,
 } from "lucide-vue-next";
 
-import { computed, watch } from "vue";
 import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();
+
+const SOURCE_URL = "https://github.com/Vadim-Khristenko/AmneziaWG-Architect";
 
 /** About page, anchored at the support block. */
 const supportLink = computed(() => ({
@@ -53,104 +66,99 @@ watch(locale, formatBuild);
 <template>
     <footer class="footer">
         <div class="container footer-inner">
-            <!-- ── Top Row: Brand & Actions ────────────────────────────────── -->
+            <!-- ── Brand and support ───────────────────────────────────── -->
             <div class="footer-top">
                 <div class="footer-brand">
-                    <div class="brand-title">
-                        <span class="brand-pre">{{ t("brand.pre") }}</span>
-                        <span class="brand-name">{{ t("brand.main") }}</span>
+                    <div class="footer-lockup">
+                        <span class="footer-pre">{{ t("brand.pre") }}</span>
+                        <span class="footer-name">{{ t("brand.main") }}</span>
                     </div>
-                    <div class="brand-slogan">
+                    <p class="footer-slogan">
                         {{ t("footer.slogan.lead") }}
                         <span class="text-accent">{{
                             t("footer.slogan.accent")
                         }}</span>
                         {{ t("footer.slogan.tail") }}
-                    </div>
+                    </p>
                 </div>
 
                 <!-- Points at the About page's support section rather than a
                      single payment provider, so every method is on offer. -->
-                <router-link :to="supportLink" class="donate-card">
-                    <div class="donate-icon">
-                        <Heart :size="20" fill="currentColor" />
-                    </div>
-                    <div class="donate-content">
-                        <span class="donate-title">{{
-                            t("footer.donate.title")
-                        }}</span>
-                        <span class="donate-desc">{{
+                <router-link :to="supportLink" class="card footer-donate">
+                    <span class="footer-donate-icon">
+                        <Heart :size="18" fill="currentColor" />
+                    </span>
+                    <span class="footer-donate-text">
+                        <span class="h3">{{ t("footer.donate.title") }}</span>
+                        <span class="note-label">{{
                             t("footer.donate.methods")
                         }}</span>
-                    </div>
-                    <ChevronRight class="donate-arrow" :size="18" />
+                    </span>
+                    <ChevronRight :size="17" class="card-go" />
                 </router-link>
             </div>
 
-            <div class="divider"></div>
-
-            <!-- ── Grid Section: Links ─────────────────────────────────────── -->
-            <div class="footer-grid">
-                <!-- Column 1: Resources -->
-                <div class="f-col">
-                    <h4 class="col-head">{{ t("footer.col.resources") }}</h4>
-                    <div class="col-links">
-                        <a
-                            href="https://github.com/Vadim-Khristenko/AmneziaWG-Architect"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="f-link"
-                        >
-                            <Github :size="16" /> {{ t("footer.link.source") }}
-                        </a>
-                        <a
-                            href="https://git.vai-rice.space/vai_prog/AmneziaWG-Architect"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="f-link"
-                        >
-                            <GitBranch :size="16" />
-                            {{ t("footer.link.sourceMirror") }}
-                        </a>
-                        <a
-                            href="https://github.com/amnezia-vpn/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="f-link"
-                        >
-                            <Shield :size="16" />
-                            {{ t("footer.link.amneziaGithub") }}
-                        </a>
-                    </div>
+            <!-- ── Link columns ────────────────────────────────────────── -->
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <h2 class="footer-colhead">
+                        {{ t("footer.col.resources") }}
+                    </h2>
+                    <a
+                        :href="SOURCE_URL"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="footer-link"
+                    >
+                        <Github :size="15" /> {{ t("footer.link.source") }}
+                    </a>
+                    <a
+                        href="https://git.vai-rice.space/vai_prog/AmneziaWG-Architect"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="footer-link"
+                    >
+                        <GitBranch :size="15" />
+                        {{ t("footer.link.sourceMirror") }}
+                    </a>
+                    <a
+                        href="https://github.com/amnezia-vpn/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="footer-link"
+                    >
+                        <Shield :size="15" />
+                        {{ t("footer.link.amneziaGithub") }}
+                    </a>
                 </div>
 
-                <!-- Column 2: Community -->
-                <div class="f-col">
-                    <h4 class="col-head">{{ t("footer.col.community") }}</h4>
-                    <div class="col-links">
-                        <a
-                            href="https://t.me/amnezia_vpn"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="f-link"
-                        >
-                            <Send :size="16" /> {{ t("footer.link.telegram") }}
-                        </a>
-                        <a
-                            href="https://github.com/Vadim-Khristenko/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="f-link"
-                        >
-                            <User :size="16" /> {{ t("footer.link.author") }}
-                        </a>
-                    </div>
+                <div class="footer-col">
+                    <h2 class="footer-colhead">
+                        {{ t("footer.col.community") }}
+                    </h2>
+                    <a
+                        href="https://t.me/amnezia_vpn"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="footer-link"
+                    >
+                        <Send :size="15" /> {{ t("footer.link.telegram") }}
+                    </a>
+                    <a
+                        href="https://github.com/Vadim-Khristenko/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="footer-link"
+                    >
+                        <User :size="15" /> {{ t("footer.link.author") }}
+                    </a>
                 </div>
 
-                <!-- Column 3: Credits -->
-                <div class="f-col credits">
-                    <h4 class="col-head">{{ t("footer.col.research") }}</h4>
-                    <div class="credits-text">
+                <div class="footer-col">
+                    <h2 class="footer-colhead">
+                        {{ t("footer.col.research") }}
+                    </h2>
+                    <p class="footer-credits">
                         {{ t("footer.credits.basedOn") }}
                         <a
                             href="https://voidwaifu.github.io/Special-Junk-Packet-List/"
@@ -165,372 +173,205 @@ watch(locale, formatBuild);
                             rel="noopener noreferrer"
                             >@VoidWaifu</a
                         >
-                    </div>
+                    </p>
                 </div>
             </div>
 
-            <!-- ── Bottom Bar ─────────────────────────────────────────────── -->
-            <div class="footer-bottom">
-                <div class="copy-block">
-                    <div class="copy-row">
-                        &copy; 2026
-                        <span class="copy-hl">Any Tech ARCHITECT</span>
-                    </div>
-                    <div class="copy-sub">
-                        {{ t("footer.madeWith") }}
-                        <Heart
-                            :size="13"
-                            fill="currentColor"
-                            class="heart-anim"
-                            aria-hidden="true"
-                        />
-                        {{ t("footer.forCommunity") }}
-                    </div>
-                    <div v-if="lastBuild" class="build-time">
-                        {{ t("footer.build") }}: {{ lastBuild }}
-                    </div>
+            <!--
+                The stamp. Four facts about what you have been looking at, in
+                the order a title block puts them, using the same primitive the
+                landing's drawing uses for its own.
+            -->
+            <div class="footer-stamp">
+                <div class="footer-stamp-cell">
+                    <span class="footer-stamp-key">
+                        {{ t("footer.stamp.project") }}
+                    </span>
+                    <span class="footer-stamp-val">Any Tech ARCHITECT</span>
                 </div>
-
-                <div class="local-badge">
-                    <Lock :size="12" />
-                    <span>{{ t("footer.local") }}</span>
+                <div class="footer-stamp-cell">
+                    <span class="footer-stamp-key">
+                        {{ t("footer.stamp.build") }}
+                    </span>
+                    <span class="footer-stamp-val">{{ lastBuild || "—" }}</span>
+                </div>
+                <div class="footer-stamp-cell">
+                    <span class="footer-stamp-key">
+                        {{ t("footer.stamp.data") }}
+                    </span>
+                    <span class="footer-stamp-val footer-stamp-ok">
+                        <i class="dot dot--ok"></i>
+                        {{ t("footer.stamp.dataValue") }}
+                    </span>
+                </div>
+                <div class="footer-stamp-cell">
+                    <span class="footer-stamp-key">
+                        {{ t("footer.stamp.source") }}
+                    </span>
+                    <span class="footer-stamp-val">
+                        <a
+                            :href="SOURCE_URL"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="footer-stamp-link"
+                        >
+                            GitHub <ExternalLink :size="11" />
+                        </a>
+                    </span>
                 </div>
             </div>
+
+            <p class="footer-made">
+                &copy; 2026 · {{ t("footer.madeWith") }}
+                <Heart
+                    :size="12"
+                    fill="currentColor"
+                    class="footer-heart"
+                    aria-hidden="true"
+                />
+                {{ t("footer.forCommunity") }}
+            </p>
         </div>
     </footer>
 </template>
 
 <style scoped>
 /*
- * The footer is the floor of the page, so it darkens downward from the ground
- * it stands on — not a band of its own colour laid across the bottom.
- *
- * It has been that band twice. First as a literal `rgba(14, 11, 7, 0.6)`, a
- * grey slab under every light page. Then as `--bg4 → --bg2`, which starts a
- * step above the page and ends at the panel colour — lighter at the bottom
- * than at the top, so in the dark scheme the page appeared to end and a
- * separate lighter block to begin. Starting from the page itself means there
- * is no seam to notice.
+ * The surface — the rule across the top, the grid beneath it, the stamp cells,
+ * the link columns — is in kit/shell.css. Only the arrangement of this
+ * footer's own content is here.
  */
-.footer {
-    position: relative;
-    margin-top: auto;
-    background: linear-gradient(to bottom, var(--bg) 0%, var(--bg3) 100%);
-    border-top: 1px solid var(--border3);
-    padding: 64px 0 40px;
-    z-index: 10;
-}
 
-.footer-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 48px;
-}
-
-/* ── Top Row ──────────────────────────────────────────────────────────── */
 .footer-top {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 40px;
+    justify-content: space-between;
     flex-wrap: wrap;
+    gap: var(--sp-6);
 }
 
 .footer-brand {
-    flex: 1;
-    min-width: 280px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--sp-3);
+    min-width: 260px;
+    flex: 1;
 }
 
-/*
- * "Any Tech" is a qualifier and sits above at label size; ARCHITECT is the
- * name and carries the weight.
- */
-.brand-title {
+.footer-lockup {
     display: flex;
     flex-direction: column;
     gap: 4px;
     line-height: 1;
 }
-.brand-pre {
+
+.footer-pre {
     font-family: var(--fm);
-    font-size: 0.7rem;
-    font-weight: 400;
-    text-transform: uppercase;
+    font-size: var(--t-2xs);
     letter-spacing: 0.28em;
-    color: var(--text3);
+    text-transform: uppercase;
+    color: var(--ink-3);
 }
-.brand-name {
+
+.footer-name {
     font-family: var(--fu);
-    font-size: 1.5rem;
+    font-size: var(--t-xl);
     font-weight: 800;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--track-tight);
     color: var(--accent-ink);
 }
 
-
-
-.brand-slogan {
-    font-size: 0.95rem;
-    color: var(--text2);
-    line-height: 1.6;
-    max-width: 420px;
+.footer-slogan {
+    max-width: 42ch;
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
 }
 
-/* ── Donate Card ──────────────────────────────────────────────────────── */
-.donate-card {
+/* ── Support ──────────────────────────────────────────────────────────── */
+
+.footer-donate {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 12px 24px 12px 14px;
-    background: rgb(var(--accent-rgb) / 0.05);
-    border: 1px solid rgb(var(--accent-rgb) / 0.15);
-    border-radius: 16px;
-    text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    position: relative;
-    overflow: hidden;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-5);
+    min-width: 280px;
 }
 
-.donate-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent);
-    background: rgb(var(--accent-rgb) / 0.08);
-    box-shadow: 0 12px 24px rgb(var(--accent-rgb) / 0.1);
-}
-
-.donate-icon {
-    width: 44px;
-    height: 44px;
-    background: var(--accent);
-    border-radius: 12px;
+.footer-donate-icon {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: var(--r-2);
+    background: var(--accent);
     color: var(--on-accent);
-    box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.3);
 }
 
-.donate-content {
+.footer-donate-text {
     display: flex;
     flex-direction: column;
+    gap: 3px;
 }
 
-.donate-title {
-    font-family: var(--fu);
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text);
+/* ── Columns ──────────────────────────────────────────────────────────── */
+
+.footer-credits {
+    margin: 0;
+    max-width: 34ch;
+    font-size: var(--t-sm);
+    color: var(--ink-3);
 }
 
-.donate-desc {
-    font-size: 0.75rem;
-    color: var(--text3);
+.footer-credits a {
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
 }
 
-.donate-arrow {
-    color: var(--text3);
-    margin-left: 8px;
-    transition: transform 0.3s;
-}
-
-.donate-card:hover .donate-arrow {
-    transform: translateX(4px);
+.footer-credits a:hover {
     color: var(--accent-ink);
+    text-decoration-color: currentcolor;
 }
 
-/* ── Grid ─────────────────────────────────────────────────────────────── */
-.divider {
-    height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgb(var(--accent-rgb) / 0.1) 50%,
-        transparent 100%
-    );
-}
+/* ── Stamp ────────────────────────────────────────────────────────────── */
 
-.footer-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 40px;
-}
-
-.col-head {
-    font-family: var(--fu);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--text3);
-    margin-bottom: 24px;
-}
-
-.col-links {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.f-link {
+.footer-stamp-ok {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--text2);
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.f-link svg {
-    color: var(--accent-ink);
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.f-link:hover {
-    color: var(--accent-ink);
-    transform: translateX(4px);
-}
-
-.f-link:hover svg {
-    opacity: 1;
-}
-
-.credits-text {
-    font-size: 0.85rem;
-    color: var(--text2);
-    line-height: 1.6;
-}
-
-.credits-text a {
-    color: var(--text);
-    border-bottom: 1px solid var(--border2);
-    transition: all 0.2s;
-}
-
-.credits-text a:hover {
-    color: var(--accent-ink);
-    border-bottom-color: var(--accent);
-}
-
-/* ── Bottom Bar ───────────────────────────────────────────────────────── */
-.footer-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    padding-top: 8px;
-}
-
-.copy-block {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.copy-row {
-    font-family: var(--fm);
-    font-size: 0.8rem;
-    color: var(--text3);
-}
-
-.copy-hl {
-    color: var(--text2);
-    font-weight: 600;
-}
-
-.copy-sub {
-    font-size: 0.8rem;
-    color: var(--text3);
-}
-
-.heart-anim {
-    display: inline-block;
-    /* Baseline-align the SVG with the surrounding text now that the heart is
-       an icon rather than an emoji glyph. */
-    vertical-align: -2px;
-    color: var(--red);
-    animation: heartbeat 2s infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .heart-anim {
-        animation: none;
-    }
-}
-
-.build-time {
-    font-family: var(--fm);
-    font-size: 0.7rem;
-    color: var(--text3);
-    opacity: 0.6;
-    margin-top: 4px;
-}
-
-.local-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: rgba(92, 184, 122, 0.05);
-    border: 1px solid rgba(92, 184, 122, 0.15);
-    border-radius: 100px;
-    font-size: 0.75rem;
+    gap: var(--sp-2);
     color: var(--green);
-    font-weight: 600;
 }
 
-@keyframes heartbeat {
-    0%,
-    100% {
-        transform: scale(1);
-    }
-    10% {
-        transform: scale(1.2);
-    }
-    20% {
-        transform: scale(1);
-    }
+.footer-stamp-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
-/* ── Mobile ───────────────────────────────────────────────────────────── */
-@media (max-width: 850px) {
-    .footer-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .credits {
-        grid-column: span 2;
-    }
+/* ── Closing line ─────────────────────────────────────────────────────── */
+
+.footer-made {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    color: var(--ink-3);
 }
 
-@media (max-width: 600px) {
-    .footer-top {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 32px;
-    }
+.footer-heart {
+    color: var(--red);
+}
 
-    .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 32px;
-    }
-
-    .credits {
-        grid-column: span 1;
-    }
-
-    .footer-bottom {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 24px;
-    }
-
-    .local-badge {
+@media (max-width: 640px) {
+    .footer-donate {
+        min-width: 0;
         width: 100%;
-        justify-content: center;
     }
 }
 </style>

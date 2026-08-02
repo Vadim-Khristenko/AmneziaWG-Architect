@@ -411,29 +411,15 @@ onUnmounted(() => {
 
 <style scoped>
 /* ── Header Container ─────────────────────────────────────────────────── */
-.header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 72px;
-    z-index: 1000;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    border-bottom: 1px solid transparent;
-}
+/*
+ * The bar itself is the kit's: `.header` and `.header-inner` in
+ * kit/shell.css, where it is the sheet's top margin rather than a floating
+ * strip. What stays here is only what is particular to this header — the
+ * brand, the links, the mobile panel.
+ */
 
-.header.is-scrolled {
-    height: 64px;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom-color: rgb(var(--accent-rgb) / 0.1);
-}
-
+/* The kit centres nothing; the shell is a bar and this is its content. */
 .header-inner {
-    height: 100%;
-    display: flex;
-    align-items: center;
     justify-content: space-between;
 }
 

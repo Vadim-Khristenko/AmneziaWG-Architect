@@ -358,6 +358,19 @@
         rgb(var(--accent-lift-rgb))
     );
 
+    /*
+     * The opaque tier.
+     *
+     * `--surface` and its friends are accent at low alpha, which is right when
+     * they sit on a panel and wrong when they sit on the page: the page has a
+     * grid on it, and a six-percent wash lets every square through. Anything
+     * that can stand on its own gets one of these instead — the same tint,
+     * already composited onto a ground, so it covers.
+     */
+    --surface-solid: color-mix(in oklab, rgb(var(--accent-rgb)) 6%, var(--ground-2));
+    --surface-solid-2: color-mix(in oklab, rgb(var(--accent-rgb)) 11%, var(--ground-2));
+    --surface-solid-3: color-mix(in oklab, rgb(var(--accent-rgb)) 17%, var(--ground-2));
+
     /* A wash on white has to be stronger to register at all. */
     --surface: light-dark(
         rgb(var(--accent-rgb) / 0.06),
@@ -383,6 +396,26 @@
     --line-faint: light-dark(
         rgb(var(--accent-deep-rgb) / 0.1),
         rgb(var(--accent-rgb) / 0.03)
+    );
+
+    /*
+     * Glow is a dark-scheme idea.
+     *
+     * Light emitted around an object reads on a dark ground and does nothing
+     * on a white one — an amber halo on paper is a smudge, not a highlight.
+     * So the light scheme gets the same emphasis by the means a light
+     * interface actually has: a ring of the deep accent and a real shadow.
+     *
+     * Every pulsing or glowing thing in the kit takes these two, so the effect
+     * is chosen once rather than per component.
+     */
+    --glow-ring: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.38),
+        rgb(var(--accent-rgb) / 0.35)
+    );
+    --glow-halo: light-dark(
+        rgb(var(--accent-deep-rgb) / 0.16),
+        rgb(var(--accent-rgb) / 0.18)
     );
 
     --glow: rgb(var(--accent-rgb) / 0.12);
@@ -454,8 +487,15 @@
         0 1px 4px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2));
     --shadow-lg: 0 8px 32px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.5)),
         0 2px 8px light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.3));
-    --shadow-glow: 0 0 20px rgb(var(--accent-rgb) / 0.08),
-        0 0 60px rgb(var(--accent-rgb) / 0.04);
+    /* In dark a halo; in light a shadow with a trace of the accent in it. */
+    --shadow-glow: light-dark(
+        0 2px 6px rgb(0 0 0 / 0.06),
+        0 0 20px rgb(var(--accent-rgb) / 0.08)
+    ),
+    light-dark(
+        0 10px 28px rgb(var(--accent-deep-rgb) / 0.16),
+        0 0 60px rgb(var(--accent-rgb) / 0.04)
+    );
 }
 
 /*

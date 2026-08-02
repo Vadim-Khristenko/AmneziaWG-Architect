@@ -12,11 +12,11 @@ import "@fontsource-variable/jetbrains-mono/index.css";
 
 // The token kit first: main.css reads its colours, and a sheet cannot use a
 // variable that is defined after it in the cascade.
-import "../assets/theme.css";
+// The kit is the design: tokens, base elements, every primitive, the shell.
+import "../assets/kit/index.css";
+// What is left of the old stylesheet, for views not yet rewritten onto the
+// kit. It shrinks with each one and eventually goes.
 import "../assets/main.css";
-// The kit: every primitive the interface is built from. After main.css so a
-// primitive can override a base element rule rather than the other way round.
-import "../assets/kit.css";
 
 // Tooltips render in one element on the body rather than as a pseudo-element
 // on each trigger, so nothing that scrolls can clip them. See utils/tooltip.

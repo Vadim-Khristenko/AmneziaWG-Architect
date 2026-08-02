@@ -13,9 +13,9 @@ import "@fontsource-variable/manrope/index.css";
 import "@fontsource-variable/unbounded/index.css";
 import "@fontsource-variable/jetbrains-mono/index.css";
 
-import "../assets/theme.css";
-import "../assets/main.css";
-import "../assets/kit.css";
+// Only the kit. If a primitive needs the old stylesheet to look right, that
+// is a defect in the primitive, and importing nothing else is what shows it.
+import "../assets/kit/index.css";
 
 import KitView from "./KitView.vue";
 

@@ -581,6 +581,11 @@ export const en: Catalog = {
   "footer.forCommunity": "for the AmneziaVPN community",
   "footer.build": "Last build",
   "footer.local": "100% local: your data never leaves the browser",
+  "footer.stamp.project": "Project",
+  "footer.stamp.build": "Build",
+  "footer.stamp.data": "Data",
+  "footer.stamp.dataValue": "never leaves the browser",
+  "footer.stamp.source": "Source",
 
   /* ── Common ───────────────────────────────────────────────────────────── */
   "common.and": "and",

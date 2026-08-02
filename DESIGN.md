@@ -2,9 +2,14 @@
 
 The visual system. `PRODUCT.md` answers who and why; this answers how it looks.
 
-Everything here is real: the tokens are in `assets/theme.css`, the primitives
-in `assets/kit.css`, and both can be seen across every accent and both schemes
+Everything here is real: the whole system is in `assets/kit/` — tokens, base
+elements, primitives and the shell, one file per family behind a single
+`index.css` — and all of it can be seen across every accent and both schemes
 with `bun run kit`, which is not part of the production build.
+
+`assets/main.css` is what is left of the old stylesheet. It holds only what
+views that have not been rewritten still reach for, and it shrinks with each
+one.
 
 ## Concept
 
@@ -111,21 +116,59 @@ reads as a toy. Durations `--dur-1` (90ms) … `--dur-5` (650ms).
 
 ## Components
 
-`assets/kit.css`, prefixed `k-`, named `.k-block`, `.k-block-element`,
-`.k-block--variant`, with `is-` / `has-` states.
+`assets/kit/`, one file per family, no prefix: `.btn` is the button. Named
+`.block`, `.block-element`, `.block--variant`, with `is-` / `has-` states.
 
-Surfaces `k-sheet` `k-panel` `k-card` `k-titleblock` · Buttons `k-btn`
-(primary / secondary / ghost / danger, three sizes, icon, block, loading,
-disabled) `k-btngroup` · Forms `k-field` `k-input` `k-select` `k-textarea`
-`k-inputgroup` `k-affix` `k-check` `k-switch` `k-range` `k-segment` · Marks
-`k-badge` `k-rev` `k-kbd` `k-code` `k-dot` · Drawing `k-dim` `k-ruler`
-`k-fieldmap` `k-leader` `k-rule` `k-void` · Readouts `k-readout` · Messages
-`k-note` `k-empty` · Progress `k-progress` `k-skeleton` `k-spinner` · Data
-`k-table` `k-list` · Disclosure `k-tabs` `k-accordion` · Overlays `k-menu`
-`k-dialog` `k-toast` · Type `k-display` `k-h2` `k-h3` `k-lede` `k-prose`
-`k-mono` · Layout `k-stack` `k-row` `k-grid`.
+| File | What is in it |
+|---|---|
+| `tokens.css` | Colour, space, type, radii, motion, depth, the drawing materials |
+| `base.css` | Reset, faces, bare elements, scrollbars |
+| `surfaces.css` | sheet · sheet-field · panel · card · plate · well · strip · titleblock |
+| `buttons.css` | btn (primary/secondary/ghost/danger, three sizes, icon, block, loading) · btngroup |
+| `forms.css` | field · input · select · textarea · inputgroup · affix · check · switch · range · segment |
+| `marks.css` | badge · rev · kbd · code · dot · chevron · badge-glow |
+| `drawing.css` | dim · ruler · fieldmap · leader · rule · void |
+| `data.css` | readout · table (striped, active row) · list |
+| `feedback.css` | note · empty · progress · skeleton · spinner |
+| `disclosure.css` | tabs · accordion |
+| `overlays.css` | menu · dialog · toast · tooltip |
+| `type.css` | display · h2 · h3 · lede · prose · mono · stack · row · grid |
+| `motion.css` | Everything below |
+| `shell.css` | The sheet background, the header, the footer |
 
-Two deliberate choices worth stating:
+Rules with a pre-kit equivalent carry the old class as an extra selector —
+`.note, .alert { … }` — so an un-rewritten view gets the new design without a
+second definition of it existing. Those come out as each view migrates.
+
+### Motion
+
+Four entrances, each with an exit, and each doing something the others do not:
+`.rise` moves up, `.settle` scales down onto its place, `.sweep-in` is
+uncovered top to bottom, `.slide-in` comes from the side. Durations rise with
+weight — 520ms to 900ms — because a large thing arriving quickly is a flicker.
+
+`.disclose` opens and closes on a grid track from `0fr` to `1fr`, so there is
+no guessed `max-height` in the CSS and no measurement in script. Collapsed, it
+is `visibility: hidden`, so nothing inside stays in the tab order.
+
+`.typing` reveals mono text a character at a time. Its width is stated in `ch`
+from a count the markup supplies, because an animation running to `width: auto`
+does not interpolate and does nothing at all — which is what the first version
+did. `.typing-cursor` is the caret; `utils/typing.ts` drives the cycling form,
+where each phrase is a different length and CSS cannot know the next one.
+
+Also: `.trace` (a rule drawing itself), `.pop-in`, `.nudge` (a rejected value),
+`.fade-swap` (a value replacing itself), `.reveal-rows` (delay from the row
+index), `.lift` / `.press` (pointer), and two that report state rather than
+decorate — `.marching` for work in progress and `.glow-pulse` for something
+live.
+
+Glow is a dark-scheme idea: light emitted around an object does nothing on
+paper. `--glow-ring` and `--glow-halo` give the light scheme the same emphasis
+by the means a light interface has — a ring of the deep accent and a real
+shadow.
+
+### Two deliberate choices
 
 - **Disabled is hatched, not faded.** A faded control raises the question of
   whether it is disabled or merely low-contrast. Hatching is the same mark the
@@ -133,6 +176,14 @@ Two deliberate choices worth stating:
 - **Notes are bordered on four sides.** A coloured bar down the left edge is
   the most common way an alert is drawn and it carries nothing the background
   tint does not already carry.
+
+### Opaque by default
+
+The page has a grid on it, so anything that can stand directly on it has an
+opaque ground. `--surface` and its friends are the accent at low alpha, which
+is right on a panel and wrong on the page — a six-percent wash lets every
+square through. `--surface-solid` is the same tint already composited onto a
+ground.
 
 ## What this is not
 

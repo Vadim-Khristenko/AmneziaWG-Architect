@@ -11,7 +11,8 @@
  * Not part of the production build — see styleguide/index.html.
  */
 
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { typeLines, type TypingHandle } from "@/utils/typing";
 /*
  * The project's own icon set. Nothing here draws a glyph by hand: the app
  * already ships lucide everywhere, and a styleguide that demonstrates
@@ -55,10 +56,23 @@ function applyScheme(next: Scheme) {
     else document.documentElement.dataset.theme = next;
 }
 
+const typedLine = ref<HTMLElement | null>(null);
+let typing: TypingHandle | null = null;
+
 onMounted(() => {
     applyAccent(accent.value);
     applyScheme(scheme.value);
+
+    if (typedLine.value) {
+        typing = typeLines(typedLine.value, [
+            "профиль: QUIC Initial",
+            "маскируемся под RFC 9000",
+            "ничего не уходит из браузера",
+        ]);
+    }
 });
+
+onUnmounted(() => typing?.stop());
 
 /* ── Live state for the interactive primitives ───────────────────────────── */
 
@@ -83,6 +97,34 @@ const someTags = computed(() => tags.value.some((t) => t.on) && !allTags.value);
 function toggleAllTags(event: Event) {
     const on = (event.target as HTMLInputElement).checked;
     for (const t of tags.value) t.on = on;
+}
+
+/*
+ * An animation you cannot replay is an animation you cannot judge: entrances
+ * run once, on load, and are gone before you have scrolled to them. Bumping a
+ * key tears the elements down and rebuilds them, which is the only honest way
+ * to watch an entrance a second time.
+ */
+const motionKey = ref(0);
+const replayMotion = () => (motionKey.value += 1);
+
+/** Whether the demo header is showing its collapsed state. */
+const headerScrolled = ref(true);
+
+/** The disclosure demo, and the value that re-arrives when it is bumped. */
+const disclosed = ref(true);
+const swapKey = ref(0);
+const swapValues = ["422", "509", "377", "641"];
+const swapValue = computed(() => swapValues[swapKey.value % swapValues.length]);
+const nudged = ref(false);
+
+/** Entrances and exits share the demo panels; this says which is running. */
+const shown = ref(true);
+
+function nudgeField() {
+    nudged.value = false;
+    // Restart the animation: a class that is already there does not replay.
+    window.setTimeout(() => (nudged.value = true), 20);
 }
 
 const radio = ref("b");
@@ -127,23 +169,41 @@ const PACKET = [
 const totalBytes = computed(() => PACKET.reduce((n, f) => n + Math.max(f.bytes, 1), 0));
 
 const ticks = Array.from({ length: 32 }, (_, i) => i);
+
+const PROFILE_ROWS = [
+    { name: "QUIC Initial", spec: "RFC 9000", fields: 8 },
+    { name: "TLS ClientHello", spec: "RFC 8446", fields: 6 },
+    { name: "DNS", spec: "RFC 1035", fields: 5 },
+    { name: "STUN", spec: "RFC 5389", fields: 4 },
+];
 </script>
 
 <template>
     <div class="kit">
+        <!--
+            The kit is shown on the ground it will actually live on. A
+            primitive judged against a flat colour is judged against a page
+            that does not exist.
+        -->
+        <div class="sheet-bg" aria-hidden="true">
+            <div class="sheet-wash"></div>
+            <div class="sheet-grid"></div>
+            <div class="sheet-grain"></div>
+        </div>
+
         <!-- ── The two axes ────────────────────────────────────────────── -->
         <header class="kit-bar">
             <div class="kit-bar-brand">
                 <span class="kit-bar-name">Any&nbsp;Tech <b>ARCHITECT</b></span>
-                <span class="k-note-label">kit</span>
+                <span class="note-label">kit</span>
             </div>
 
-            <div class="k-row">
-                <div class="k-segment">
+            <div class="row">
+                <div class="segment">
                     <button
                         v-for="s in SCHEMES"
                         :key="s"
-                        class="k-segment-opt"
+                        class="segment-opt"
                         :class="{ 'is-active': scheme === s }"
                         @click="applyScheme(s)"
                     >
@@ -151,11 +211,11 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                     </button>
                 </div>
 
-                <div class="k-segment">
+                <div class="segment">
                     <button
                         v-for="a in ACCENTS"
                         :key="a"
-                        class="k-segment-opt kit-swatch"
+                        class="segment-opt kit-swatch"
                         :class="{ 'is-active': accent === a }"
                         :data-accent="a"
                         @click="applyAccent(a)"
@@ -170,14 +230,14 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
         <main class="kit-main">
             <!-- ══ Foundations ═════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Основания</h2>
-                <p class="k-lede">
+                <h2 class="h2">Основания</h2>
+                <p class="lede">
                     Всё ниже строится из этих величин. Меняется только акцент
                     и схема — сами шкалы не зависят ни от страницы, ни от
                     читателя.
                 </p>
 
-                <h3 class="k-h3">Фон и цвета бренда</h3>
+                <h3 class="h3">Фон и цвета бренда</h3>
                 <div class="kit-swatches">
                     <div
                         v-for="t in [
@@ -201,25 +261,25 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                             class="kit-chip-fill"
                             :style="{ background: `var(${t})` }"
                         ></span>
-                        <code class="k-note-label">{{ t }}</code>
+                        <code class="note-label">{{ t }}</code>
                     </div>
                 </div>
 
-                <h3 class="k-h3">Типографика</h3>
-                <div class="k-stack">
-                    <span class="k-display k-display--lg">Architect</span>
-                    <span class="k-display">Конфигурация</span>
-                    <span class="k-h2">Заголовок раздела</span>
-                    <span class="k-h3">Подзаголовок</span>
-                    <p class="k-prose">
+                <h3 class="h3">Типографика</h3>
+                <div class="stack">
+                    <span class="display display--lg">Architect</span>
+                    <span class="display">Конфигурация</span>
+                    <span class="h2">Заголовок раздела</span>
+                    <span class="h3">Подзаголовок</span>
+                    <p class="prose">
                         Основной текст держится в пределах комфортной меры и
                         никогда не растягивается на всю ширину экрана: строка
                         длиннее семидесяти знаков теряет читателя на переносе.
                     </p>
-                    <span class="k-mono">0xc2000000011487e88c53715e896f8bce</span>
+                    <span class="mono">0xc2000000011487e88c53715e896f8bce</span>
                 </div>
 
-                <h3 class="k-h3">Отступы</h3>
+                <h3 class="h3">Отступы</h3>
                 <div class="kit-spaces">
                     <div
                         v-for="n in 10"
@@ -233,54 +293,54 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Drawing motifs ══════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Чертёжные мотивы</h2>
-                <p class="k-lede">
+                <h2 class="h2">Чертёжные мотивы</h2>
+                <p class="lede">
                     Правило одно: каждый мотив несёт данные. Размерная линия —
                     это диапазон, потому что диапазон и есть размер. Штриховка
                     означает, что клиент этого не поддерживает. Литера ревизии —
                     версия протокола.
                 </p>
 
-                <h3 class="k-h3">Размерные линии — диапазоны заголовков</h3>
-                <div class="k-panel">
-                    <div class="k-panel-body k-stack">
+                <h3 class="h3">Размерные линии — диапазоны заголовков</h3>
+                <div class="panel">
+                    <div class="panel-body stack">
                         <div v-for="r in RANGES" :key="r.key" class="kit-dimrow">
-                            <span class="k-rev">{{ r.key }}</span>
-                            <div class="k-dim">
-                                <span class="k-dim-end">{{ nf.format(r.lo) }}</span>
-                                <span class="k-dim-line">
-                                    <span class="k-dim-span">
+                            <span class="rev">{{ r.key }}</span>
+                            <div class="dim">
+                                <span class="dim-end">{{ nf.format(r.lo) }}</span>
+                                <span class="dim-line">
+                                    <span class="dim-span">
                                         ширина {{ span(r.lo, r.hi) }}
                                     </span>
                                 </span>
-                                <span class="k-dim-end">{{ nf.format(r.hi) }}</span>
+                                <span class="dim-end">{{ nf.format(r.hi) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <h3 class="k-h3">Октетная линейка и карта полей</h3>
-                <div class="k-panel">
-                    <div class="k-panel-body k-stack">
-                        <div class="k-ruler">
+                <h3 class="h3">Октетная линейка и карта полей</h3>
+                <div class="panel">
+                    <div class="panel-body stack">
+                        <div class="ruler">
                             <span
                                 v-for="i in ticks"
                                 :key="i"
-                                class="k-ruler-tick"
-                                :class="{ 'k-ruler-tick--major': i % 8 === 7 }"
+                                class="ruler-tick"
+                                :class="{ 'ruler-tick--major': i % 8 === 7 }"
                             >
                                 <span v-if="i % 8 === 0">{{ i }}</span>
                             </span>
                         </div>
 
-                        <div class="k-fieldmap">
+                        <div class="fieldmap">
                             <div
                                 v-for="f in PACKET"
                                 :key="f.name"
-                                class="k-fieldmap-field"
+                                class="fieldmap-field"
                                 :class="{
-                                    'k-fieldmap-field--ours': f.ours,
-                                    'k-fieldmap-field--void': f.void,
+                                    'fieldmap-field--ours': f.ours,
+                                    'fieldmap-field--void': f.void,
                                 }"
                                 :style="{
                                     /*
@@ -294,81 +354,81 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                                     flexBasis: 0,
                                 }"
                             >
-                                <span class="k-fieldmap-name">{{ f.name }}</span>
-                                <span class="k-fieldmap-size">
+                                <span class="fieldmap-name">{{ f.name }}</span>
+                                <span class="fieldmap-size">
                                     {{ f.bytes ? `${f.bytes} B` : "—" }}
                                 </span>
                             </div>
                         </div>
 
-                        <div class="k-row">
-                            <span class="k-leader">заполняется генератором</span>
-                            <span class="k-leader">штриховка — поля нет</span>
+                        <div class="row">
+                            <span class="leader">заполняется генератором</span>
+                            <span class="leader">штриховка — поля нет</span>
                         </div>
                     </div>
                 </div>
 
-                <h3 class="k-h3">Штамп основной надписи</h3>
-                <div class="k-titleblock">
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">Лист</span>
-                        <span class="k-titleblock-val">AWG-3.0</span>
+                <h3 class="h3">Штамп основной надписи</h3>
+                <div class="titleblock">
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">Лист</span>
+                        <span class="titleblock-val">AWG-3.0</span>
                     </div>
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">Профиль</span>
-                        <span class="k-titleblock-val">QUIC Initial</span>
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">Профиль</span>
+                        <span class="titleblock-val">QUIC Initial</span>
                     </div>
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">Клиент</span>
-                        <span class="k-titleblock-val">Amnezia VPN</span>
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">Клиент</span>
+                        <span class="titleblock-val">Amnezia VPN</span>
                     </div>
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">MTU</span>
-                        <span class="k-titleblock-val">1500</span>
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">MTU</span>
+                        <span class="titleblock-val">1500</span>
                     </div>
                 </div>
 
-                <h3 class="k-h3">Разделители и пустоты</h3>
-                <div class="k-stack">
-                    <span class="k-rule">экспорт</span>
-                    <hr class="k-divider" />
-                    <div class="k-void" style="height: 56px"></div>
+                <h3 class="h3">Разделители и пустоты</h3>
+                <div class="stack">
+                    <span class="rule">экспорт</span>
+                    <hr class="divider" />
+                    <div class="void" style="height: 56px"></div>
                 </div>
             </section>
 
             <!-- ══ Buttons ═════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Кнопки</h2>
+                <h2 class="h2">Кнопки</h2>
 
-                <div class="k-row">
-                    <button class="k-btn k-btn--primary">
+                <div class="row">
+                    <button class="btn btn--primary">
                         <Sparkles :size="15" /> Сгенерировать
                     </button>
-                    <button class="k-btn k-btn--secondary">
+                    <button class="btn btn--secondary">
                         <Download :size="15" /> Скачать .conf
                     </button>
-                    <button class="k-btn k-btn--ghost">
+                    <button class="btn btn--ghost">
                         <Copy :size="15" /> Копировать
                     </button>
-                    <button class="k-btn k-btn--danger">
+                    <button class="btn btn--danger">
                         <Trash2 :size="15" /> Очистить историю
                     </button>
                 </div>
 
-                <div class="k-row">
-                    <button class="k-btn k-btn--primary k-btn--sm">Мелкая</button>
-                    <button class="k-btn k-btn--primary">Обычная</button>
-                    <button class="k-btn k-btn--primary k-btn--lg">Крупная</button>
-                    <button class="k-btn k-btn--secondary k-btn--icon" aria-label="Обновить">
+                <div class="row">
+                    <button class="btn btn--primary btn--sm">Мелкая</button>
+                    <button class="btn btn--primary">Обычная</button>
+                    <button class="btn btn--primary btn--lg">Крупная</button>
+                    <button class="btn btn--secondary btn--icon" aria-label="Обновить">
                         <RefreshCw :size="15" />
                     </button>
                 </div>
 
-                <div class="k-row">
-                    <button class="k-btn k-btn--primary" disabled>Недоступно</button>
-                    <button class="k-btn k-btn--secondary" disabled>Недоступно</button>
+                <div class="row">
+                    <button class="btn btn--primary" disabled>Недоступно</button>
+                    <button class="btn btn--secondary" disabled>Недоступно</button>
                     <button
-                        class="k-btn k-btn--primary"
+                        class="btn btn--primary"
                         :class="{ 'is-loading': loading }"
                         @click="fakeWork"
                     >
@@ -376,11 +436,11 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                     </button>
                 </div>
 
-                <div class="k-btngroup">
+                <div class="btngroup">
                     <button
                         v-for="v in ['1.0', '1.5', '2.0', '3.0']"
                         :key="v"
-                        class="k-btn"
+                        class="btn"
                         :class="{ 'is-active': v === '3.0' }"
                     >
                         AWG {{ v }}
@@ -390,68 +450,68 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Form controls ═══════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Поля ввода</h2>
+                <h2 class="h2">Поля ввода</h2>
 
-                <div class="k-grid">
-                    <label class="k-field">
-                        <span class="k-label">Хост мимикрии</span>
-                        <input class="k-input" placeholder="например, do.co" />
-                        <span class="k-hint">
+                <div class="grid">
+                    <label class="field">
+                        <span class="label">Хост мимикрии</span>
+                        <input class="input" placeholder="например, do.co" />
+                        <span class="hint">
                             Хост с HTTP/3. Примеры из базы: do.co, ya.ru, dns.sb
                         </span>
                     </label>
 
-                    <label class="k-field">
-                        <span class="k-label">
-                            Приватный ключ<span class="k-label-req">*</span>
+                    <label class="field">
+                        <span class="label">
+                            Приватный ключ<span class="label-req">*</span>
                         </span>
                         <input
-                            class="k-input k-input--mono is-invalid"
+                            class="input input--mono is-invalid"
                             value="8Jd2kQ…"
                         />
-                        <span class="k-error">Не base64 длиной 44 символа.</span>
+                        <span class="error">Не base64 длиной 44 символа.</span>
                     </label>
 
-                    <label class="k-field">
-                        <span class="k-label">Целевой клиент</span>
-                        <select class="k-select">
+                    <label class="field">
+                        <span class="label">Целевой клиент</span>
+                        <select class="select">
                             <option>Amnezia VPN</option>
                             <option>AmneziaWG Android</option>
                             <option>Keenetic (native)</option>
                         </select>
                     </label>
 
-                    <div class="k-field">
-                        <span class="k-label">MTU интерфейса</span>
-                        <div class="k-inputgroup">
-                            <input class="k-input" value="1500" />
-                            <span class="k-affix">байт</span>
+                    <div class="field">
+                        <span class="label">MTU интерфейса</span>
+                        <div class="inputgroup">
+                            <input class="input" value="1500" />
+                            <span class="affix">байт</span>
                         </div>
                     </div>
 
-                    <label class="k-field">
-                        <span class="k-label">Отключённое поле</span>
-                        <input class="k-input" value="недоступно" disabled />
+                    <label class="field">
+                        <span class="label">Отключённое поле</span>
+                        <input class="input" value="недоступно" disabled />
                     </label>
 
-                    <label class="k-field">
-                        <span class="k-label">Конфигурация</span>
+                    <label class="field">
+                        <span class="label">Конфигурация</span>
                         <textarea
-                            class="k-textarea k-textarea--mono"
+                            class="textarea textarea--mono"
                             placeholder="Вставьте vpn:// ключ или .conf"
                         ></textarea>
                     </label>
                 </div>
 
-                <h3 class="k-h3">Переключатели</h3>
-                <div class="k-grid">
-                    <div class="k-stack">
+                <h3 class="h3">Переключатели</h3>
+                <div class="grid">
+                    <div class="stack">
                         <!--
                             Родитель показывает три состояния: все, ни одного,
                             часть. Третье — та самая «неопределённость», и
                             смысл она имеет только здесь.
                         -->
-                        <label class="k-check">
+                        <label class="check">
                             <input
                                 type="checkbox"
                                 :checked="allTags"
@@ -463,19 +523,19 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                         <label
                             v-for="t in tags"
                             :key="t.id"
-                            class="k-check"
+                            class="check"
                             style="padding-left: 28px"
                         >
                             <input v-model="t.on" type="checkbox" />
-                            <span><code class="k-code">{{ t.label }}</code></span>
+                            <span><code class="code">{{ t.label }}</code></span>
                         </label>
-                        <label class="k-check">
+                        <label class="check">
                             <input type="checkbox" disabled />
                             <span>Не поддерживается клиентом</span>
                         </label>
                     </div>
 
-                    <div class="k-stack">
+                    <div class="stack">
                         <label
                             v-for="o in [
                                 { v: 'a', l: 'Низкая энтропия' },
@@ -483,39 +543,39 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                                 { v: 'c', l: 'Высокая' },
                             ]"
                             :key="o.v"
-                            class="k-check"
+                            class="check"
                         >
                             <input v-model="radio" type="radio" :value="o.v" />
                             <span>{{ o.l }}</span>
                         </label>
                     </div>
 
-                    <div class="k-stack">
-                        <label class="k-switch">
+                    <div class="stack">
+                        <label class="switch">
                             <input v-model="switched" type="checkbox" />
-                            <span class="k-switch-track"></span>
+                            <span class="switch-track"></span>
                             <span>Режим роутера</span>
                         </label>
-                        <label class="k-switch">
+                        <label class="switch">
                             <input type="checkbox" disabled />
-                            <span class="k-switch-track"></span>
+                            <span class="switch-track"></span>
                             <span>Недоступно на этом клиенте</span>
                         </label>
-                        <label class="k-field">
-                            <span class="k-label">
+                        <label class="field">
+                            <span class="label">
                                 Интенсивность — {{ range }}
                             </span>
                             <input
                                 v-model.number="range"
-                                class="k-range"
+                                class="range"
                                 type="range"
                             />
                         </label>
-                        <div class="k-segment">
+                        <div class="segment">
                             <button
                                 v-for="s in ['low', 'med', 'high']"
                                 :key="s"
-                                class="k-segment-opt"
+                                class="segment-opt"
                                 :class="{ 'is-active': segment === s }"
                                 @click="segment = s"
                             >
@@ -528,59 +588,59 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Marks ═══════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Метки</h2>
-                <div class="k-row">
-                    <span class="k-badge">AWG 3.0</span>
-                    <span class="k-badge k-badge--ok">работает</span>
-                    <span class="k-badge k-badge--warn">проверьте</span>
-                    <span class="k-badge k-badge--bad">ошибка</span>
-                    <span class="k-badge k-badge--info">.conf</span>
-                    <span class="k-badge k-badge--quiet">черновик</span>
+                <h2 class="h2">Метки</h2>
+                <div class="row">
+                    <span class="badge">AWG 3.0</span>
+                    <span class="badge badge--ok">работает</span>
+                    <span class="badge badge--warn">проверьте</span>
+                    <span class="badge badge--bad">ошибка</span>
+                    <span class="badge badge--info">.conf</span>
+                    <span class="badge badge--quiet">черновик</span>
                 </div>
-                <div class="k-row">
-                    <span class="k-rev">A</span>
-                    <span class="k-rev is-active">B</span>
-                    <span class="k-rev">H1</span>
-                    <kbd class="k-kbd">Ctrl</kbd>
-                    <kbd class="k-kbd">C</kbd>
-                    <code class="k-code">Jmin</code>
-                    <span class="k-row" style="gap: 6px">
-                        <i class="k-dot k-dot--ok"></i> готово
+                <div class="row">
+                    <span class="rev">A</span>
+                    <span class="rev is-active">B</span>
+                    <span class="rev">H1</span>
+                    <kbd class="kbd">Ctrl</kbd>
+                    <kbd class="kbd">C</kbd>
+                    <code class="code">Jmin</code>
+                    <span class="row" style="gap: 6px">
+                        <i class="dot dot--ok"></i> готово
                     </span>
-                    <span class="k-row" style="gap: 6px">
-                        <i class="k-dot k-dot--live"></i> идёт проверка
+                    <span class="row" style="gap: 6px">
+                        <i class="dot dot--live"></i> идёт проверка
                     </span>
                 </div>
             </section>
 
             <!-- ══ Readouts ════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Отсчёты</h2>
-                <div class="k-readout-row">
-                    <div class="k-readout">
-                        <span class="k-readout-key">Jc</span>
-                        <span class="k-readout-val">4</span>
+                <h2 class="h2">Отсчёты</h2>
+                <div class="readout-row">
+                    <div class="readout">
+                        <span class="readout-key">Jc</span>
+                        <span class="readout-val">4</span>
                     </div>
-                    <div class="k-readout">
-                        <span class="k-readout-key">Jmin</span>
-                        <span class="k-readout-val">422</span>
+                    <div class="readout">
+                        <span class="readout-key">Jmin</span>
+                        <span class="readout-val">422</span>
                     </div>
-                    <div class="k-readout">
-                        <span class="k-readout-key">Jmax</span>
-                        <span class="k-readout-val">722</span>
+                    <div class="readout">
+                        <span class="readout-key">Jmax</span>
+                        <span class="readout-val">722</span>
                     </div>
-                    <div class="k-readout">
-                        <span class="k-readout-key">S1</span>
-                        <span class="k-readout-val">77</span>
+                    <div class="readout">
+                        <span class="readout-key">S1</span>
+                        <span class="readout-val">77</span>
                     </div>
-                    <div class="k-readout">
-                        <span class="k-readout-key">S2</span>
-                        <span class="k-readout-val">72</span>
+                    <div class="readout">
+                        <span class="readout-key">S2</span>
+                        <span class="readout-val">72</span>
                     </div>
                 </div>
-                <div class="k-readout k-readout--wide">
-                    <span class="k-readout-key">I1</span>
-                    <span class="k-readout-val">
+                <div class="readout readout--wide">
+                    <span class="readout-key">I1</span>
+                    <span class="readout-val">
                         &lt;b 0xc3000000011487e88c53715e896f8bce25178d35e22fcf&gt;&lt;rc
                         19&gt;&lt;t&gt;&lt;r 54&gt;
                     </span>
@@ -589,37 +649,37 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Messages ════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Сообщения</h2>
-                <div class="k-stack">
-                    <div class="k-note">
-                        <Info :size="16" class="k-note-icon" />
+                <h2 class="h2">Сообщения</h2>
+                <div class="stack">
+                    <div class="note">
+                        <Info :size="16" class="note-icon" />
                         <span>
-                            <b class="k-note-title">Тег &lt;c&gt; проблемный</b>
+                            <b class="note-title">Тег &lt;c&gt; проблемный</b>
                             Не работает в старых версиях AWG-go. Разработчики
                             Amnezia позднее отказались от него.
                         </span>
                     </div>
-                    <div class="k-note k-note--ok">
-                        <CheckCircle2 :size="16" class="k-note-icon" />
+                    <div class="note note--ok">
+                        <CheckCircle2 :size="16" class="note-icon" />
                         <span>Конфигурация прошла проверку без замечаний.</span>
                     </div>
-                    <div class="k-note k-note--bad">
-                        <AlertTriangle :size="16" class="k-note-icon" />
+                    <div class="note note--bad">
+                        <AlertTriangle :size="16" class="note-icon" />
                         <span>H2 и H3 пересекаются — клиент отвергнет конфиг.</span>
                     </div>
-                    <div class="k-note k-note--info">
-                        <HelpCircle :size="16" class="k-note-icon" />
+                    <div class="note note--info">
+                        <HelpCircle :size="16" class="note-icon" />
                         <span>Эти параметры должны совпадать на обоих концах.</span>
                     </div>
 
-                    <div class="k-empty">
-                        <span class="k-empty-title">Пока ничего не сгенерировано</span>
-                        <span class="k-empty-desc">
+                    <div class="empty">
+                        <span class="empty-title">Пока ничего не сгенерировано</span>
+                        <span class="empty-desc">
                             Выберите версию и клиента, затем нажмите
                             «Сгенерировать». История хранится только в этом
                             браузере.
                         </span>
-                        <button class="k-btn k-btn--primary">
+                        <button class="btn btn--primary">
                             <Sparkles :size="15" /> Сгенерировать
                         </button>
                     </div>
@@ -628,32 +688,32 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Progress ════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Ход работы</h2>
-                <div class="k-stack">
-                    <div class="k-progress">
-                        <div class="k-progress-bar" :style="{ width: `${progress}%` }"></div>
+                <h2 class="h2">Ход работы</h2>
+                <div class="stack">
+                    <div class="progress">
+                        <div class="progress-bar" :style="{ width: `${progress}%` }"></div>
                     </div>
-                    <div class="k-progress k-progress--indeterminate">
-                        <div class="k-progress-bar"></div>
+                    <div class="progress progress--indeterminate">
+                        <div class="progress-bar"></div>
                     </div>
-                    <div class="k-row">
-                        <span class="k-spinner"></span>
-                        <span class="k-note-label">проверяем домен</span>
+                    <div class="row">
+                        <span class="spinner"></span>
+                        <span class="note-label">проверяем домен</span>
                     </div>
-                    <div class="k-stack" style="gap: 8px">
-                        <div class="k-skeleton" style="height: 14px; width: 45%"></div>
-                        <div class="k-skeleton" style="height: 14px; width: 80%"></div>
-                        <div class="k-skeleton" style="height: 14px; width: 62%"></div>
+                    <div class="stack" style="gap: 8px">
+                        <div class="skeleton" style="height: 14px; width: 45%"></div>
+                        <div class="skeleton" style="height: 14px; width: 80%"></div>
+                        <div class="skeleton" style="height: 14px; width: 62%"></div>
                     </div>
                 </div>
             </section>
 
             <!-- ══ Tables, tabs, accordion ═════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Данные и раскрытие</h2>
+                <h2 class="h2">Данные и раскрытие</h2>
 
-                <div class="k-tablewrap">
-                    <table class="k-table">
+                <div class="tablewrap">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Параметр</th>
@@ -661,39 +721,39 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                                 <th>1.5</th>
                                 <th>2.0</th>
                                 <th>3.0</th>
-                                <th class="k-num">Предел</th>
+                                <th class="num">Предел</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code class="k-code">Jc</code></td>
+                                <td><code class="code">Jc</code></td>
                                 <td>да</td>
                                 <td>да</td>
                                 <td>да</td>
                                 <td>да</td>
-                                <td class="k-num">15</td>
+                                <td class="num">15</td>
                             </tr>
                             <tr>
-                                <td><code class="k-code">S3, S4</code></td>
+                                <td><code class="code">S3, S4</code></td>
                                 <td>—</td>
                                 <td>—</td>
                                 <td>да</td>
                                 <td>да</td>
-                                <td class="k-num">1280</td>
+                                <td class="num">1280</td>
                             </tr>
                             <tr>
-                                <td><code class="k-code">H1–H4</code></td>
+                                <td><code class="code">H1–H4</code></td>
                                 <td>одно</td>
                                 <td>одно</td>
                                 <td>диапазон</td>
                                 <td>диапазон</td>
-                                <td class="k-num">4294967295</td>
+                                <td class="num">4294967295</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="k-tabs">
+                <div class="tabs">
                     <button
                         v-for="t in [
                             { id: 'params', l: 'Параметры' },
@@ -701,7 +761,7 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                             { id: 'health', l: 'Проверка' },
                         ]"
                         :key="t.id"
-                        class="k-tab"
+                        class="tab"
                         :class="{ 'is-active': tab === t.id }"
                         @click="tab = t.id"
                     >
@@ -709,7 +769,7 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                     </button>
                 </div>
 
-                <div class="k-accordion">
+                <div class="accordion">
                     <div
                         v-for="(q, i) in [
                             'Что делают Jc, Jmin и Jmax?',
@@ -717,15 +777,15 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
                             'Какой MTU выставлять?',
                         ]"
                         :key="i"
-                        class="k-accordion-item"
+                        class="accordion-item"
                     >
                         <button
-                            class="k-accordion-head"
+                            class="accordion-head"
                             @click="openItem = openItem === i ? null : i"
                         >
                             {{ q }}
                         </button>
-                        <div v-if="openItem === i" class="k-accordion-body">
+                        <div v-if="openItem === i" class="accordion-body">
                             Junk-поезд — это пакеты-пустышки перед рукопожатием.
                             Jc задаёт их количество, Jmin и Jmax — границы
                             размера каждого.
@@ -736,56 +796,56 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Overlays ════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Наложения</h2>
-                <div class="k-row" style="align-items: flex-start">
-                    <ul class="k-menu" style="position: static">
+                <h2 class="h2">Наложения</h2>
+                <div class="row" style="align-items: flex-start">
+                    <ul class="menu" style="position: static">
                         <li>
-                            <button class="k-menu-item is-on">
+                            <button class="menu-item is-on">
                                 <Monitor :size="15" /> Как в системе
                             </button>
                         </li>
                         <li>
-                            <button class="k-menu-item">
+                            <button class="menu-item">
                                 <Sun :size="15" /> Светлая
                             </button>
                         </li>
                         <li>
-                            <button class="k-menu-item">
+                            <button class="menu-item">
                                 <Moon :size="15" /> Тёмная
                             </button>
                         </li>
-                        <li><span class="k-menu-sep"></span></li>
+                        <li><span class="menu-sep"></span></li>
                         <li>
-                            <button class="k-menu-item">
+                            <button class="menu-item">
                                 <RotateCcw :size="15" /> Сбросить
                             </button>
                         </li>
                     </ul>
 
-                    <div class="k-toast">
-                        <CheckCircle2 :size="16" class="k-toast-icon" />
+                    <div class="toast">
+                        <CheckCircle2 :size="16" class="toast-icon" />
                         <span>Конфигурация скопирована в буфер обмена.</span>
                     </div>
 
-                    <button class="k-btn k-btn--secondary" @click="dialog?.showModal()">
+                    <button class="btn btn--secondary" @click="dialog?.showModal()">
                         Открыть диалог
                     </button>
                 </div>
 
-                <dialog ref="dialog" class="k-dialog">
-                    <div class="k-dialog-head">
-                        <span class="k-dialog-title">Очистить историю?</span>
+                <dialog ref="dialog" class="dialog">
+                    <div class="dialog-head">
+                        <span class="dialog-title">Очистить историю?</span>
                     </div>
-                    <div class="k-dialog-body">
+                    <div class="dialog-body">
                         Будут удалены все записи, кроме закреплённых. История
                         хранится только в этом браузере — восстановить её будет
                         нечем.
                     </div>
-                    <div class="k-dialog-foot">
-                        <button class="k-btn k-btn--ghost" @click="dialog?.close()">
+                    <div class="dialog-foot">
+                        <button class="btn btn--ghost" @click="dialog?.close()">
                             Отмена
                         </button>
-                        <button class="k-btn k-btn--danger" @click="dialog?.close()">
+                        <button class="btn btn--danger" @click="dialog?.close()">
                             Очистить
                         </button>
                     </div>
@@ -794,45 +854,423 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
 
             <!-- ══ Surfaces ════════════════════════════════════════════ -->
             <section class="kit-section">
-                <h2 class="k-h2">Поверхности</h2>
-                <div class="k-grid k-grid--wide">
-                    <div class="k-panel">
-                        <div class="k-panel-head">
-                            <span class="k-panel-title">Конфигурация</span>
-                            <span class="k-panel-aside">
-                                <span class="k-badge">AWG 3.0</span>
+                <h2 class="h2">Поверхности</h2>
+                <p class="lede">
+                    Всё это лежит на клетчатом листе, поэтому у каждой
+                    поверхности, которая может стоять прямо на странице, фон
+                    непрозрачный. Полупрозрачная подложка на сетке подсвечивает
+                    сетку, а не себя.
+                </p>
+
+                <div class="grid grid--wide">
+                    <div class="panel">
+                        <div class="panel-head">
+                            <span class="panel-title">Конфигурация</span>
+                            <span class="panel-aside">
+                                <span class="badge">AWG 3.0</span>
                             </span>
                         </div>
-                        <div class="k-panel-body k-prose">
-                            Панель — это обрамлённая область на листе. Голова,
-                            тело, подвал.
+                        <div class="panel-body prose">
+                            Панель — обрамлённая область на листе. Голова, тело,
+                            подвал.
                         </div>
-                        <div class="k-panel-foot">
-                            <button class="k-btn k-btn--ghost k-btn--sm">Сброс</button>
-                            <button class="k-btn k-btn--primary k-btn--sm">
+                        <div class="panel-foot">
+                            <button class="btn btn--ghost btn--sm">Сброс</button>
+                            <button class="btn btn--primary btn--sm">
                                 Применить
                             </button>
                         </div>
                     </div>
 
-                    <a class="k-card" href="#">
-                        <span class="k-row" style="justify-content: space-between">
-                            <span class="k-h3">Генератор AmneziaWG</span>
-                            <ChevronRight :size="16" class="k-card-go" />
+                    <a class="card lift press" href="#">
+                        <span class="row" style="justify-content: space-between">
+                            <span class="h3">Генератор AmneziaWG</span>
+                            <ChevronRight :size="16" class="card-go" />
                         </span>
-                        <p class="k-prose" style="margin-top: 8px">
-                            Junk-поезда, диапазоны заголовков, подписи CPS и
-                            одиннадцать профилей мимикрии.
+                        <p class="prose" style="margin-top: 8px">
+                            Карточка — это панель, по которой можно кликнуть.
+                            Поднимается на два пикселя и проседает при нажатии.
                         </p>
                     </a>
 
-                    <div class="k-sheet k-sheet--gridded" style="min-height: 160px">
-                        <div style="padding: 24px">
-                            <span class="k-note-label">лист с сеткой</span>
+                    <div class="well">
+                        <span class="note-label">колодец</span>
+                        <pre style="margin-top: 8px; border: none; padding: 0">Jc = 4
+Jmin = 422
+Jmax = 722</pre>
+                        <p class="prose" style="margin-top: 12px">
+                            Утоплен, а не приподнят — для того, что выдала
+                            машина: конфиг, лог, вывод.
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="h3">Лист, поле и плита</h3>
+                <div class="sheet sheet--gridded" style="padding: 20px">
+                    <div class="sheet-field">
+                        <span class="note-label">поле листа</span>
+                        <p class="prose" style="margin-top: 8px">
+                            Сетка — это поля листа, а поле — то, на чём лежит
+                            сам чертёж. Без него линейка и карта полей
+                            накладываются на клетку, и клетка читается как
+                            лишние засечки.
+                        </p>
+                    </div>
+                </div>
+
+                <figure style="margin: 0">
+                    <div class="plate">
+                        <div class="ruler">
+                            <span
+                                v-for="i in ticks"
+                                :key="i"
+                                class="ruler-tick"
+                                :class="{ 'ruler-tick--major': i % 8 === 7 }"
+                            >
+                                <span v-if="i % 8 === 0">{{ i }}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <figcaption class="plate-caption">
+                        <span class="plate-caption-no">Рис. 1</span>
+                        <span>
+                            Плита — рамка для рисунка: внешняя линия, зазор,
+                            внутренняя. Две линии говорят «это фигура, и она
+                            закончена» так, как одна не может.
+                        </span>
+                    </figcaption>
+                </figure>
+
+                <div class="strip">
+                    <div class="row" style="justify-content: space-between">
+                        <span class="note-label">полоса — факты страницы</span>
+                        <span class="row">
+                            <span class="badge">11 профилей</span>
+                            <span class="badge">10 клиентов</span>
+                            <span class="badge">4 версии</span>
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══ Motion ══════════════════════════════════════════════ -->
+            <section class="kit-section">
+                <h2 class="h2">Движение</h2>
+                <p class="lede">
+                    Всё выезжает по экспоненте и ничего не пружинит: прибор,
+                    который подпрыгивает, читается как игрушка. Появления
+                    заполнены назад — элемент уже на месте до того, как
+                    анимация началась.
+                </p>
+
+                <div class="row">
+                    <button class="btn btn--secondary" @click="replayMotion">
+                        <RotateCcw :size="15" /> Проиграть заново
+                    </button>
+                    <span class="note-label">
+                        появление видно один раз — иначе его нечем судить
+                    </span>
+                </div>
+
+                <div class="row">
+                    <button class="btn btn--secondary" @click="shown = !shown">
+                        {{ shown ? "Показать уход" : "Показать появление" }}
+                    </button>
+                    <span class="note-label">
+                        у каждого появления есть своя пара на уход
+                    </span>
+                </div>
+
+                <div :key="motionKey" class="grid">
+                    <div class="panel" :class="shown ? 'rise' : 'rise-out'">
+                        <div class="panel-body">
+                            <code class="code">.rise / .rise-out</code>
+                            <p class="prose" style="margin-top: 8px">
+                                Поднимается и проявляется. База для всего
+                                остального.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="panel" :class="shown ? 'settle' : 'settle-out'">
+                        <div class="panel-body">
+                            <code class="code">.settle / .settle-out</code>
+                            <p class="prose" style="margin-top: 8px">
+                                Оседает на место, а не прилетает.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="panel" :class="shown ? 'sweep-in' : 'sweep-out'">
+                        <div class="panel-body">
+                            <code class="code">.sweep-in / .sweep-out</code>
+                            <p class="prose" style="margin-top: 8px">
+                                Раскрывается сверху вниз. Тяжелее — на страницу
+                                один раз.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div :key="`b${motionKey}`" class="panel">
+                    <div class="panel-body stack">
+                        <div class="row">
+                            <code class="code">.trace</code>
+                            <span class="note-label">линия чертит себя</span>
+                        </div>
+                        <div class="dim">
+                            <span class="dim-end">404 731 556</span>
+                            <span class="dim-line trace">
+                                <span class="dim-span">42 860</span>
+                            </span>
+                            <span class="dim-end">404 774 416</span>
+                        </div>
+
+                        <div class="row">
+                            <code class="code">.typing</code>
+                            <span class="mono typing" style="--chars: 34">
+                                0xc2000000011487e88c53715e896f8bce
+                            </span>
+                        </div>
+
+                        <div class="row">
+                            <code class="code">typeLines()</code>
+                            <span ref="typedLine" class="mono typing-cursor"></span>
+                        </div>
+
+                        <div class="row">
+                            <code class="code">.stagger</code>
+                        </div>
+                        <div class="readout-row stagger">
+                            <div class="readout">
+                                <span class="readout-key">Jc</span>
+                                <span class="readout-val">4</span>
+                            </div>
+                            <div class="readout">
+                                <span class="readout-key">Jmin</span>
+                                <span class="readout-val">422</span>
+                            </div>
+                            <div class="readout">
+                                <span class="readout-key">Jmax</span>
+                                <span class="readout-val">722</span>
+                            </div>
+                            <div class="readout">
+                                <span class="readout-key">S1</span>
+                                <span class="readout-val">77</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="h3">Раскрытие и замена</h3>
+                <!--
+                    grid--top: иначе панель держит высоту соседей по ряду, и
+                    свёрнутый блок выглядит несвернувшимся.
+                -->
+                <div class="grid grid--wide grid--top">
+                    <div class="panel">
+                        <button
+                            class="accordion-head"
+                            @click="disclosed = !disclosed"
+                        >
+                            <ChevronRight
+                                :size="15"
+                                class="chevron"
+                                :style="{
+                                    transform: disclosed ? 'rotate(90deg)' : 'none',
+                                }"
+                            />
+                            <code class="code">.disclose</code>
+                        </button>
+                        <div class="disclose" :class="{ 'is-open': disclosed }">
+                            <div>
+                                <p class="prose" style="padding: 0 20px 20px">
+                                    Раскрывается по настоящей высоте
+                                    содержимого: трек грида едет от 0fr к 1fr,
+                                    и в CSS нет ни одного числа, которое
+                                    кто-то угадал.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-body stack">
+                            <div class="row">
+                                <code class="code">.fade-swap</code>
+                                <button
+                                    class="btn btn--secondary btn--sm"
+                                    @click="swapKey += 1"
+                                >
+                                    Обновить
+                                </button>
+                            </div>
+                            <div class="readout">
+                                <span class="readout-key">Jmax</span>
+                                <span :key="swapKey" class="readout-val fade-swap">
+                                    {{ swapValue }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-body stack">
+                            <div class="row">
+                                <code class="code">.nudge</code>
+                                <button
+                                    class="btn btn--secondary btn--sm"
+                                    @click="nudgeField"
+                                >
+                                    Отклонить
+                                </button>
+                            </div>
+                            <input
+                                class="input input--mono is-invalid"
+                                :class="{ nudge: nudged }"
+                                value="8Jd2kQ…"
+                            />
+                            <span class="error">Не base64 длиной 44 символа.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div :key="`c${motionKey}`" class="grid grid--wide">
+                    <div class="panel" :class="shown ? 'slide-in' : 'slide-out'">
+                        <div class="panel-body">
+                            <code class="code">.slide-in / .slide-out</code>
+                            <p class="prose" style="margin-top: 8px">
+                                Приезжает с того края, которому принадлежит.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-body row">
+                            <span class="badge pop-in">.pop-in</span>
+                            <span class="mono typing-cursor">ожидание ввода</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div :key="`d${motionKey}`" class="tablewrap">
+                    <table class="table table--striped">
+                        <thead>
+                            <tr>
+                                <th>Профиль</th>
+                                <th>Документ</th>
+                                <th class="num">Полей</th>
+                            </tr>
+                        </thead>
+                        <tbody class="reveal-rows">
+                            <tr
+                                v-for="(p, i) in PROFILE_ROWS"
+                                :key="p.name"
+                                :style="{ '--row': i }"
+                                :class="{ 'is-active': i === 1 }"
+                            >
+                                <td>{{ p.name }}</td>
+                                <td>{{ p.spec }}</td>
+                                <td class="num">{{ p.fields }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <span class="note-label">
+                    .reveal-rows — задержка берётся из индекса строки, а
+                    активная строка подчёркнута акцентом и залита непрозрачно
+                </span>
+
+                <h3 class="h3">Состояние, а не появление</h3>
+                <div class="grid">
+                    <div class="marching" style="padding: 20px">
+                        <code class="code">.marching</code>
+                        <p class="prose" style="margin-top: 8px">
+                            Штриховка, которая ползёт: внутри идёт работа.
+                            Подвижная версия той штриховки, что означает
+                            «недоступно».
+                        </p>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-body row">
+                            <button class="btn btn--primary glow-pulse">
+                                <Sparkles :size="15" /> .glow-pulse
+                            </button>
+                            <span class="row" style="gap: 6px">
+                                <i class="dot dot--live"></i>
+                                <span class="note-label">.dot--live</span>
+                            </span>
                         </div>
                     </div>
                 </div>
             </section>
+
+            <!-- ══ Shell ═══════════════════════════════════════════════ -->
+            <section class="kit-section">
+                <h2 class="h2">Оболочка</h2>
+                <p class="lede">
+                    Страница — это лист. Шапка — его верхнее поле, футер —
+                    штамп основной надписи. У футера фон сплошной: клетка
+                    зафиксирована к окну, и вторая клетка со своим смещением
+                    дала бы клетку поверх клетки.
+                </p>
+
+                <div class="row">
+                    <button
+                        class="btn btn--secondary"
+                        @click="headerScrolled = !headerScrolled"
+                    >
+                        {{ headerScrolled ? "Развернуть шапку" : "Свернуть шапку" }}
+                    </button>
+                    <span class="note-label">
+                        свёрнутая: тень, светлая кромка, полоса прокрутки, и
+                        квалификатор уходит из лого
+                    </span>
+                </div>
+
+                <div class="kit-shelldemo sheet sheet--gridded">
+                    <div class="header" :class="{ 'is-scrolled': headerScrolled }">
+                        <div class="header-inner" style="padding: 0 20px">
+                            <span class="kit-demo-lockup">
+                                <span class="header-lockup">
+                                    <span class="kit-demo-pre">Any Tech</span>
+                                </span>
+                                <span class="kit-demo-name">ARCHITECT</span>
+                            </span>
+                            <span class="row" style="margin-left: auto">
+                                <span class="note-label">AmneziaWG</span>
+                                <span class="note-label">XRay</span>
+                                <span class="note-label">FAQ</span>
+                            </span>
+                            <span class="header-progress"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer kit-footerdemo">
+                    <div class="footer-inner" style="padding: 0 24px">
+                        <div class="footer-stamp">
+                            <div class="footer-stamp-cell">
+                                <span class="footer-stamp-key">Проект</span>
+                                <span class="footer-stamp-val">
+                                    Any Tech ARCHITECT
+                                </span>
+                            </div>
+                            <div class="footer-stamp-cell">
+                                <span class="footer-stamp-key">Сборка</span>
+                                <span class="footer-stamp-val">03.08.2026</span>
+                            </div>
+                            <div class="footer-stamp-cell">
+                                <span class="footer-stamp-key">Данные</span>
+                                <span class="footer-stamp-val">
+                                    не покидают браузер
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 </template>
@@ -900,17 +1338,17 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
     padding: var(--sp-8) var(--sp-gutter) var(--sp-10);
     display: flex;
     flex-direction: column;
-    gap: var(--sp-10);
+    gap: calc(var(--sp-10) + var(--sp-5));
 }
 
 .kit-section {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-5);
+    gap: var(--sp-6);
     scroll-margin-top: 80px;
 }
 
-.kit-section > .k-h3 {
+.kit-section > .h3 {
     margin-top: var(--sp-3);
     color: var(--ink-3);
 }
@@ -946,6 +1384,53 @@ const ticks = Array.from({ length: 32 }, (_, i) => i);
     background: var(--surface-active);
     border: var(--rule) solid var(--line-soft);
     border-radius: var(--r-1);
+}
+
+/* ── The shell demo ───────────────────────────────────────────────────── */
+
+/*
+ * The header and footer are fixed and full-bleed in the app. Here they are
+ * pinned inside a box so both states can be looked at side by side without
+ * scrolling the page to reach them.
+ */
+.kit-shelldemo {
+    position: relative;
+    height: 150px;
+    overflow: hidden;
+    padding: 0;
+}
+
+.kit-shelldemo .header {
+    position: absolute;
+}
+
+.kit-footerdemo {
+    margin-top: 0;
+    border-radius: var(--r-3);
+    overflow: hidden;
+}
+
+.kit-demo-lockup {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1;
+}
+
+.kit-demo-pre {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.kit-demo-name {
+    font-family: var(--fu);
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: var(--track-tight);
+    color: var(--ink);
 }
 
 .kit-dimrow {

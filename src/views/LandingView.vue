@@ -95,20 +95,20 @@ const MORE = [
     <div class="landing">
         <!-- ══ Hero: the wordmark and the drawing ═══════════════════════ -->
         <header class="landing-hero">
-            <div class="landing-hero-text k-stagger">
+            <div class="landing-hero-text stagger">
                 <h1 class="wordmark">
                     <span class="wordmark-pre">{{ t("brand.pre") }}</span>
                     <span class="wordmark-main">{{ t("brand.main") }}</span>
                 </h1>
 
-                <p class="k-lede landing-lede">{{ t("landing.lede") }}</p>
+                <p class="lede landing-lede">{{ t("landing.lede") }}</p>
 
-                <div class="k-row landing-actions">
-                    <router-link :to="at('/amneziawg')" class="k-btn k-btn--primary k-btn--lg">
+                <div class="row landing-actions">
+                    <router-link :to="at('/amneziawg')" class="btn btn--primary btn--lg">
                         {{ t("landing.hero.cta") }}
                         <ArrowRight :size="16" />
                     </router-link>
-                    <router-link :to="at('/about')" class="k-btn k-btn--secondary k-btn--lg">
+                    <router-link :to="at('/about')" class="btn btn--secondary btn--lg">
                         {{ t("landing.hero.second") }}
                     </router-link>
                 </div>
@@ -121,32 +121,32 @@ const MORE = [
                 prose beside it; to a screen reader it is a diagram of nothing
                 new.
             -->
-            <figure class="landing-drawing k-sheet k-sheet--gridded" aria-hidden="true">
+            <figure class="landing-drawing sheet sheet--gridded" aria-hidden="true">
                 <figcaption class="landing-drawing-head">
-                    <span class="k-note-label">{{ t("landing.drawing") }}</span>
-                    <span class="k-rev is-active">B</span>
+                    <span class="note-label">{{ t("landing.drawing") }}</span>
+                    <span class="rev is-active">B</span>
                 </figcaption>
 
                 <div class="landing-drawing-body">
-                    <div class="k-ruler k-draw-in">
+                    <div class="ruler draw-in">
                         <span
                             v-for="i in ticks"
                             :key="i"
-                            class="k-ruler-tick"
-                            :class="{ 'k-ruler-tick--major': i % 8 === 7 }"
+                            class="ruler-tick"
+                            :class="{ 'ruler-tick--major': i % 8 === 7 }"
                         >
                             <span v-if="i % 8 === 0">{{ i }}</span>
                         </span>
                     </div>
 
-                    <div class="k-fieldmap k-draw-in">
+                    <div class="fieldmap draw-in">
                         <div
                             v-for="f in PACKET"
                             :key="f.name"
-                            class="k-fieldmap-field"
+                            class="fieldmap-field"
                             :class="{
-                                'k-fieldmap-field--ours': f.ours,
-                                'k-fieldmap-field--void': f.absent,
+                                'fieldmap-field--ours': f.ours,
+                                'fieldmap-field--void': f.absent,
                             }"
                             :style="{
                                 /*
@@ -160,8 +160,8 @@ const MORE = [
                                 flexBasis: 0,
                             }"
                         >
-                            <span class="k-fieldmap-name">{{ f.name }}</span>
-                            <span class="k-fieldmap-size">
+                            <span class="fieldmap-name">{{ f.name }}</span>
+                            <span class="fieldmap-size">
                                 {{ f.bytes ? `${f.bytes} B` : "—" }}
                             </span>
                         </div>
@@ -169,30 +169,30 @@ const MORE = [
 
                     <div class="landing-dims">
                         <div v-for="r in RANGES" :key="r.key" class="landing-dimrow">
-                            <span class="k-rev">{{ r.key }}</span>
-                            <div class="k-dim">
-                                <span class="k-dim-end">{{ nf.format(r.lo) }}</span>
-                                <span class="k-dim-line">
-                                    <span class="k-dim-span">{{ nf.format(r.hi - r.lo) }}</span>
+                            <span class="rev">{{ r.key }}</span>
+                            <div class="dim">
+                                <span class="dim-end">{{ nf.format(r.lo) }}</span>
+                                <span class="dim-line">
+                                    <span class="dim-span">{{ nf.format(r.hi - r.lo) }}</span>
                                 </span>
-                                <span class="k-dim-end">{{ nf.format(r.hi) }}</span>
+                                <span class="dim-end">{{ nf.format(r.hi) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="k-titleblock landing-titleblock">
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">{{ t("landing.sheet") }}</span>
-                        <span class="k-titleblock-val">AWG-3.0</span>
+                <div class="titleblock landing-titleblock">
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">{{ t("landing.sheet") }}</span>
+                        <span class="titleblock-val">AWG-3.0</span>
                     </div>
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">{{ t("landing.scale") }}</span>
-                        <span class="k-titleblock-val">{{ t("landing.scale.value") }}</span>
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">{{ t("landing.scale") }}</span>
+                        <span class="titleblock-val">{{ t("landing.scale.value") }}</span>
                     </div>
-                    <div class="k-titleblock-cell">
-                        <span class="k-titleblock-key">{{ t("landing.rev") }}</span>
-                        <span class="k-titleblock-val">B · 2026</span>
+                    <div class="titleblock-cell">
+                        <span class="titleblock-key">{{ t("landing.rev") }}</span>
+                        <span class="titleblock-val">B · 2026</span>
                     </div>
                 </div>
             </figure>
@@ -200,37 +200,37 @@ const MORE = [
 
         <!-- ══ The two engines ══════════════════════════════════════════ -->
         <section class="landing-section">
-            <h2 class="k-h2">{{ t("landing.tools.title") }}</h2>
-            <p class="k-lede">{{ t("landing.tools.lede") }}</p>
+            <h2 class="h2">{{ t("landing.tools.title") }}</h2>
+            <p class="lede">{{ t("landing.tools.lede") }}</p>
 
             <div class="landing-engines">
-                <router-link :to="at('/amneziawg')" class="k-card landing-engine">
+                <router-link :to="at('/amneziawg')" class="card landing-engine">
                     <span class="landing-engine-head">
                         <Layers :size="20" class="landing-engine-icon" />
-                        <span class="k-h3">{{ t("landing.awg.name") }}</span>
-                        <span class="k-badge k-badge--ok landing-engine-status">
+                        <span class="h3">{{ t("landing.awg.name") }}</span>
+                        <span class="badge badge--ok landing-engine-status">
                             {{ t("landing.awg.status") }}
                         </span>
                     </span>
-                    <p class="k-prose">{{ t("landing.awg.desc") }}</p>
+                    <p class="prose">{{ t("landing.awg.desc") }}</p>
                     <span class="landing-engine-go">
                         {{ t("landing.awg.go") }}
-                        <ArrowRight :size="15" class="k-card-go" />
+                        <ArrowRight :size="15" class="card-go" />
                     </span>
                 </router-link>
 
-                <router-link :to="at('/xray')" class="k-card landing-engine landing-engine--soon">
+                <router-link :to="at('/xray')" class="card landing-engine landing-engine--soon">
                     <span class="landing-engine-head">
                         <Network :size="20" class="landing-engine-icon" />
-                        <span class="k-h3">{{ t("landing.xray.name") }}</span>
-                        <span class="k-badge landing-engine-status">
+                        <span class="h3">{{ t("landing.xray.name") }}</span>
+                        <span class="badge landing-engine-status">
                             {{ t("landing.xray.status") }}
                         </span>
                     </span>
-                    <p class="k-prose">{{ t("landing.xray.desc") }}</p>
+                    <p class="prose">{{ t("landing.xray.desc") }}</p>
                     <span class="landing-engine-go">
                         {{ t("landing.xray.go") }}
-                        <ArrowRight :size="15" class="k-card-go" />
+                        <ArrowRight :size="15" class="card-go" />
                     </span>
                 </router-link>
             </div>
@@ -238,8 +238,8 @@ const MORE = [
 
         <!-- ══ Mimicry profiles ═════════════════════════════════════════ -->
         <section class="landing-section">
-            <h2 class="k-h2">{{ t("landing.profiles.title") }}</h2>
-            <p class="k-lede">{{ t("landing.profiles.lede") }}</p>
+            <h2 class="h2">{{ t("landing.profiles.title") }}</h2>
+            <p class="lede">{{ t("landing.profiles.lede") }}</p>
 
             <ul class="landing-profiles">
                 <li v-for="p in PROFILES" :key="p.name" class="landing-profile">
@@ -251,14 +251,14 @@ const MORE = [
 
         <!-- ══ Why believe it ═══════════════════════════════════════════ -->
         <section class="landing-section">
-            <h2 class="k-h2">{{ t("landing.trust.title") }}</h2>
+            <h2 class="h2">{{ t("landing.trust.title") }}</h2>
 
             <div class="landing-trust">
                 <div v-for="item in TRUST" :key="item.title" class="landing-trust-item">
                     <component :is="item.icon" :size="18" class="landing-trust-icon" />
                     <div>
-                        <h3 class="k-h3">{{ t(item.title) }}</h3>
-                        <p class="k-prose">{{ t(item.desc) }}</p>
+                        <h3 class="h3">{{ t(item.title) }}</h3>
+                        <p class="prose">{{ t(item.desc) }}</p>
                     </div>
                 </div>
             </div>
@@ -266,9 +266,9 @@ const MORE = [
 
         <!-- ══ Everything else ══════════════════════════════════════════ -->
         <section class="landing-section">
-            <h2 class="k-h2">{{ t("landing.more.title") }}</h2>
+            <h2 class="h2">{{ t("landing.more.title") }}</h2>
 
-            <ul class="k-list landing-more">
+            <ul class="list landing-more">
                 <li v-for="m in MORE" :key="m.to" class="landing-more-item">
                     <router-link :to="at(m.to)" class="landing-more-link">
                         <component :is="m.icon" :size="17" class="landing-more-icon" />
@@ -359,7 +359,7 @@ const MORE = [
     gap: var(--sp-3);
 }
 
-.landing-actions .k-btn {
+.landing-actions .btn {
     text-decoration: none;
 }
 
@@ -400,7 +400,7 @@ const MORE = [
 }
 
 /* The dimension label sits on the sheet, so it has to mask the sheet. */
-.landing-drawing :deep(.k-dim-span) {
+.landing-drawing :deep(.dim-span) {
     background: var(--ground-2);
 }
 
@@ -411,7 +411,7 @@ const MORE = [
 }
 
 /* The second line delays behind the first, so the sheet assembles downward. */
-.landing-drawing .k-draw-in:nth-of-type(2) {
+.landing-drawing .draw-in:nth-of-type(2) {
     animation-delay: 120ms;
 }
 
@@ -423,7 +423,7 @@ const MORE = [
     gap: var(--sp-4);
 }
 
-.landing-section > .k-lede {
+.landing-section > .lede {
     margin-bottom: var(--sp-3);
 }
 
@@ -612,7 +612,7 @@ const MORE = [
 }
 
 @media (max-width: 620px) {
-    .landing-actions .k-btn {
+    .landing-actions .btn {
         flex: 1 1 100%;
     }
 

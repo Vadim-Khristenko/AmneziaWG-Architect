@@ -32,21 +32,21 @@ const READY = [
 
 <template>
     <div class="xray">
-        <header class="xray-head k-stagger">
-            <span class="k-badge">{{ t("xray.badge") }}</span>
-            <h1 class="k-display k-display--sm xray-title">
+        <header class="xray-head stagger">
+            <span class="badge">{{ t("xray.badge") }}</span>
+            <h1 class="display display--sm xray-title">
                 <Network :size="28" class="xray-title-icon" />
                 {{ t("xray.title") }}
             </h1>
-            <p class="k-lede">{{ t("xray.lede") }}</p>
+            <p class="lede">{{ t("xray.lede") }}</p>
         </header>
 
-        <section class="k-panel">
-            <div class="k-panel-head">
-                <span class="k-panel-title">{{ t("xray.ready.title") }}</span>
+        <section class="panel">
+            <div class="panel-head">
+                <span class="panel-title">{{ t("xray.ready.title") }}</span>
             </div>
-            <ul class="k-list">
-                <li v-for="r in READY" :key="r.key" class="k-list-item">
+            <ul class="list">
+                <li v-for="r in READY" :key="r.key" class="list-item">
                     <component :is="r.icon" :size="17" class="xray-item-icon" />
                     <span>{{ t(r.key) }}</span>
                 </li>
@@ -54,14 +54,14 @@ const READY = [
         </section>
 
         <!-- Hatched, because that is this kit's mark for "not available". -->
-        <section class="k-void xray-left">
-            <h2 class="k-h3">{{ t("xray.left.title") }}</h2>
-            <p class="k-prose">{{ t("xray.left.desc") }}</p>
+        <section class="void xray-left">
+            <h2 class="h3">{{ t("xray.left.title") }}</h2>
+            <p class="prose">{{ t("xray.left.desc") }}</p>
         </section>
 
         <router-link
             :to="localizePath('/amneziawg', locale)"
-            class="k-btn k-btn--primary xray-cta"
+            class="btn btn--primary xray-cta"
         >
             {{ t("xray.meanwhile") }}
             <ArrowRight :size="16" />
