@@ -53,6 +53,28 @@ const GROUP_ROOT: Record<string, string> = {
  * exist.
  */
 const EXPLICIT: Record<string, Record<string, string>> = {
+  /*
+   * The last two XHTTP parameters the generator does not choose.
+   *
+   * Where the uplink data is hidden and the key it is hidden under: both are
+   * decisions about a specific deployment, and the rest of the group is picked
+   * for you, so these two are named here rather than the whole group being
+   * rooted.
+   */
+  xhttp: {
+    uplinkDataPlacement: "xhttp.uplinkDataPlacement",
+    uplinkDataKey: "xhttp.uplinkDataKey",
+  },
+
+  /*
+   * PROXY protocol in front of the inbound. Off unless something upstream
+   * really speaks it — turning it on otherwise breaks the inbound outright,
+   * which is why it was never generated.
+   */
+  transport: {
+    acceptProxyProtocol: "transportSettings.acceptProxyProtocol",
+  },
+
   reality: {
     maxClientVer: "maxClientVer",
     maxTimeDiff: "maxTimeDiff",

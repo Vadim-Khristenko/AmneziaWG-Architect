@@ -64,14 +64,29 @@ describe("editable parameter bindings", () => {
     expect(broken).toEqual([]);
   });
 
-  it("offers a control for every REALITY parameter left to the user", () => {
-    const manual = XRAY_PARAMETERS.filter(
-      (p) => p.group === "reality" && p.offered && !p.generated,
-    );
+  /*
+   * The guard that matters most here.
+   *
+   * A parameter the catalogue says the user supplies, with nothing to supply
+   * it with, is a promise the page does not keep — and it appears silently,
+   * the moment somebody adds an entry and forgets the binding. This fails
+   * then, naming the parameter.
+   */
+  it("offers a control for every parameter left to the user", () => {
+    const manual = XRAY_PARAMETERS.filter((p) => p.offered && !p.generated);
     expect(manual.length).toBeGreaterThan(0);
+
     const unbound = manual
       .filter((p) => inputPathFor(p.group, p.key) === null)
-      .map((p) => p.key);
+      .map((p) => `${p.group}.${p.key}`);
     expect(unbound).toEqual([]);
+  });
+
+  it("resolves each of those on a real input", () => {
+    const input = createDefaults();
+    const broken = XRAY_PARAMETERS.filter((p) => p.offered && !p.generated)
+      .filter((p) => readPath(input, inputPathFor(p.group, p.key)!) === undefined)
+      .map((p) => `${p.group}.${p.key} → ${inputPathFor(p.group, p.key)}`);
+    expect(broken).toEqual([]);
   });
 });

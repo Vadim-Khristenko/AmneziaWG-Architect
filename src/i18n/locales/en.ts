@@ -225,6 +225,13 @@ export const en: Catalog = {
   "xg.group.sockopt": "Socket",
   "xg.group.finalmask": "FinalMask",
 
+  "xg.ph.int": "a number",
+  "xg.ph.range": "lo—hi",
+  "xg.ph.between": "{min}–{max}",
+  "xg.ph.text": "text",
+  "xg.ph.key": "base64, {n} bytes",
+  "xg.ph.hex": "hex, {n} characters",
+  "xg.ph.duration": "e.g. 300ms",
   "xg.state.generated": "chosen for you",
   "xg.state.manual": "you set it",
   "xg.state.missing": "not covered",

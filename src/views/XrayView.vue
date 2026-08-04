@@ -258,6 +258,12 @@ const groups = computed(() =>
             options: p.bounds?.oneOf ?? [],
             min: p.bounds?.min,
             max: p.bounds?.max,
+            placeholder: placeholderFor(
+                p.kind,
+                p.bounds?.min,
+                p.bounds?.max,
+                p.bounds?.byteLength,
+            ),
         }));
         return {
             group,
@@ -311,6 +317,30 @@ function setValue(group: string, key: string, kind: string, raw: unknown) {
     }
     writePath(input.value, path, value);
     build();
+}
+
+/**
+ * What to type, taken from the catalogue rather than written per field.
+ *
+ * The shape of the value and nothing else — a number, a range, how long a key
+ * is. Not "e.g. 11": a made-up specimen invites being copied, and a bound the
+ * catalogue already states is both truer and shorter.
+ */
+function placeholderFor(kind: string, min?: number, max?: number, bytes?: number) {
+    switch (kind) {
+        case "int":
+            return min !== undefined && max !== undefined
+                ? t("xg.ph.between", { min, max })
+                : t("xg.ph.int");
+        case "range":
+            return t("xg.ph.range");
+        case "key":
+            return bytes ? t("xg.ph.key", { n: bytes }) : t("xg.ph.text");
+        case "hex":
+            return bytes ? t("xg.ph.hex", { n: bytes * 2 }) : t("xg.ph.text");
+        default:
+            return t("xg.ph.text");
+    }
 }
 
 /**
@@ -1167,6 +1197,7 @@ function setServerNames(event: Event) {
                                     :type="p.kind === 'int' ? 'number' : 'text'"
                                     :min="p.min"
                                     :max="p.max"
+                                    :placeholder="p.placeholder"
                                     :value="valueOf(g.group, p.key)"
                                     @change="
                                         setValue(

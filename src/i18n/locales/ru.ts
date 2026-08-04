@@ -225,6 +225,13 @@ export const ru = {
   "xg.group.sockopt": "Сокет",
   "xg.group.finalmask": "FinalMask",
 
+  "xg.ph.int": "число",
+  "xg.ph.range": "от—до",
+  "xg.ph.between": "{min}–{max}",
+  "xg.ph.text": "текст",
+  "xg.ph.key": "base64, {n} байт",
+  "xg.ph.hex": "hex, {n} символов",
+  "xg.ph.duration": "например 300ms",
   "xg.state.generated": "подбирается",
   "xg.state.manual": "задаётся",
   "xg.state.missing": "не покрыт",
