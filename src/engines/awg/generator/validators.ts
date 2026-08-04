@@ -14,6 +14,11 @@ import {
   HEADER_PROTECTION_KEY_BYTES,
   MIN_S_WITH_HEADER_PROTECTION,
 } from "./awg3";
+import {
+  INIT_TO_RESPONSE,
+  INIT_TO_COOKIE,
+  RESPONSE_TO_COOKIE,
+} from "../messageSizes";
 
 /**
  * Parse a range — "N-M", or "N" for a single value — into [min, max].
@@ -88,7 +93,7 @@ export function validateHeaderRanges(
 /** Validate the core S-size constraints (S1 + 56 ≠ S2, S4 ≤ 32, etc.). */
 export function validateSizes(cfg: AWGConfig): ValidationFinding[] {
   const out: ValidationFinding[] = [];
-  if (cfg.s1 + 56 === cfg.s2) {
+  if (cfg.s1 + INIT_TO_RESPONSE === cfg.s2) {
     out.push({
       field: "S2",
       level: "warn",
@@ -96,7 +101,7 @@ export function validateSizes(cfg: AWGConfig): ValidationFinding[] {
       values: { a: "S1", b: "S2" },
     });
   }
-  if (cfg.s3 === cfg.s1 + 56) {
+  if (cfg.s3 === cfg.s1 + INIT_TO_COOKIE) {
     out.push({
       field: "S3",
       level: "warn",
@@ -104,7 +109,7 @@ export function validateSizes(cfg: AWGConfig): ValidationFinding[] {
       values: { a: "S1", b: "S3" },
     });
   }
-  if (cfg.s3 === cfg.s2 + 92) {
+  if (cfg.s3 === cfg.s2 + RESPONSE_TO_COOKIE) {
     out.push({
       field: "S3",
       level: "warn",

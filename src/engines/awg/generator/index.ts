@@ -37,6 +37,11 @@ import {
 import { validateGeneratedConfig } from "./validators";
 import { genAwg3, MIN_S_WITH_HEADER_PROTECTION } from "./awg3";
 import { capsFor } from "./versions";
+import {
+  INIT_TO_RESPONSE,
+  INIT_TO_COOKIE,
+  RESPONSE_TO_COOKIE,
+} from "../messageSizes";
 
 export * from "./types";
 export * from "./constants";
@@ -108,8 +113,8 @@ function liftAboveFloor(value: number, floor: number, high: number): number {
  *
  * At the ceiling the step goes down instead. The direction does not matter to
  * the rule — the collision is with one specific length, and either neighbour
- * misses it — and downwards never runs out of room, because a collision means
- * the value is at least 56 to begin with.
+ * misses it — and downwards never runs out of room, because the smallest
+ * colliding value any of the three rules can produce is 29.
  */
 export function avoidCollision(
   value: number,
@@ -148,8 +153,10 @@ interface SizeRules {
  * Apply the rules that no single parameter can satisfy alone.
  *
  * Two message types that end up the same length are one signal, and padding
- * exists precisely so they do not. `S1 + 56` is an initiation padded to a
- * response's length; `S2 + 92` is a response padded to a cookie reply's.
+ * exists precisely so they do not. There are three ways for that to happen —
+ * `S2 = S1 + 56`, `S3 = S1 + 84`, `S3 = S2 + 28` — and the offsets are derived
+ * from the message sizes rather than written out, because two of the three
+ * used to be written out wrongly.
  *
  * The 3.0 floor comes last: header protection takes its ChaCha20 nonce from
  * the first twelve bytes of padding, so nothing after it may pull a size back
@@ -173,7 +180,7 @@ function resolveSizes(drawn: Sizes, rules: SizeRules): Sizes {
     s3 = avoidCollision(
       s3,
       s3Max,
-      (v) => v === s1 + INIT_TO_RESPONSE || v === s2 + RESPONSE_TO_COOKIE,
+      (v) => v === s1 + INIT_TO_COOKIE || v === s2 + RESPONSE_TO_COOKIE,
     );
     s4 = Math.min(s4, rules.maxS4);
   }
@@ -192,7 +199,7 @@ function resolveSizes(drawn: Sizes, rules: SizeRules): Sizes {
       s3 = avoidCollision(
         s3,
         s3Max,
-        (v) => v === s1 + INIT_TO_RESPONSE || v === s2 + RESPONSE_TO_COOKIE,
+        (v) => v === s1 + INIT_TO_COOKIE || v === s2 + RESPONSE_TO_COOKIE,
       );
       s4 = Math.min(s4, rules.maxS4);
     }
@@ -212,10 +219,6 @@ function resolveJmax(jmin: number, drawn: number, version: AWGVersion): number {
   if (version === "1.0" && jmax <= 81) jmax = 82 + rnd(50, 200);
   return jmax;
 }
-
-/** Padded lengths that would make two message types indistinguishable. */
-const INIT_TO_RESPONSE = 56;
-const RESPONSE_TO_COOKIE = 92;
 
 /**
  * Generate a complete AmneziaWG obfuscation configuration.

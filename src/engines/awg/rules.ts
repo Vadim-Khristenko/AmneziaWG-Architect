@@ -21,6 +21,11 @@
 import { error, warn } from "@/shared/findings";
 import type { Finding } from "@/types/findings";
 import { parseRangeValue } from "@/shared/validation";
+import {
+  INIT_TO_RESPONSE,
+  INIT_TO_COOKIE,
+  RESPONSE_TO_COOKIE,
+} from "./messageSizes";
 
 /* ── Input ────────────────────────────────────────────────────────────────── */
 
@@ -74,10 +79,6 @@ const S4_MAX = 32; // amneziawg-tools src/config.c
 
 /** WireGuard's own message types occupy 1–4; an H value there collides. */
 const RESERVED_HEADER_MAX = 4;
-
-/** Sizes that make two message types indistinguishable by length. */
-const INIT_TO_RESPONSE = 56;
-const RESPONSE_TO_COOKIE = 92;
 
 /** A CPS chain is one or more well-formed tags, concatenated. */
 const VALID_CHAIN =
@@ -197,7 +198,7 @@ function checkSizes(p: AwgParamInput, options: AwgRuleOptions): Finding[] {
   if (s1 !== null && s2 !== null && s1 + INIT_TO_RESPONSE === s2) {
     found.push(warn("S2", "awg.size_collision", { a: "S1", b: "S2" }));
   }
-  if (s1 !== null && s3 !== null && s3 === s1 + INIT_TO_RESPONSE) {
+  if (s1 !== null && s3 !== null && s3 === s1 + INIT_TO_COOKIE) {
     found.push(warn("S3", "awg.size_collision", { a: "S1", b: "S3" }));
   }
   if (s2 !== null && s3 !== null && s3 === s2 + RESPONSE_TO_COOKIE) {

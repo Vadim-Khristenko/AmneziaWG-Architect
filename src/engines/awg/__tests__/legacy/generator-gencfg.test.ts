@@ -27,34 +27,36 @@ const baseInput: GeneratorInput = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// S1+56 collision rule
+// Padded lengths must differ between message types
+//
+// A padded message is its base size plus its own S value — init 148, response
+// 92, cookie reply 64 — so two of them collide when the S values differ by the
+// difference of the sizes. These tests used to work that out correctly in a
+// comment and then assert something else, calling it a simplified check.
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("S1+56 collision rule", () => {
-    it("s2 !== s1 + 56 across 200 iterations", () => {
+describe("padded size collisions", () => {
+    it("init and response never come out the same length", () => {
         for (let i = 0; i < 200; i++) {
             const cfg = genCfg(baseInput);
-            expect(cfg.s2).not.toBe(cfg.s1 + 56);
+            // 148 + s1 === 92 + s2  →  s2 === s1 + 56
+            expect(148 + cfg.s1).not.toBe(92 + cfg.s2);
         }
     });
 
-    it("s3 !== s1 + 56 (Init vs Cookie size collision)", () => {
+    it("init and cookie reply never come out the same length", () => {
         for (let i = 0; i < 200; i++) {
             const cfg = genCfg(baseInput);
-            // Init size = 148 + s1, Cookie size = 64 + s3
-            // Collision: 148 + s1 = 64 + s3 → s3 = s1 + 84
-            // Но мы проверяем s1 + 56 ≠ s3 (упрощённая проверка)
-            expect(cfg.s3).not.toBe(cfg.s1 + 56);
+            // 148 + s1 === 64 + s3  →  s3 === s1 + 84
+            expect(148 + cfg.s1).not.toBe(64 + cfg.s3);
         }
     });
 
-    it("s3 !== s2 + 92 (Response vs Cookie size collision)", () => {
+    it("response and cookie reply never come out the same length", () => {
         for (let i = 0; i < 200; i++) {
             const cfg = genCfg(baseInput);
-            // Response size = 92 + s2, Cookie size = 64 + s3
-            // Collision: 92 + s2 = 64 + s3 → s3 = s2 + 28
-            // Но мы проверяем s2 + 92 ≠ s3 (упрощённая проверка)
-            expect(cfg.s3).not.toBe(cfg.s2 + 92);
+            // 92 + s2 === 64 + s3  →  s3 === s2 + 28
+            expect(92 + cfg.s2).not.toBe(64 + cfg.s3);
         }
     });
 });

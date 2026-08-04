@@ -89,10 +89,11 @@ describe("AWG 3.0 S-padding floor", () => {
     for (const [s1, s2, s3] of sample()) {
       // Handshake sizes that coincide make the padding visible in the packet
       // length distribution; the generator avoids them before and after the
-      // floor is applied.
-      expect(s2).not.toBe(s1! + 56);
-      expect(s3).not.toBe(s1! + 56);
-      expect(s3).not.toBe(s2! + 92);
+      // floor is applied. Compared as padded lengths rather than as offsets,
+      // because two of the three offsets were wrong here.
+      expect(148 + s1!).not.toBe(92 + s2!);
+      expect(148 + s1!).not.toBe(64 + s3!);
+      expect(92 + s2!).not.toBe(64 + s3!);
     }
   });
 });
