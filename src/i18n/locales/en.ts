@@ -186,6 +186,44 @@ export const en: Catalog = {
   "gen.links.merge": "Refresh the obfuscation in an existing key",
   "gen.links.about": "How this differs from the button in your client",
 
+  /* ── XRay generator ───────────────────────────────────────────────────── */
+  "xg.section.setup": "Setup",
+  "xg.section.params": "Parameters",
+  "xg.section.result": "What came out",
+
+  "xg.zone.core": "Core",
+  "xg.zone.core.note": "The Xray-core version decides which parameters exist at all: VLESS Encryption, the XHTTP modes, ML-DSA-65, Hysteria.",
+  "xg.zone.donor": "REALITY donor",
+  "xg.zone.donor.note": "The site whose handshake the server is dressed as. It has to be on TLS 1.3, answer without a redirect, and not share a CDN with you.",
+  "xg.zone.layers": "Layers",
+  "xg.zone.layers.note": "Transport, security and flow. Three decisions everything else in the config follows from.",
+  "xg.zone.ids": "Keys and shortIds",
+  "xg.zone.ids.note": "The X25519 pair and the shortId set. Generated here and sent nowhere.",
+
+  "xg.group.inbound": "Inbound",
+  "xg.group.vless": "VLESS",
+  "xg.group.reality": "REALITY",
+  "xg.group.tls": "TLS",
+  "xg.group.xhttp": "XHTTP",
+  "xg.group.xmux": "xmux",
+  "xg.group.transport": "Transport",
+  "xg.group.sockopt": "Socket",
+  "xg.group.finalmask": "FinalMask",
+
+  "xg.state.generated": "chosen for you",
+  "xg.state.manual": "you set it",
+  "xg.state.missing": "not covered",
+  "xg.state.generated.hint": "Architect picks a value itself.",
+  "xg.state.manual.hint": "You supply this; inventing it for you would make a worse tool.",
+  "xg.state.missing.hint": "Not yet expressible in the current config model.",
+
+  "xg.coverage": "{done} of {total}",
+  "xg.out.server": "Server",
+  "xg.out.client": "Client",
+  "xg.out.empty": "Press Generate.",
+  "xg.act.generate": "Generate",
+  "xg.act.regenerate": "Generate again",
+
   /* ── XRay page ────────────────────────────────────────────────────────── */
   "xray.badge": "In progress",
   "xray.title": "XRay / REALITY",

@@ -186,6 +186,44 @@ export const ru = {
   "gen.links.merge": "Обновить обфускацию в готовом ключе",
   "gen.links.about": "Чем это отличается от кнопки в клиенте",
 
+  /* ── XRay generator ───────────────────────────────────────────────────── */
+  "xg.section.setup": "Настройка",
+  "xg.section.params": "Параметры",
+  "xg.section.result": "Что получилось",
+
+  "xg.zone.core": "Ядро",
+  "xg.zone.core.note": "Версия Xray-core решает, какие параметры вообще существуют: VLESS Encryption, режимы XHTTP, ML-DSA-65, Hysteria.",
+  "xg.zone.donor": "Донор REALITY",
+  "xg.zone.donor.note": "Сайт, под чьё рукопожатие маскируется сервер. Он должен быть на TLS 1.3, отвечать без редиректа и не сидеть на том же CDN, что и вы.",
+  "xg.zone.layers": "Слои",
+  "xg.zone.layers.note": "Транспорт, защита и flow. Это три решения, от которых зависит всё остальное в конфиге.",
+  "xg.zone.ids": "Ключи и shortId",
+  "xg.zone.ids.note": "X25519-пара и набор shortId. Генерируются здесь и в браузер никуда не уходят.",
+
+  "xg.group.inbound": "Входящее подключение",
+  "xg.group.vless": "VLESS",
+  "xg.group.reality": "REALITY",
+  "xg.group.tls": "TLS",
+  "xg.group.xhttp": "XHTTP",
+  "xg.group.xmux": "xmux",
+  "xg.group.transport": "Транспорт",
+  "xg.group.sockopt": "Сокет",
+  "xg.group.finalmask": "FinalMask",
+
+  "xg.state.generated": "подбирается",
+  "xg.state.manual": "задаётся",
+  "xg.state.missing": "не покрыт",
+  "xg.state.generated.hint": "Architect выбирает значение сам.",
+  "xg.state.manual.hint": "Значение задаёте вы; выдумывать его за вас было бы хуже.",
+  "xg.state.missing.hint": "Пока не выражается в текущей модели конфига.",
+
+  "xg.coverage": "{done} из {total}",
+  "xg.out.server": "Сервер",
+  "xg.out.client": "Клиент",
+  "xg.out.empty": "Нажмите «Сгенерировать».",
+  "xg.act.generate": "Сгенерировать",
+  "xg.act.regenerate": "Сгенерировать заново",
+
   /* ── XRay page ────────────────────────────────────────────────────────── */
   "xray.badge": "В работе",
   "xray.title": "XRay / REALITY",
