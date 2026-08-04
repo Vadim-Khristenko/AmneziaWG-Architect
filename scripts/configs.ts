@@ -181,11 +181,26 @@ async function sh(args: string[], quiet = true): Promise<{ code: number; out: st
  *
  * A bind mount with a path Docker cannot resolve comes up silently *empty*
  * rather than failing, so the loop inside finds no configs and reports a clean
- * pass over nothing at all. On Linux this is the identity.
+ * pass over nothing at all. Everywhere but Windows this is the identity.
+ *
+ * It used to run `cygpath` unconditionally and fall back on a non-zero exit
+ * code — which reads as safe and is not, because a missing executable makes
+ * `Bun.spawn` throw rather than exit non-zero. There is no cygpath on a Linux
+ * runner, so this threw on the first call and the whole core check never ran
+ * in CI at all.
  */
 async function hostPath(path: string): Promise<string> {
-  const converted = await sh(["cygpath", "-m", path]);
-  return converted.code === 0 && converted.out.trim() ? converted.out.trim() : path;
+  if (process.platform !== "win32") return path;
+
+  try {
+    const converted = await sh(["cygpath", "-m", path]);
+    return converted.code === 0 && converted.out.trim()
+      ? converted.out.trim()
+      : path;
+  } catch {
+    // A Windows shell without cygpath: Docker may still accept the path.
+    return path;
+  }
 }
 
 /**
