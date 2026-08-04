@@ -30,6 +30,10 @@ export interface ConfLine {
  */
 export interface RenderLabels {
   privateKey: string;
+  /** Placeholder for the peer key, which only the server operator has. */
+  peerKey: string;
+  /** What the endpoint line is for. */
+  endpoint: string;
   address: string;
   cpsClientOnly: string;
   noCps: string;
@@ -55,6 +59,8 @@ export interface RenderLabels {
 
 export const DEFAULT_LABELS: RenderLabels = {
   privateKey: "PrivateKey = <your private key>",
+  peerKey: "PublicKey = <the server public key>",
+  endpoint: "The server this connects to",
   address: "Address = 10.0.0.2/32",
   cpsClientOnly: "Client-side only in 1.5 — the server ignores these:",
   noCps: "1.0 has no CPS chain; obfuscation here is junk packets and headers",
@@ -70,6 +76,18 @@ export const DEFAULT_LABELS: RenderLabels = {
 };
 
 export interface RenderOptions {
+  /**
+   * The server this config connects to, as `host:port`.
+   *
+   * Empty by default, and then nothing is emitted: the file has always been
+   * the obfuscation block alone, pasted into a config the user already has.
+   * When it is given, a `[Peer]` section is written with the endpoint and a
+   * commented placeholder for the key — the same treatment PrivateKey and
+   * Address already get, because those are the two things this tool has never
+   * had and must never invent.
+   */
+  endpoint?: string;
+
   /**
    * Preview mode collapses the PrivateKey/Address placeholders onto one
    * comment line and is what the on-screen preview uses.
@@ -102,7 +120,7 @@ export function renderConfLines(
   cfg: AWGConfig,
   opts: RenderOptions = {},
 ): ConfLine[] {
-  const { preview = false, caption } = opts;
+  const { preview = false, caption, endpoint = "" } = opts;
   const L: RenderLabels = { ...DEFAULT_LABELS, ...opts.labels };
   const v: AWGVersion = cfg.version;
   const lines: ConfLine[] = [];
@@ -190,6 +208,21 @@ export function renderConfLines(
       lines.push(cm(`# ${L.awg3Timers}`));
       for (const [key, value] of active) lines.push(kv(key, value));
     }
+  }
+
+  /*
+   * The peer, when there is one to name. It goes last because that is where
+   * wg-quick expects it, and it carries a commented key rather than a
+   * generated one: a public key that did not come from the server it claims to
+   * belong to is worse than no line at all.
+   */
+  if (endpoint.trim()) {
+    lines.push(cm(""));
+    lines.push(cm("[Peer]"));
+    lines.push(cm(`# ${L.peerKey}`));
+    lines.push(cm(`# ${L.endpoint}`));
+    lines.push(kv("Endpoint", endpoint.trim()));
+    lines.push(kv("AllowedIPs", "0.0.0.0/0, ::/0"));
   }
 
   return lines;

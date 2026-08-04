@@ -56,6 +56,7 @@ import { useHistory } from "@/composables/useHistory";
 import { downloadText } from "@/utils/download";
 import HistoryPanel from "@/components/HistoryPanel.vue";
 import type { AwgHistoryEntry } from "@/engines/awg/history";
+import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
 import { awgParamRecord } from "@/engines/awg/generator";
 import { AWG_VERSIONS } from "@/engines/awg/generator/versions";
 import {
@@ -454,8 +455,7 @@ const {
     legacyKey: "awg-architect:history",
     /** Two generations are the same when the rendered config is the same. */
     fingerprint: (entry) => entry.text,
-    searchText: (entry) =>
-        [entry.version, entry.intensity, entry.profile].join(" "),
+    searchText: (entry) => [entry.version, entry.label1, entry.label2].join(" "),
 });
 
 const showHistory = ref(false);
@@ -465,8 +465,10 @@ function saveToHistory() {
     const awg = currentAwg.value;
     addToHistory({
         version: version.value,
-        intensity: intensity.value,
-        profile: config.profile,
+        // The panel shows two labels and does not care what they mean; here
+        // they are the entropy class and the mimicry profile.
+        label1: intensity.value,
+        label2: config.profile,
         text: plainText.value,
         params: awgParamRecord(awg),
         // Structured clone: `currentAwg` keeps mutating as the user generates.
@@ -474,14 +476,21 @@ function saveToHistory() {
     });
 }
 
-/** Put a stored config back on screen; older entries can only be copied. */
-function restoreFromHistory(entry: AwgHistoryEntry) {
-    if (entry.cfg) restoreConfig(entry.cfg);
+/**
+ * Put a stored config back on screen; older entries can only be copied.
+ *
+ * The panel hands back the shared shape, where `cfg` is `unknown` — it serves
+ * two engines and has no business knowing what either one's config looks like.
+ * This is the place that does know, so this is where the narrowing belongs.
+ */
+function restoreFromHistory(entry: GeneratorHistoryEntry) {
+    const cfg = entry.cfg as AWGConfig | undefined;
+    if (cfg) restoreConfig(cfg);
     else void copy(`h:${entry.id}`, entry.text);
     showHistory.value = false;
 }
 
-function copyHistoryEntry(entry: AwgHistoryEntry) {
+function copyHistoryEntry(entry: GeneratorHistoryEntry) {
     void copy(`h:${entry.id}`, entry.text);
 }
 
@@ -623,7 +632,25 @@ function toSimulator() {
                             </option>
                         </select>
                     </label>
-                    <label v-if="releases.length" class="field">
+                        <!--
+                        Where the tunnel actually is. Empty leaves the file as
+                        it has always been — the obfuscation block alone — and
+                        filled adds the [Peer] section it belongs in.
+                    -->
+                    <label class="field">
+                        <span class="label">
+                            {{ t("gen.endpoint.label") }}
+                            <span class="hint">{{ t("gen.endpoint.hint") }}</span>
+                        </span>
+                        <input
+                            v-model="config.endpoint"
+                            class="input input--mono"
+                            placeholder="203.0.113.10:51820"
+                            @change="generate()"
+                        />
+                    </label>
+
+                <label v-if="releases.length" class="field">
                         <span class="label">{{ t("client.releaseLabel") }}</span>
                         <select v-model="config.clientRelease" class="select" @change="generate()">
                             <option :value="null">{{ t("client.releaseCurrent") }}</option>

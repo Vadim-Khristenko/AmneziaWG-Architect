@@ -8,16 +8,14 @@
  * be stated somewhere the panel and the page can both read.
  */
 
-import type { HistoryRecord } from "@/types/history";
+import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
 import type { AWGConfig } from "./generator";
 
-export interface AwgHistoryEntry extends HistoryRecord {
-  version: string;
-  intensity: string;
-  profile: string;
-  /** The rendered `.conf`, which is what a copy puts on the clipboard. */
-  text: string;
-  params: Record<string, string | number>;
+export interface AwgHistoryEntry extends GeneratorHistoryEntry {
+  /** The entropy class, shown in the panel's first label slot. */
+  label1: string;
+  /** The mimicry profile, shown in the second. */
+  label2: string;
   /**
    * The full config, so an entry can be restored rather than only copied.
    *

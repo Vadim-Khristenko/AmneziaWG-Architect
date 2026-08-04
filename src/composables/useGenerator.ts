@@ -117,6 +117,15 @@ export function useGenerator() {
     // MTU (допустимый диапазон 576–9000; по умолчанию стандартный Ethernet)
     mtu: 1500,
 
+    /*
+     * Куда подключаться, как "host:port".
+     *
+     * Пусто по умолчанию, и тогда в файл ничего не добавляется: конфиг всегда
+     * был одним блоком обфускации, который вставляют в уже готовый. Заполнено —
+     * дописывается [Peer] с эндпоинтом и закомментированным ключом сервера.
+     */
+    endpoint: "",
+
     // Junk-train (0 = отключён, рекомендовано 3–7)
     junkLevel: 5,
 
@@ -346,6 +355,8 @@ export function useGenerator() {
       blockSizes: translate("conf.blockSizes"),
       blockJunk: translate("conf.blockJunk"),
       blockCps: translate("conf.blockCps"),
+      peerKey: translate("conf.peerKey"),
+      endpoint: translate("conf.endpoint"),
       mustMatch: translate("conf.mustMatch"),
     }),
   );
@@ -353,7 +364,7 @@ export function useGenerator() {
   const plainText = computed((): string => {
     const p = currentAwg.value;
     if (!p) return "";
-    return renderConf(p, { labels: confLabels.value });
+    return renderConf(p, { labels: confLabels.value, endpoint: config.endpoint });
   });
 
   /**
@@ -363,7 +374,7 @@ export function useGenerator() {
   const previewLines = computed(() => {
     const p = currentAwg.value;
     if (!p) return [];
-    return renderConfLines(p, { preview: true, labels: confLabels.value });
+    return renderConfLines(p, { preview: true, labels: confLabels.value, endpoint: config.endpoint });
   });
 
   /**

@@ -37,10 +37,17 @@ import {
     Globe,
     Layers as LayersIcon,
     Cpu,
+    History as HistoryIcon,
+    Server,
+    Search,
     TriangleAlert,
 } from "lucide-vue-next";
 
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
+import { useHistory } from "@/composables/useHistory";
+import HistoryPanel from "@/components/HistoryPanel.vue";
+import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
+import type { XrayHistoryEntry } from "@/engines/xray/history";
 import { downloadText } from "@/utils/download";
 import { XRAY_VERSIONS } from "@/engines/xray/versions";
 import {
@@ -49,6 +56,7 @@ import {
     xrayParamsFor,
 } from "@/engines/xray/params";
 import { createDefaults, generateXray } from "@/engines/xray/generate";
+import { validateXray } from "@/engines/xray/validate";
 import { buildServerInbound, buildClientUris } from "@/engines/xray/render";
 import type { XrayConfig, XrayInput } from "@/engines/xray/types";
 import { localizePath, useI18n } from "@/i18n";
@@ -89,7 +97,10 @@ function build() {
     config.value = generateXray(input.value);
 }
 
-onMounted(build);
+onMounted(() => {
+    loadHistory();
+    generateAndRemember();
+});
 
 /* ── The catalogue, grouped ──────────────────────────────────────────────── */
 
@@ -158,11 +169,106 @@ const groups = computed(() =>
             group,
             label: t(("xg.group." + group) as never),
             items,
+            wide: WIDE_GROUPS.has(group),
             done: coverage[group]?.done ?? 0,
             total: coverage[group]?.total ?? 0,
         };
-    }).filter((g) => g.items.length > 0),
+    }).filter((g) => g.items.length > 0 && groupApplies(g.group)),
 );
+
+/* ── What is on screen, and what is not ──────────────────────────────────── */
+
+/**
+ * A group is shown when it is in the config being produced.
+ *
+ * The first version listed all nine always, so a `raw` inbound displayed
+ * twenty-eight XHTTP parameters that were not going anywhere near the output.
+ * That is not completeness, it is noise with a coverage badge on it.
+ *
+ * Derived from the two layer choices rather than from a flag somebody has to
+ * remember to set, so a transport added later appears without this having to
+ * be edited.
+ */
+function groupApplies(group: string): boolean {
+    switch (group) {
+        case "reality":
+            return input.value.security === "reality";
+        case "tls":
+            return input.value.security === "tls";
+        case "xhttp":
+        case "xmux":
+            return input.value.transport === "xhttp";
+        case "transport":
+            // The per-transport block: gRPC, WebSocket, HTTPUpgrade. `raw` has
+            // no settings of its own and `xhttp` has its own section.
+            return !["raw", "xhttp"].includes(input.value.transport);
+        default:
+            return true;
+    }
+}
+
+/** REALITY and XHTTP carry most of the surface; they get the whole row. */
+const WIDE_GROUPS = new Set(["reality", "xhttp"]);
+
+/* ── The help drawers, as on the AmneziaWG page ──────────────────────────── */
+
+/**
+ * One open at a time, opened by the question mark, pushing the zone taller
+ * rather than covering the controls it explains.
+ */
+const openHelp = ref<string | null>(null);
+const toggleHelp = (group: string) =>
+    (openHelp.value = openHelp.value === group ? null : group);
+
+/** The catalogue's own notes, which nothing had rendered until now. */
+function helpFor(group: string) {
+    return XRAY_PARAMETERS.filter((p) => p.group === group && p.note).map((p) => ({
+        key: p.key,
+        note: t(p.note as never),
+    }));
+}
+
+/* ── The donor, checked ──────────────────────────────────────────────────── */
+
+/**
+ * Is the donor reachable from here?
+ *
+ * The same check the AmneziaWG page runs on a mimicry host. It answers one
+ * question — whether the name resolves and answers — and not the ones that
+ * decide whether a donor is any good: TLS 1.3, HTTP/2, no redirect, and not
+ * sharing a CDN with your own server. A browser cannot see those, and
+ * pretending otherwise would be worse than saying so.
+ */
+const donorStatus = ref<"" | "checking" | "ok" | "blocked">("");
+
+const donorLabel = computed(() =>
+    donorStatus.value ? t(("xg.donor." + donorStatus.value) as never) : "",
+);
+
+async function checkDonor() {
+    const host = input.value.dest.split(":")[0]?.trim();
+    if (!host) return;
+
+    donorStatus.value = "checking";
+    const { isKnownBlocked, checkDomain } = await import("@/utils/domainCheck");
+
+    if (isKnownBlocked(host)) {
+        donorStatus.value = "blocked";
+        return;
+    }
+    const result = await checkDomain(host);
+    donorStatus.value = result.accessible ? "ok" : "blocked";
+}
+
+/** The donor/SNI warning, surfaced where the mistake is made. */
+const sniMismatch = computed(() => {
+    if (!config.value) return "";
+    const finding = validateXray(config.value).find(
+        (f) => f.code === "xray.sni_dest_mismatch",
+    );
+    if (!finding) return "";
+    return t("find.xray.sni_dest_mismatch" as never, finding.values ?? {});
+});
 
 /* ── Output ──────────────────────────────────────────────────────────────── */
 
@@ -179,37 +285,59 @@ const hasConfig = computed(() => config.value !== null);
 /* ── What each parameter is actually worth right now ─────────────────────── */
 
 /**
- * Every leaf of the produced inbound, keyed by its own name.
+ * Every leaf of the produced inbound, with the path it was found at.
  *
  * The catalogue names a parameter the way the core spells it — `shortIds`,
  * `xPaddingBytes`, `tcpcongestion` — and the config nests them differently in
- * every section. Matching on the leaf name rather than the path means a
- * parameter finds its value wherever the renderer decided to put it, and a
- * parameter with no value simply has none to show.
+ * every section, so the lookup is by leaf name. The path comes along because
+ * the result panel groups by it: `streamSettings.…` is transport and security,
+ * `sockopt.…` is the socket, and the rest is the inbound itself.
+ *
+ * An array of objects contributes its contents and not itself. Stringifying
+ * one produced `clients: [object Object]`, which is not a value anybody can
+ * copy or read.
  */
-function leafValues(value: unknown, out: Record<string, string> = {}) {
-    if (value === null || value === undefined) return out;
-    if (Array.isArray(value)) {
-        for (const v of value) leafValues(v, out);
-        return out;
-    }
-    if (typeof value === "object") {
-        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-            if (v !== null && typeof v === "object" && !Array.isArray(v)) {
-                leafValues(v, out);
-            } else if (Array.isArray(v)) {
-                out[k] = v.map((x) => String(x)).join(", ");
-                leafValues(v, out);
-            } else {
-                out[k] = String(v);
-            }
-        }
-    }
-    return out;
+interface Leaf {
+    key: string;
+    value: string;
+    path: string;
 }
 
+function collectLeaves(value: unknown, path: string, out: Leaf[]): void {
+    if (value === null || value === undefined) return;
+
+    if (Array.isArray(value)) {
+        const scalars = value.every((v) => v === null || typeof v !== "object");
+        if (scalars) {
+            const key = path.slice(path.lastIndexOf(".") + 1);
+            out.push({ key, value: value.map((v) => String(v)).join(", "), path });
+        } else {
+            for (const v of value) collectLeaves(v, path, out);
+        }
+        return;
+    }
+
+    if (typeof value === "object") {
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+            collectLeaves(v, path ? `${path}.${k}` : k, out);
+        }
+        return;
+    }
+
+    const key = path.slice(path.lastIndexOf(".") + 1);
+    out.push({ key, value: String(value), path });
+}
+
+const serverLeaves = computed<Leaf[]>(() => {
+    if (!config.value) return [];
+    const out: Leaf[] = [];
+    collectLeaves(buildServerInbound(config.value), "", out);
+    return out;
+});
+
+/** Name to value, for the catalogue tiles. */
 const serverValues = computed(() =>
-    config.value ? leafValues(buildServerInbound(config.value)) : {},
+    Object.fromEntries(serverLeaves.value.map((l) => [l.key, l.value])),
 );
 
 /**
@@ -271,26 +399,139 @@ const wholeText = computed(() =>
  * query the link carries, which is what a person pasting one field at a time
  * into a client app is actually looking for.
  */
-const outRows = computed(() => {
+const outGroups = computed(() => {
     if (outView.value === "server") {
-        return Object.entries(serverValues.value).map(([key, value]) => ({ key, value }));
+        /*
+         * By where the value lives in the file. A flat list of forty leaves is
+         * a wall; the same forty under three headings are three short lists,
+         * and the headings are the config's own structure rather than an
+         * arrangement invented for the panel.
+         */
+        const bucket = (path: string) =>
+            path.startsWith("streamSettings.sockopt")
+                ? "socket"
+                : path.startsWith("streamSettings")
+                  ? "stream"
+                  : "server";
+
+        const order = ["server", "stream", "socket"] as const;
+        return order
+            .map((id) => ({
+                id,
+                label: t(("xg.result.group." + id) as never),
+                rows: serverLeaves.value
+                    .filter((l) => bucket(l.path) === id)
+                    .map((l) => ({ key: l.key, value: l.value })),
+            }))
+            .filter((g) => g.rows.length > 0);
     }
+
     const uri = clientUris.value[0];
     if (!uri) return [];
 
-    const rows: { key: string; value: string }[] = [];
     const at = uri.indexOf("?");
     const head = at === -1 ? uri : uri.slice(0, at);
-    rows.push({ key: "uri", value: head });
+    const groups = [
+        {
+            id: "link",
+            label: t("xg.result.group.link" as never),
+            rows: [{ key: "uri", value: head }],
+        },
+    ];
 
     if (at !== -1) {
+        const rows: { key: string; value: string }[] = [];
         for (const pair of uri.slice(at + 1).split("&")) {
             const [k, v = ""] = pair.split("=");
             if (k) rows.push({ key: k, value: decodeURIComponent(v) });
         }
+        groups.push({
+            id: "query",
+            label: t("xg.result.group.query" as never),
+            rows,
+        });
     }
-    return rows;
+    return groups;
 });
+
+/* ── History ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Its own key, so the two engines never mix: a config restored into the wrong
+ * generator is worse than one that was never saved.
+ */
+const {
+    entries: historyEntries,
+    visible: historyVisible,
+    query: historyQuery,
+    load: loadHistory,
+    add: addToHistory,
+    remove: removeHistoryEntry,
+    clear: clearHistory,
+    setPinned: setHistoryPinned,
+    setNote: setHistoryNote,
+    toJson: historyToJson,
+    fromJson: historyFromJson,
+} = useHistory<XrayHistoryEntry>({
+    engineId: "xray",
+    /** Two generations are the same when the rendered server config is. */
+    fingerprint: (entry) => entry.text,
+    searchText: (entry) => [entry.version, entry.label1, entry.label2].join(" "),
+});
+
+const showHistory = ref(false);
+
+function saveToHistory() {
+    const cfg = config.value;
+    if (!cfg) return;
+
+    addToHistory({
+        version: input.value.version,
+        label1: input.value.security,
+        label2: input.value.transport,
+        text: serverJson.value,
+        // Flattened: the panel shows a parameter list, and the config is three
+        // levels deep in places.
+        params: Object.fromEntries(serverLeaves.value.map((l) => [l.key, l.value])),
+        cfg: JSON.parse(JSON.stringify(cfg)) as XrayConfig,
+    });
+}
+
+/**
+ * Put a stored config back on screen.
+ *
+ * The stored object is the *output*, not the input, so what can be restored is
+ * the view of it. Reconstructing the settings that produced it would mean
+ * inferring inputs from outputs, and the two are not in one-to-one
+ * correspondence — a config carries the values, not the reasons.
+ */
+function restoreFromHistory(entry: GeneratorHistoryEntry) {
+    const cfg = entry.cfg as XrayConfig | undefined;
+    if (cfg) config.value = cfg;
+    else void copy(`h:${entry.id}`, entry.text);
+    showHistory.value = false;
+}
+
+function copyHistoryEntry(entry: GeneratorHistoryEntry) {
+    void copy(`h:${entry.id}`, entry.text);
+}
+
+function exportHistory() {
+    downloadText(
+        `xray-history-${new Date().toISOString().slice(0, 10)}.json`,
+        historyToJson(),
+    );
+}
+
+async function importHistory(file: File) {
+    historyFromJson(await file.text());
+}
+
+/** Generate, then remember. One action from the reader's side. */
+function generateAndRemember() {
+    build();
+    saveToHistory();
+}
 
 function copyRow(key: string, value: string) {
     void copy("r:" + key, value);
@@ -337,12 +578,81 @@ function setServerNames(event: Event) {
                 </div>
                 <h1 class="gen-name">{{ t("brand.main") }}</h1>
             </div>
+
+            <button
+                class="btn btn--ghost"
+                :class="{ 'is-active': showHistory }"
+                :aria-expanded="showHistory"
+                @click="showHistory = !showHistory"
+            >
+                <HistoryIcon :size="16" />
+                {{ t("gen.act.history") }}
+                <span v-if="historyEntries.length" class="badge">
+                    {{ historyEntries.length }}
+                </span>
+            </button>
         </header>
+
+        <transition name="expand">
+            <HistoryPanel
+                v-if="showHistory"
+                :entries="historyEntries"
+                :visible="historyVisible"
+                :query="historyQuery"
+                :marked-key="null"
+                @update:query="historyQuery = $event"
+                @restore="restoreFromHistory"
+                @copy="copyHistoryEntry"
+                @remove="removeHistoryEntry"
+                @pin="setHistoryPinned"
+                @note="setHistoryNote"
+                @clear="clearHistory"
+                @export="exportHistory"
+                @import="importHistory"
+            />
+        </transition>
 
         <!-- ══ Setup ═══════════════════════════════════════════════════ -->
         <h2 class="gen-section">{{ t("xg.section.setup") }}</h2>
 
         <div class="gen-zones">
+            <!--
+                Our server and the donor are opposite things and were in the
+                same box: the address is where the tunnel actually is, the
+                donor is a site we have nothing to do with and are dressing up
+                as. Putting them together invited exactly the confusion of
+                thinking one had to be the other.
+            -->
+            <section class="zone gen-span-4">
+                <div class="zone-head">
+                    <Server :size="15" class="zone-icon" />
+                    <span class="zone-title">{{ t("xg.zone.server") }}</span>
+                </div>
+                <p class="zone-note">{{ t("xg.zone.server.note") }}</p>
+                <div class="zone-body xg-layers">
+                    <label class="field">
+                        <span class="label">{{ t("xg.field.address") }}</span>
+                        <input
+                            v-model="input.address"
+                            class="input input--mono"
+                            placeholder="203.0.113.10"
+                            @change="build"
+                        />
+                    </label>
+                    <label class="field">
+                        <span class="label">{{ t("xg.field.port") }}</span>
+                        <input
+                            v-model.number="input.port"
+                            class="input input--mono"
+                            type="number"
+                            min="1"
+                            max="65535"
+                            @change="build"
+                        />
+                    </label>
+                </div>
+            </section>
+
             <section class="zone gen-span-4">
                 <div class="zone-head">
                     <Cpu :size="15" class="zone-icon" />
@@ -360,42 +670,7 @@ function setServerNames(event: Event) {
                 </div>
             </section>
 
-            <section class="zone gen-span-8">
-                <div class="zone-head">
-                    <Globe :size="15" class="zone-icon" />
-                    <span class="zone-title">{{ t("xg.zone.donor") }}</span>
-                </div>
-                <p class="zone-note">{{ t("xg.zone.donor.note") }}</p>
-                <div class="zone-body xg-donor">
-                    <label class="field">
-                        <span class="label">address</span>
-                        <input
-                            v-model="input.address"
-                            class="input input--mono"
-                            placeholder="203.0.113.10"
-                            @change="build"
-                        />
-                    </label>
-                    <label class="field">
-                        <span class="label">dest</span>
-                        <input
-                            v-model="input.dest"
-                            class="input input--mono"
-                            @change="build"
-                        />
-                    </label>
-                    <label class="field">
-                        <span class="label">serverNames</span>
-                        <input
-                            :value="input.serverNames.join(', ')"
-                            class="input input--mono"
-                            @change="setServerNames"
-                        />
-                    </label>
-                </div>
-            </section>
-
-            <section class="zone gen-span-6">
+            <section class="zone gen-span-4">
                 <div class="zone-head">
                     <LayersIcon :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.layers") }}</span>
@@ -429,7 +704,63 @@ function setServerNames(event: Event) {
                 </div>
             </section>
 
-            <section class="zone gen-span-6">
+            <!-- Only when REALITY is the security in play. -->
+            <section v-if="input.security === 'reality'" class="zone gen-span-8">
+                <div class="zone-head">
+                    <Globe :size="15" class="zone-icon" />
+                    <span class="zone-title">{{ t("xg.zone.donor") }}</span>
+                    <span class="zone-aside">
+                        <span
+                            v-if="donorStatus"
+                            class="badge"
+                            :class="donorStatus === 'ok' ? 'badge--ok' : 'badge--bad'"
+                        >
+                            {{ donorLabel }}
+                        </span>
+                    </span>
+                </div>
+                <p class="zone-note">{{ t("xg.zone.donor.note") }}</p>
+                <div class="zone-body xg-donor">
+                    <label class="field">
+                        <span class="label">dest</span>
+                        <div class="inputgroup">
+                            <input
+                                v-model="input.dest"
+                                class="input input--mono"
+                                @change="build"
+                            />
+                            <button
+                                class="btn btn--secondary btn--sm"
+                                :data-tooltip="t('gen.host.check')"
+                                @click="checkDonor"
+                            >
+                                <Search :size="14" />
+                            </button>
+                        </div>
+                    </label>
+                    <label class="field">
+                        <span class="label">serverNames</span>
+                        <input
+                            :value="input.serverNames.join(', ')"
+                            class="input input--mono"
+                            @change="setServerNames"
+                        />
+                    </label>
+                </div>
+
+                <!--
+                    The one mistake in this section that burns a server, said
+                    where it is made rather than left to the findings list.
+                -->
+                <div v-if="sniMismatch" class="zone-help">
+                    <div class="note note--warn">
+                        <TriangleAlert :size="15" class="note-icon" />
+                        <span>{{ sniMismatch }}</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="zone gen-span-4">
                 <div class="zone-head">
                     <KeyRound :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.ids") }}</span>
@@ -474,17 +805,32 @@ function setServerNames(event: Event) {
             </section>
         </div>
 
+
         <!-- ══ Every parameter, and where it stands ════════════════════ -->
         <h2 class="gen-section">{{ t("xg.section.params") }}</h2>
 
         <div class="gen-zones">
-            <section v-for="g in groups" :key="g.group" class="zone gen-span-6">
+            <section
+                v-for="g in groups"
+                :key="g.group"
+                class="zone"
+                :class="g.wide ? 'gen-span-12' : 'gen-span-6'"
+            >
                 <div class="zone-head">
                     <span class="zone-title">{{ g.label }}</span>
                     <span class="zone-aside">
                         <span class="badge">
                             {{ t("xg.coverage", { done: g.done, total: g.total }) }}
                         </span>
+                        <button
+                            class="help-btn"
+                            :class="{ 'is-on': openHelp === g.group }"
+                            :data-tooltip="t('gen.help.open')"
+                            :aria-expanded="openHelp === g.group"
+                            @click="toggleHelp(g.group)"
+                        >
+                            ?
+                        </button>
                     </span>
                 </div>
 
@@ -533,12 +879,27 @@ function setServerNames(event: Event) {
                         </div>
                     </div>
                 </div>
+
+                <div class="disclose" :class="{ 'is-open': openHelp === g.group }">
+                    <div>
+                        <div class="zone-help">
+                            <div
+                                v-for="h in helpFor(g.group)"
+                                :key="h.key"
+                                class="zone-help-item"
+                            >
+                                <span class="zone-help-key">{{ h.key }}</span>
+                                <span>{{ h.note }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
 
         <!-- ══ Actions ═════════════════════════════════════════════════ -->
         <div class="strip gen-actions">
-            <button class="btn btn--primary btn--lg" @click="build">
+            <button class="btn btn--primary btn--lg" @click="generateAndRemember">
                 <Sparkles :size="16" />
                 {{ hasConfig ? t("xg.act.regenerate") : t("xg.act.generate") }}
             </button>
@@ -605,19 +966,32 @@ function setServerNames(event: Event) {
                     <span>{{ t("xg.out.needAddress") }}</span>
                 </div>
 
-                <div v-else-if="outDetail === 'one'" class="gen-tiles">
-                    <button
-                        v-for="row in outRows"
-                        :key="row.key"
-                        class="gen-tile xg-copyable"
-                        :data-tooltip="t('gen.params.copyHint')"
-                        @click="copyRow(row.key, row.value)"
-                    >
-                        <span class="gen-tile-key">{{ row.key }}</span>
-                        <span class="gen-tile-val">{{ row.value }}</span>
-                        <Check v-if="isCopied('r:' + row.key)" :size="13" class="xg-copy-ok" />
-                        <Copy v-else :size="13" class="xg-copy" />
-                    </button>
+                <div v-else-if="outDetail === 'one'" class="gen-groups">
+                    <section v-for="g in outGroups" :key="g.id" class="gen-group">
+                        <h3 class="gen-group-head">
+                            <span class="gen-group-name">{{ g.label }}</span>
+                            <span class="gen-group-rule"></span>
+                            <span class="gen-group-count">{{ g.rows.length }}</span>
+                        </h3>
+                        <div class="gen-tiles">
+                            <button
+                                v-for="row in g.rows"
+                                :key="g.id + row.key"
+                                class="gen-tile xg-copyable"
+                                :data-tooltip="t('gen.params.copyHint')"
+                                @click="copyRow(g.id + row.key, row.value)"
+                            >
+                                <span class="gen-tile-key">{{ row.key }}</span>
+                                <span class="gen-tile-val">{{ row.value }}</span>
+                                <Check
+                                    v-if="isCopied('r:' + g.id + row.key)"
+                                    :size="13"
+                                    class="xg-copy-ok"
+                                />
+                                <Copy v-else :size="13" class="xg-copy" />
+                            </button>
+                        </div>
+                    </section>
                 </div>
 
                 <pre v-else class="well gen-out">{{ wholeText }}</pre>
@@ -739,6 +1113,10 @@ function setServerNames(event: Event) {
 
 .gen-span-8 {
     grid-column: span 8;
+}
+
+.gen-span-12 {
+    grid-column: 1 / -1;
 }
 
 .xg-donor,
@@ -897,6 +1275,46 @@ function setServerNames(event: Event) {
     opacity: 0.4;
 }
 
+/* ── Grouped result ───────────────────────────────────────────────────── */
+
+.gen-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-6);
+    max-height: 560px;
+    overflow: auto;
+    padding-right: var(--sp-2);
+}
+
+/* A drawn division rather than a bolder line of text. */
+.gen-group-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: 0 0 var(--sp-3);
+}
+
+.gen-group-name {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    white-space: nowrap;
+}
+
+.gen-group-rule {
+    flex: 1;
+    height: var(--rule);
+    background: var(--line-faint);
+}
+
+.gen-group-count {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    color: var(--ink-3);
+}
+
 /* ── Actions and output ───────────────────────────────────────────────── */
 
 .gen-actions {
@@ -944,7 +1362,8 @@ function setServerNames(event: Event) {
 @media (max-width: 900px) {
     .gen-span-4,
     .gen-span-6,
-    .gen-span-8 {
+    .gen-span-8,
+    .gen-span-12 {
         grid-column: 1 / -1;
     }
 }

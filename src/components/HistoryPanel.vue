@@ -31,13 +31,13 @@ import {
 } from "lucide-vue-next";
 
 import { useI18n } from "@/i18n";
-import type { AwgHistoryEntry } from "@/engines/awg/history";
+import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
 
 const props = defineProps<{
     /** Everything stored, which is what the count and the empty state read. */
-    entries: readonly AwgHistoryEntry[];
+    entries: readonly GeneratorHistoryEntry[];
     /** What the query leaves, pinned first. */
-    visible: readonly AwgHistoryEntry[];
+    visible: readonly GeneratorHistoryEntry[];
     query: string;
     /** The page's currently-marked copy key, or null. */
     markedKey: string | null;
@@ -45,8 +45,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "update:query", value: string): void;
-    (e: "restore", entry: AwgHistoryEntry): void;
-    (e: "copy", entry: AwgHistoryEntry): void;
+    (e: "restore", entry: GeneratorHistoryEntry): void;
+    (e: "copy", entry: GeneratorHistoryEntry): void;
     (e: "remove", id: number): void;
     (e: "pin", id: number, pinned: boolean): void;
     (e: "note", id: number, text: string): void;
@@ -74,7 +74,7 @@ function registerNoteInput(id: number, el: unknown) {
  * Opening a field the user then has to click into is two actions where they
  * asked for one.
  */
-function toggleNote(entry: AwgHistoryEntry) {
+function toggleNote(entry: GeneratorHistoryEntry) {
     noteOpen.value = noteOpen.value === entry.id ? null : entry.id;
     if (noteOpen.value === entry.id) {
         void nextTick(() => noteInputs.get(entry.id)?.focus());
@@ -208,10 +208,10 @@ function formatTime(ts: number): string {
                                             entry.version
                                         }}</span>
                                         <span class="history-entry-tag">{{
-                                            entry.intensity
+                                            entry.label1
                                         }}</span>
                                         <span class="history-entry-tag">{{
-                                            entry.profile
+                                            entry.label2
                                         }}</span>
                                     </span>
                                 </div>
