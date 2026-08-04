@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/github-preview.png" alt="AmneziaWG Architect" width="100%">
+<img src=".github/assets/github-preview.png" alt="Any Tech Architect" width="100%">
 
 **Русский** · [English](README.en.md)
 

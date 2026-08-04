@@ -236,6 +236,31 @@ export function title(cx, y, left, right, T, size = 96) {
   </g>`;
 }
 
+/**
+ * The brand lockup: a small tracked qualifier over one large name.
+ *
+ * The two-part `title` sets both halves on one line at one size, which is
+ * right for "MERGE KEYS" and wrong for "Any Tech ARCHITECT" — there the first
+ * part is a qualifier and the second is the name, and giving them equal weight
+ * makes the product sound as though it is called all three words.
+ */
+export function lockup(cx, y, pre, name, T, size = 96) {
+  const preSize = Math.round(size * 0.2);
+  const common = `text-anchor="middle" font-family="${FAMILY.display}" font-size="${size}" letter-spacing="-1"`;
+  const body = (fill, extra = "") =>
+    `<text x="${cx}" y="${y}" ${common} ${extra} fill="${fill}">${esc(name)}</text>`;
+
+  return `
+  <g>
+    <text x="${cx}" y="${y - size * 0.86}" text-anchor="middle"
+      font-family="${FAMILY.mono}" font-size="${preSize}"
+      letter-spacing="${(preSize * 0.42).toFixed(1)}"
+      fill="${T.textSub}">${esc(pre.toUpperCase())}</text>
+    ${body(T.accent, `filter="url(#softGlow)" opacity="0.5"`)}
+    ${body("url(#titleFade)")}
+  </g>`;
+}
+
 export function subtitle(cx, y, text, T, size = 30) {
   return `<text x="${cx}" y="${y}" text-anchor="middle"
     font-family="${FAMILY.body}" font-size="${size}" fill="${T.textBody}"

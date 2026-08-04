@@ -60,7 +60,7 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "AmneziaWG Architect — генератор конфигураций",
       ogDescription:
         "Обфускация AmneziaWG 1.0–3.0: junk-пакеты, магические заголовки, профили мимикрии QUIC/TLS/DTLS/SIP и защита заголовков ChaCha20.",
-      ogImage: "og-image.png",
+      ogImage: "og-amneziawg.png",
       keywords:
         "AmneziaWG, AmneziaWG 3.0, обход блокировок, DPI, WireGuard, обфускация, генератор конфигов, VPN, Jc, Jmin, Jmax, HeaderProtectionKey",
     },
@@ -71,30 +71,30 @@ export const ROUTE_SEO: SeoTable = {
       ogTitle: "AmneziaWG Architect — config generator",
       ogDescription:
         "AmneziaWG 1.0–3.0 obfuscation: junk packets, magic headers, QUIC/TLS/DTLS/SIP mimicry profiles and ChaCha20 header protection.",
-      ogImage: "og-image-en.png",
+      ogImage: "og-amneziawg-en.png",
       keywords:
         "AmneziaWG, AmneziaWG 3.0, DPI bypass, WireGuard, obfuscation, config generator, VPN, censorship circumvention, HeaderProtectionKey",
     },
   },
   xray: {
     ru: {
-      title: "XRay / REALITY — Any Tech ARCHITECT",
+      title: "XRay ARCHITECT — генератор конфигураций XRay / REALITY",
       description:
         "Движок XRay/REALITY: ключи X25519 и shortIds, ML-DSA-65, DSL шифрования VLESS, транспорты XHTTP, отпечатки браузеров и FinalMask. Проверен против выпущенных ядер Xray. Интерфейс собирается.",
       ogTitle: "XRay / REALITY — в работе",
       ogDescription:
         "Движок написан и покрыт тестами против выпущенных ядер. Интерфейс к нему ещё собирается — здесь видно, что уже готово, а чего пока нет.",
-      ogImage: "og-image.png",
+      ogImage: "og-xray.png",
       keywords: "XRay, REALITY, VLESS, XHTTP, ML-DSA-65, fingerprint, обход блокировок",
     },
     en: {
-      title: "XRay / REALITY — Any Tech ARCHITECT",
+      title: "XRay ARCHITECT — XRay / REALITY config generator",
       description:
         "The XRay/REALITY engine: X25519 keys and shortIds, ML-DSA-65, the VLESS encryption DSL, XHTTP transports, browser fingerprints and FinalMask. Tested against released Xray cores. The interface is being built.",
       ogTitle: "XRay / REALITY — in progress",
       ogDescription:
         "The engine is written and tested against released cores. The interface to it is still being built; this page states what is done and what is not.",
-      ogImage: "og-image-en.png",
+      ogImage: "og-xray-en.png",
       keywords: "XRay, REALITY, VLESS, XHTTP, ML-DSA-65, fingerprint, censorship circumvention",
     },
   },
