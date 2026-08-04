@@ -44,6 +44,7 @@ export const theme = ref<ThemeChoice>("system");
 const PAGE_ACCENT: Record<string, Accent> = {
   home: "amber",
   amneziawg: "amber",
+  newawg: "amber",
   xray: "blue",
   faq: "teal",
   about: "gold",

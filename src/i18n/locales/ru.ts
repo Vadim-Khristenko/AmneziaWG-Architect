@@ -100,6 +100,47 @@ export const ru = {
     "Сорок четыре ответа: что делает каждый параметр и что проверять, когда туннель не поднимается.",
   "landing.more.about": "Чем это отличается от кнопки «сгенерировать» в клиенте.",
 
+  /* ── Generator, new layout ────────────────────────────────────────────── */
+  "gen.sheet.title": "Лист конфигурации",
+  "gen.zone.junk": "Junk-поезд",
+  "gen.zone.sizes": "Размеры пакетов",
+  "gen.zone.headers": "Заголовки",
+  "gen.zone.cps": "Цепочка CPS",
+  "gen.zone.awg3": "Параметры 3.0",
+  "gen.zone.mimic": "Профиль мимикрии",
+  "gen.zone.target": "Куда поедет конфиг",
+
+  "gen.junk.handshake": "рукопожатие",
+  "gen.junk.none": "поезда нет",
+  "gen.junk.count": "пакетов перед рукопожатием",
+  "gen.junk.ask": "Запрошено",
+  "gen.headers.rule": "Диапазоны не должны пересекаться. Здесь это видно.",
+  "gen.headers.clash": "Пересекаются",
+  "gen.headers.ok": "Не пересекаются",
+  "gen.sizes.floor": "Порог 12 байт при защите заголовков",
+
+  "gen.help.open": "Что это за параметры",
+  "gen.reroll": "Перебросить",
+  "gen.reroll.hint": "Пересобрать только эту группу",
+
+  "gen.act.generate": "Сгенерировать",
+  "gen.act.regenerate": "Сгенерировать заново",
+  "gen.act.batch": "Сразу несколько",
+  "gen.act.history": "История",
+  "gen.act.simulator": "Открыть в симуляторе",
+
+  "gen.out.title": "Готовая конфигурация",
+  "gen.out.empty": "Пока пусто. Выберите версию и нажмите «Сгенерировать».",
+  "gen.out.copyConf": "Копировать .conf",
+  "gen.out.downloadConf": "Скачать .conf",
+  "gen.out.copyJson": "Копировать JSON",
+  "gen.out.downloadJson": "Скачать JSON",
+
+  "gen.links.title": "Если что-то не сходится",
+  "gen.links.faq": "Что делает каждый параметр",
+  "gen.links.merge": "Обновить обфускацию в готовом ключе",
+  "gen.links.about": "Чем это отличается от кнопки в клиенте",
+
   /* ── XRay page ────────────────────────────────────────────────────────── */
   "xray.badge": "В работе",
   "xray.title": "XRay / REALITY",
@@ -940,6 +981,8 @@ export const ru = {
 
   /* ── Client releases ──────────────────────────────────────────────────── */
   "client.release.upTo": "до {version}",
+  "client.releaseLabel": "Сборка клиента",
+  "client.releaseCurrent": "Текущая",
 
 
   /* ── Parameter notes ──────────────────────────────────────────────────── */

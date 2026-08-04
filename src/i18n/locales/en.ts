@@ -100,6 +100,47 @@ export const en: Catalog = {
     "Forty-four answers: what each parameter does, and what to check when the tunnel will not come up.",
   "landing.more.about": "How this differs from the generate button in your client.",
 
+  /* ── Generator, new layout ────────────────────────────────────────────── */
+  "gen.sheet.title": "Configuration sheet",
+  "gen.zone.junk": "Junk train",
+  "gen.zone.sizes": "Packet sizes",
+  "gen.zone.headers": "Headers",
+  "gen.zone.cps": "CPS chain",
+  "gen.zone.awg3": "3.0 parameters",
+  "gen.zone.mimic": "Mimicry profile",
+  "gen.zone.target": "Where this config is going",
+
+  "gen.junk.handshake": "handshake",
+  "gen.junk.none": "no train",
+  "gen.junk.count": "packets before the handshake",
+  "gen.junk.ask": "Asked for",
+  "gen.headers.rule": "The ranges must not overlap. Here you can see it.",
+  "gen.headers.clash": "Overlapping",
+  "gen.headers.ok": "No overlap",
+  "gen.sizes.floor": "12-byte floor with header protection on",
+
+  "gen.help.open": "What these parameters are",
+  "gen.reroll": "Re-roll",
+  "gen.reroll.hint": "Rebuild this group only",
+
+  "gen.act.generate": "Generate",
+  "gen.act.regenerate": "Generate again",
+  "gen.act.batch": "Several at once",
+  "gen.act.history": "History",
+  "gen.act.simulator": "Open in the simulator",
+
+  "gen.out.title": "The configuration",
+  "gen.out.empty": "Nothing yet. Pick a version and press Generate.",
+  "gen.out.copyConf": "Copy .conf",
+  "gen.out.downloadConf": "Download .conf",
+  "gen.out.copyJson": "Copy JSON",
+  "gen.out.downloadJson": "Download JSON",
+
+  "gen.links.title": "If something does not add up",
+  "gen.links.faq": "What each parameter does",
+  "gen.links.merge": "Refresh the obfuscation in an existing key",
+  "gen.links.about": "How this differs from the button in your client",
+
   /* ── XRay page ────────────────────────────────────────────────────────── */
   "xray.badge": "In progress",
   "xray.title": "XRay / REALITY",
@@ -927,6 +968,8 @@ export const en: Catalog = {
 
   /* ── Client releases ──────────────────────────────────────────────────── */
   "client.release.upTo": "up to {version}",
+  "client.releaseLabel": "Client build",
+  "client.releaseCurrent": "Current",
 
 
   /* ── Parameter notes ──────────────────────────────────────────────────── */

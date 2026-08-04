@@ -74,6 +74,14 @@ const BASE_ROUTES: BaseRoute[] = [
     name: "amneziawg",
     component: () => import("@/views/HomeView.vue"),
   },
+  // A sketch of the redesigned generator, standing beside the current page so
+  // the two can be compared. It replaces /amneziawg or it goes; either way
+  // this entry does not survive the decision.
+  {
+    path: "/newawg",
+    name: "newawg",
+    component: () => import("@/views/NewAwgView.vue"),
+  },
   {
     path: "/xray",
     name: "xray",
