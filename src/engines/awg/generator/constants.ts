@@ -3,6 +3,7 @@
  */
 
 import type { BrowserProfile, BfpSlot, MimicProfile } from "./types";
+import { SIZED_FINGERPRINTS, type SizeRange } from "@/shared/fingerprints";
 
 export const YANDEX_UNSTABLE_PROFILES: BrowserProfile[] = [
   "yandex_desktop",
@@ -25,67 +26,15 @@ export const PROFILE_LABELS: Record<MimicProfile, string> = {
 
 
 /**
- * Browser Fingerprint (BFP) — таблицы реальных размеров UDP payload.
+ * Browser fingerprints now live in `shared/fingerprints.ts`, beside the uTLS
+ * profiles XRay needs, because a browser is one object with two facets rather
+ * than two lists that happen to share names.
  *
- * Слоты:
- *   qi   — QUIC Initial
- *   q0   — QUIC 0-RTT Early Data
- *   h3   — HTTP/3 DATA-пакеты после хендшейка
- *   tls  — TLS 1.3 Client Hello
- *   nx   — WireGuard Noise_IK Initiation
- *   dtls — DTLS 1.2/1.3 Client Hello
- *
- * Формат: [min, max] байт UDP payload (без UDP/IP заголовков).
+ * This alias is what is left of the table that used to be here. It reads the
+ * registry, so a browser added there is immediately selectable for AmneziaWG
+ * instead of having to be added twice.
  */
-type BfpTable = Record<BfpSlot, [number, number]>;
+export const BFP: Record<string, Record<BfpSlot, SizeRange>> = Object.fromEntries(
+  SIZED_FINGERPRINTS.map((b) => [b.id, b.sizes!]),
+);
 
-export const BFP: Record<string, BfpTable> = {
-  chrome: {
-    qi: [1250, 1250],
-    q0: [1250, 1350],
-    h3: [1250, 1350],
-    tls: [512, 800],
-    nx: [1200, 1250],
-    dtls: [1100, 1200],
-  },
-  edge: {
-    qi: [1250, 1250],
-    q0: [1250, 1350],
-    h3: [1250, 1350],
-    tls: [512, 800],
-    nx: [1200, 1250],
-    dtls: [1100, 1200],
-  },
-  firefox: {
-    qi: [1200, 1252],
-    q0: [1200, 1300],
-    h3: [1200, 1350],
-    tls: [512, 700],
-    nx: [1200, 1250],
-    dtls: [1050, 1200],
-  },
-  safari: {
-    qi: [1250, 1252],
-    q0: [1250, 1300],
-    h3: [1250, 1350],
-    tls: [512, 750],
-    nx: [1200, 1250],
-    dtls: [1100, 1200],
-  },
-  yandex_desktop: {
-    qi: [1250, 1250],
-    q0: [1250, 1350],
-    h3: [1350, 1350],
-    tls: [512, 800],
-    nx: [1200, 1250],
-    dtls: [1100, 1200],
-  },
-  yandex_mobile: {
-    qi: [1232, 1232],
-    q0: [1250, 1350],
-    h3: [1350, 1350],
-    tls: [512, 800],
-    nx: [1200, 1250],
-    dtls: [1100, 1200],
-  },
-};

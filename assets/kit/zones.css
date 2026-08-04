@@ -53,6 +53,23 @@
     gap: var(--sp-2);
 }
 
+/*
+ * What the zone carries, in one line under its title.
+ *
+ * A title names a group; it does not say why the group exists or what you are
+ * looking at. Every zone on the generator page earns this line — the reader
+ * arrives at a drawing of numbers they did not choose, and the caption is the
+ * difference between a diagram and a decoration.
+ */
+.zone-note {
+    padding: 0 var(--sp-5) var(--sp-4);
+    margin: calc(var(--sp-4) * -1) 0 0;
+    font-size: var(--t-sm);
+    line-height: var(--lh-body);
+    color: var(--ink-3);
+    max-width: 78ch;
+}
+
 .zone-body {
     display: flex;
     flex-direction: column;
@@ -236,8 +253,23 @@
     overflow: hidden;
 }
 
+/*
+ * Blockified explicitly.
+ *
+ * It is a span, and width and height do not apply to a non-replaced inline
+ * element — so every bar rendered as an empty track and the zone drew four
+ * values it never showed. The track escaped this only because a grid item is
+ * blockified for free, which is exactly why the bug was hard to see: half of
+ * the component worked.
+ *
+ * The minimum width is for the small end of the scale: S4 against S2 is two
+ * bytes against a hundred and forty, and a fill under a pixel wide is a value
+ * reported as nothing.
+ */
 .bar-fill {
+    display: block;
     height: 100%;
+    min-width: 3px;
     background: var(--accent);
     transition: width var(--dur-3) var(--ease-out-quart);
 }

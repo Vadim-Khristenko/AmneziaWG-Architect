@@ -47,6 +47,17 @@ export interface BrowserFingerprint {
   sizes?: Readonly<Record<BfpSlot, SizeRange>>;
 
   /**
+   * Where a size table came from, when it was not measured for this browser.
+   *
+   * A Chromium fork ships Chromium's QUIC stack, so its datagram sizes are
+   * Chromium's until somebody patches the network layer — inheriting them is
+   * accurate and inventing per-fork numbers would not be. Recording it keeps
+   * the two kinds of entry apart: absent means measured, present means
+   * derived, and the interface can say which.
+   */
+  sizesFrom?: string;
+
+  /**
    * XRay facet: the uTLS profile to name in `fingerprint`.
    *
    * `preset` is the stable alias a client shows; `modern` pins a concrete
@@ -115,12 +126,30 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
     id: "safari",
     label: "Safari",
     family: "webkit",
+    sizes: {
+      qi: [1250, 1252],
+      q0: [1250, 1300],
+      h3: [1250, 1350],
+      tls: [512, 750],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
     utls: { preset: "safari", modern: "hellosafari_26_3" },
   },
   {
     id: "ios",
     label: "Safari (iOS)",
     family: "webkit",
+    sizes: {
+      qi: [1250, 1252],
+      q0: [1250, 1300],
+      h3: [1250, 1350],
+      tls: [512, 750],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
+    /* Inherited: Safari — the same WebKit networking stack. */
+    sizesFrom: "safari",
     utls: { preset: "ios", modern: "helloios_14" },
   },
   {
@@ -133,6 +162,14 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
     id: "yandex_desktop",
     label: "Yandex Browser",
     family: "chromium",
+    sizes: {
+      qi: [1250, 1250],
+      q0: [1250, 1350],
+      h3: [1350, 1350],
+      tls: [512, 800],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
     // No uTLS profile exists for Yandex; it is Chromium, so a Chrome hello is
     // the honest approximation rather than a missing option.
     utls: { preset: "chrome" },
@@ -141,12 +178,30 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
     id: "yandex_mobile",
     label: "Yandex Browser (mobile)",
     family: "chromium",
+    sizes: {
+      qi: [1232, 1232],
+      q0: [1250, 1350],
+      h3: [1350, 1350],
+      tls: [512, 800],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
     utls: { preset: "chrome" },
   },
   {
     id: "360",
     label: "360 Browser",
     family: "chromium",
+    sizes: {
+      qi: [1250, 1250],
+      q0: [1250, 1350],
+      h3: [1250, 1350],
+      tls: [512, 800],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
+    /* Inherited: Chrome — a Chromium fork with an unmodified QUIC stack. */
+    sizesFrom: "chrome",
     // Same story as Edge: uTLS points Hello360_Auto at 7.5 and calls 11.0
     // incompatible, despite Xray listing 11.0 as Modern.
     utls: { preset: "360", modern: "hello360_7_5" },
@@ -155,6 +210,16 @@ export const BROWSER_FINGERPRINTS: readonly BrowserFingerprint[] = [
     id: "qq",
     label: "QQ Browser",
     family: "chromium",
+    sizes: {
+      qi: [1250, 1250],
+      q0: [1250, 1350],
+      h3: [1250, 1350],
+      tls: [512, 800],
+      nx: [1200, 1250],
+      dtls: [1100, 1200],
+    },
+    /* Inherited: Chrome — a Chromium fork with an unmodified QUIC stack. */
+    sizesFrom: "chrome",
     utls: { preset: "qq", modern: "helloqq_11_1" },
   },
 ];

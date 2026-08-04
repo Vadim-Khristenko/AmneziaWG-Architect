@@ -7,6 +7,7 @@
 import { cryptoRnd, cryptoRh, cryptoPick } from "@/shared/rng";
 import type { GeneratorInput, BfpSlot } from "./types";
 import { BFP } from "./constants";
+import { BROWSER_FINGERPRINTS } from "@/shared/fingerprints";
 import { pickHost as pickDomain } from "@/shared/domains";
 import type { DnsQueryType, DomainRole } from "@/types/domain";
 
@@ -246,12 +247,19 @@ export function getFpRange(
 ): [number, number] | null {
   if (!input.useBrowserFp || !input.browserProfile) return null;
   const table = BFP[input.browserProfile];
-  return table?.[slot] ?? null;
+  const range = table?.[slot];
+  // The registry holds its ranges readonly, which is right — a caller must not
+  // be able to edit the measurements. Copy rather than widen the type.
+  return range ? [range[0], range[1]] : null;
 }
 
-export const CHROMIUM_PROFILES = new Set([
-  "chrome",
-  "edge",
-  "yandex_desktop",
-  "yandex_mobile",
-]);
+/*
+ * Which profiles are Chromium, read off the registry.
+ *
+ * It was a hand-written list of four, and the registry has six — 360 and QQ
+ * are Chromium forks too, and were being given a non-Chromium TLS shape purely
+ * because nobody added them here.
+ */
+export const CHROMIUM_PROFILES = new Set(
+  BROWSER_FINGERPRINTS.filter((b) => b.family === "chromium").map((b) => b.id),
+);

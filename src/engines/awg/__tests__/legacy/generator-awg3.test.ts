@@ -316,7 +316,10 @@ describe("renderConf parity for legacy versions", () => {
     expect(text).not.toMatch(/^I1 = /m);
     expect(text).not.toMatch(/^S3 = /m);
     expect(text).not.toMatch(/^S4 = /m);
-    expect(text).toContain("I1-I5 are not supported in AWG 1.0");
+    // That the absence is explained, not the sentence it is explained in.
+    // Asserting the prose made rewording a comment a failing test, which is
+    // how a comment ends up frozen for a reason nobody can name.
+    expect(text).toMatch(/^# .*CPS/m);
   });
 
   it("uses caller-supplied comment labels when given", () => {

@@ -20,14 +20,17 @@ export type MimicProfile =
   | "dns_query"
   | "random";
 
-export type BrowserProfile =
-  | "chrome"
-  | "edge"
-  | "firefox"
-  | "safari"
-  | "yandex_desktop"
-  | "yandex_mobile"
-  | "";
+/**
+ * Which browser the packet sizes imitate.
+ *
+ * A plain string keyed to `shared/fingerprints` rather than a union spelled
+ * out here. The union listed six while the registry held ten, so a browser
+ * added to the registry — 360, QQ, iOS — could not be selected however
+ * complete its data was: it had to be typed out in a second place first.
+ *
+ * The empty string means no imitation at all.
+ */
+export type BrowserProfile = string;
 
 // Lives in shared/fingerprints, beside the data it describes.
 export type { BfpSlot } from "@/shared/fingerprints";

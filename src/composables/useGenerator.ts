@@ -342,6 +342,11 @@ export function useGenerator() {
       awg3Hpk: translate("conf.awg3Hpk"),
       awg3Cpa: translate("conf.awg3Cpa"),
       awg3Timers: translate("conf.awg3Timers"),
+      blockHeaders: translate("conf.blockHeaders"),
+      blockSizes: translate("conf.blockSizes"),
+      blockJunk: translate("conf.blockJunk"),
+      blockCps: translate("conf.blockCps"),
+      mustMatch: translate("conf.mustMatch"),
     }),
   );
 

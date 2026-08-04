@@ -2,7 +2,9 @@
  * Vue Router — SPA navigation for AmneziaWG Architect.
  *
  * Routes (Russian at the root, English under /en):
- *   /            → HomeView      (Generator)
+ *   /            → LandingView   (the landing)
+ *   /amneziawg   → AmneziaWgView (the AmneziaWG generator)
+ *   /xray        → XrayView      (XRay, in progress)
  *   /mergekeys   → MergeKeysView (MergeKeys tool)
  *   /simulator   → SimulatorView (Packet simulator)
  *   /about       → AboutView     (About page)
@@ -72,15 +74,7 @@ const BASE_ROUTES: BaseRoute[] = [
   {
     path: "/amneziawg",
     name: "amneziawg",
-    component: () => import("@/views/HomeView.vue"),
-  },
-  // A sketch of the redesigned generator, standing beside the current page so
-  // the two can be compared. It replaces /amneziawg or it goes; either way
-  // this entry does not survive the decision.
-  {
-    path: "/newawg",
-    name: "newawg",
-    component: () => import("@/views/NewAwgView.vue"),
+    component: () => import("@/views/AmneziaWgView.vue"),
   },
   {
     path: "/xray",

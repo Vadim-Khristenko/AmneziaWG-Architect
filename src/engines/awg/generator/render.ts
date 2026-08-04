@@ -36,17 +36,37 @@ export interface RenderLabels {
   awg3Hpk: string;
   awg3Cpa: string;
   awg3Timers: string;
+
+  /**
+   * A line above each block saying what it is for.
+   *
+   * A `.conf` is read months later by someone who did not generate it, and
+   * often by someone editing the server side to match. Four magic numbers
+   * under no heading are four numbers to copy carefully and not understand;
+   * the same four under one sentence are a decision that can be checked.
+   */
+  blockHeaders: string;
+  blockSizes: string;
+  blockJunk: string;
+  blockCps: string;
+  /** Which side has to carry the identical value. */
+  mustMatch: string;
 }
 
 export const DEFAULT_LABELS: RenderLabels = {
   privateKey: "PrivateKey = <your private key>",
   address: "Address = 10.0.0.2/32",
-  cpsClientOnly: "I1-I5 are client-side only in AWG 1.5:",
-  noCps: "I1-I5 are not supported in AWG 1.0",
-  awg3Hpk:
-    "AWG 3.0 — shared header protection key (identical on both ends)",
-  awg3Cpa: "AWG 3.0 — random transport packet padding",
-  awg3Timers: "AWG 3.0 — protocol timer randomisation",
+  cpsClientOnly: "Client-side only in 1.5 — the server ignores these:",
+  noCps: "1.0 has no CPS chain; obfuscation here is junk packets and headers",
+  awg3Hpk: "Header encryption. The key is shared, and the padding above feeds its nonce",
+  awg3Cpa: "Extra random padding on every transport packet",
+  awg3Timers: "Randomised protocol timers instead of the fixed constants",
+
+  blockHeaders: "Packet type markers. Must match the server and must not overlap",
+  blockSizes: "Random padding in front of each kind of packet",
+  blockJunk: "Empty packets sent before the handshake",
+  blockCps: "Fake packets sent before the handshake. The receiver never parses them",
+  mustMatch: "Everything above this line must be identical on the server",
 };
 
 export interface RenderOptions {
@@ -100,6 +120,8 @@ export function renderConfLines(
   // parameter panel cannot disagree about what a version looks like.
   const caps = capsFor(v);
 
+  lines.push(cm(""));
+  lines.push(cm(`# ${L.blockHeaders}`));
   if (caps.rangedHeaders) {
     lines.push(kv("H1", cfg.h1), kv("H2", cfg.h2), kv("H3", cfg.h3), kv("H4", cfg.h4));
   } else {
@@ -111,14 +133,28 @@ export function renderConfLines(
     );
   }
 
+  lines.push(cm(""));
+  lines.push(cm(`# ${L.blockSizes}`));
   lines.push(kv("S1", cfg.s1), kv("S2", cfg.s2));
   if (caps.extraSizes) lines.push(kv("S3", cfg.s3), kv("S4", cfg.s4));
 
+  lines.push(cm(""));
+  // The count and the range, stated once, so the three numbers below read as
+  // one decision rather than as three unrelated constants.
+  lines.push(
+    cm(
+      cfg.jc > 0
+        ? `# ${L.blockJunk}: ${cfg.jc} × ${cfg.jmin}–${cfg.jmax} B`
+        : `# ${L.blockJunk} — off`,
+    ),
+  );
   lines.push(kv("Jc", cfg.jc), kv("Jmin", cfg.jmin), kv("Jmax", cfg.jmax));
 
+  lines.push(cm(""));
   if (!caps.cps) {
     lines.push(cm(`# ${L.noCps}`));
   } else {
+    lines.push(cm(`# ${L.blockCps}`));
     if (v === "1.5") lines.push(cm(`# ${L.cpsClientOnly}`));
     lines.push(
       kv("I1", cfg.i1),
@@ -132,6 +168,7 @@ export function renderConfLines(
   if (caps.headerProtection && cfg.awg3) {
     const p = cfg.awg3;
 
+    lines.push(cm(""));
     if (p.headerProtectionKey) {
       lines.push(cm(`# ${L.awg3Hpk}`));
       lines.push(kv("HeaderProtectionKey", p.headerProtectionKey));
