@@ -38,11 +38,23 @@ export const REALITY_TRANSPORTS: readonly XrayTransport[] = [
 export type XraySecurity = "reality" | "tls" | "none";
 
 /**
- * VLESS flow. Exactly two values exist; anything else is "unknown request
- * flow". Vision needs TLS 1.3 underneath, refuses UDP, and must match on both
- * ends.
+ * VLESS flow.
+ *
+ * Vision needs TLS 1.3 underneath and must match on both ends. Anything not
+ * listed here is an "unknown request flow" to the core.
+ *
+ * The `-udp443` suffix is an **outbound** value: it tells a client not to
+ * intercept UDP/443, so QUIC goes direct instead of through the tunnel. The
+ * inbound does not accept it, which is why the renderer writes the base value
+ * into the server and the full one into the client link. Treating them as one
+ * string is how a config ends up with a flow the server rejects.
  */
-export type XrayFlow = "" | "xtls-rprx-vision";
+export type XrayFlow = "" | "xtls-rprx-vision" | "xtls-rprx-vision-udp443";
+
+/** What the server side may carry, with any client-only suffix removed. */
+export function inboundFlow(flow: XrayFlow): string {
+  return flow.replace(/-udp443$/, "");
+}
 
 /**
  * XHTTP mode. `auto` resolves in the core: `packet-up` normally, `stream-one`

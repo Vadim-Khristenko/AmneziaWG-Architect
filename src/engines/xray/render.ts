@@ -13,6 +13,7 @@
 
 import type { EngineLine } from "@/types/engine";
 import { xrayCaps } from "./versions";
+import { inboundFlow } from "./types";
 import { renderFinalMask } from "./finalmask";
 import { renderSockopt } from "./sockopt";
 import {
@@ -280,7 +281,8 @@ function inboundSettings(cfg: XrayConfig): Record<string, unknown> {
   return {
     clients: cfg.clients.map((client) => ({
       id: client.id,
-      ...(client.flow ? { flow: client.flow } : {}),
+      // The inbound never carries the client-only `-udp443` suffix.
+      ...(client.flow ? { flow: inboundFlow(client.flow) } : {}),
     })),
     // "none" is a value, not an absence: the core requires the field.
     decryption: cfg.vlessEncryption?.decryption ?? "none",

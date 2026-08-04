@@ -396,3 +396,79 @@
     color: var(--ink-2);
     overflow-wrap: anywhere;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A ROW THAT ENDS TOGETHER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Setup zones share a bottom edge.
+ *
+ * `align-items: start` was right for the parameter grid, where a collapsible
+ * has to be able to shrink, and wrong for a row of settings: three cards of
+ * different heights leave ragged white space under the short ones and read as
+ * an unfinished layout rather than a deliberate one.
+ *
+ * The body grows to fill, so the controls sit where they were and only the
+ * card gets taller.
+ */
+.zone-row {
+    align-items: stretch;
+}
+
+.zone-row > .zone {
+    height: 100%;
+}
+
+/*
+ * The body fills the card, and its contents stay at the top.
+ *
+ * Without the second rule the fields inherit the extra height: a grid stretches
+ * its rows and a column flex spreads its children, so making the cards level
+ * pulled the controls apart inside them. The spare space belongs at the
+ * bottom, which is where the sheet mark goes.
+ */
+.zone-row > .zone > .zone-body {
+    flex: 1;
+    align-content: start;
+}
+
+.zone-row > .zone > .zone-body > * {
+    align-self: start;
+}
+
+/* A field is a column of its own; it must still fill the cell it sits in. */
+.zone-row > .zone > .zone-body > .field,
+.zone-row > .zone > .zone-body > label {
+    width: 100%;
+}
+
+/*
+ * The mark left in the space a short card cannot fill.
+ *
+ * It is the drawing sheet's own furniture — a corner tick and a scale note —
+ * rather than a joke pasted into a gap. Hidden from assistive technology and
+ * from narrow screens, where the cards stack and there is no gap to fill.
+ */
+.zone-filler {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    flex: 1;
+    min-height: 34px;
+    padding-top: var(--sp-4);
+    font-family: var(--fm);
+    font-size: 9px;
+    line-height: 1.35;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    white-space: pre;
+    pointer-events: none;
+    user-select: none;
+}
+
+@media (max-width: 900px) {
+    .zone-filler {
+        display: none;
+    }
+}

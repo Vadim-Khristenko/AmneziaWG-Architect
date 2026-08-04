@@ -494,10 +494,16 @@ function copyHistoryEntry(entry: GeneratorHistoryEntry) {
     void copy(`h:${entry.id}`, entry.text);
 }
 
+/*
+ * `downloadText` takes the text first. Both exports passed the filename there,
+ * so the saved file was named after its own JSON and contained the name — the
+ * bug lived for as long as the feature did.
+ */
 function exportHistory() {
     downloadText(
-        `awg-history-${new Date().toISOString().slice(0, 10)}.json`,
         historyToJson(),
+        "AnyTech_Architect_History_AmneziaWG.json",
+        "application/json",
     );
 }
 
@@ -598,7 +604,7 @@ function toSimulator() {
             both directions. The version decides which parameters exist; the
             modes are two ceilings you rarely touch.
         -->
-        <div class="gen-zones">
+        <div class="gen-zones zone-row">
             <section class="zone gen-span-4">
                 <div class="zone-head">
                     <span class="zone-title">{{ t("gen.zone.protocol") }}</span>
@@ -616,6 +622,13 @@ function toSimulator() {
                             {{ v }}
                         </button>
                     </div>
+                    <!--
+                        The mark left where a short card cannot fill its row:
+                        the sheet's own furniture rather than a joke pasted
+                        into a gap.
+                    -->
+                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
+└ ATA ┘</div>
                 </div>
             </section>
 
@@ -1505,6 +1518,7 @@ function toSimulator() {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     align-items: end;
+    align-content: start;
     gap: var(--sp-4);
 }
 

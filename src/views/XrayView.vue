@@ -37,6 +37,7 @@ import {
     Globe,
     Layers as LayersIcon,
     Cpu,
+    Dices,
     History as HistoryIcon,
     Server,
     Search,
@@ -50,12 +51,17 @@ import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
 import type { XrayHistoryEntry } from "@/engines/xray/history";
 import { downloadText } from "@/utils/download";
 import { XRAY_VERSIONS } from "@/engines/xray/versions";
+import { UTLS_FINGERPRINTS } from "@/shared/fingerprints";
 import {
     XRAY_PARAMETERS,
     xrayCoverage,
     xrayParamsFor,
 } from "@/engines/xray/params";
-import { createDefaults, generateXray } from "@/engines/xray/generate";
+import {
+    createDefaults,
+    generateXray,
+    generateXrayBatch,
+} from "@/engines/xray/generate";
 import { validateXray } from "@/engines/xray/validate";
 import { buildServerInbound, buildClientUris } from "@/engines/xray/render";
 import type { XrayConfig, XrayInput } from "@/engines/xray/types";
@@ -89,9 +95,41 @@ const outDetail = ref<"one" | "whole">("whole");
 
 const versions = XRAY_VERSIONS;
 
-const TRANSPORTS = ["raw", "xhttp", "grpc", "httpupgrade", "ws"] as const;
+/*
+ * The transports the engine actually has. `hysteria` was missing from the list
+ * I typed out, so a QUIC transport the core supports could not be selected.
+ */
+const TRANSPORTS = ["raw", "xhttp", "grpc", "ws", "httpupgrade", "hysteria"] as const;
 const SECURITIES = ["reality", "tls", "none"] as const;
-const FLOWS = ["xtls-rprx-vision", ""] as const;
+
+/*
+ * Three flows, not two.
+ *
+ * `xtls-rprx-vision-udp443` is an outbound value: it tells the client not to
+ * intercept UDP/443, so QUIC goes direct rather than through the tunnel. The
+ * inbound does not accept the suffix, which the renderer strips — the option
+ * was simply absent here, so the choice could not be made at all.
+ */
+const FLOWS = ["xtls-rprx-vision", "xtls-rprx-vision-udp443", ""] as const;
+
+/**
+ * Browsers with a uTLS profile, grouped by the engine that shapes the
+ * handshake — the same registry the AmneziaWG page reads for packet sizes.
+ *
+ * The fingerprint decides what the TLS Client Hello looks like, so it is a
+ * choice a person makes about their own traffic and not something to pick for
+ * them. It was in the catalogue as "chosen for you" with no way to choose.
+ */
+const FINGERPRINT_GROUPS = computed(() => {
+    const order = ["chromium", "gecko", "webkit", "other"] as const;
+    return order
+        .map((family) => ({
+            family,
+            label: t(("gen.fp.family." + family) as never),
+            items: UTLS_FINGERPRINTS.filter((b) => b.family === family),
+        }))
+        .filter((g) => g.items.length > 0);
+});
 
 function build() {
     config.value = generateXray(input.value);
@@ -518,13 +556,38 @@ function copyHistoryEntry(entry: GeneratorHistoryEntry) {
 
 function exportHistory() {
     downloadText(
-        `xray-history-${new Date().toISOString().slice(0, 10)}.json`,
         historyToJson(),
+        "AnyTech_Architect_History_XRay.json",
+        "application/json",
     );
 }
 
 async function importHistory(file: File) {
     historyFromJson(await file.text());
+}
+
+/*
+ * Several at once, which the engine has been able to do all along —
+ * `generateXrayBatch` existed and nothing called it. Each config is
+ * independent: its own keys, its own shortIds, its own client identities.
+ */
+const batchCount = ref(10);
+
+function downloadBatch() {
+    const batch = generateXrayBatch(input.value, batchCount.value);
+    const parts = batch.map((cfg, i) => {
+        const rule = "─".repeat(40);
+        const inbound = JSON.stringify(buildServerInbound(cfg), null, 2);
+        const uris = buildClientUris(cfg).join("\n");
+        const head = `// ── ${i + 1} / ${batch.length} ${rule}`;
+        return uris ? `${head}\n${inbound}\n\n// client\n${uris}` : `${head}\n${inbound}`;
+    });
+
+    downloadText(
+        parts.join("\n\n"),
+        `AnyTech_Architect_XRay_batch_${batch.length}.txt`,
+        "text/plain",
+    );
 }
 
 /** Generate, then remember. One action from the reader's side. */
@@ -543,11 +606,26 @@ function copyOut() {
     void copy("out", text);
 }
 
+/*
+ * Named for what it is, and with the arguments the right way round:
+ * `downloadText` takes the text first. Both this and the history export had
+ * them swapped, so the saved file was named after its own contents — and the
+ * buttons said ".conf" on a page that produces JSON for the server and a list
+ * of links for the client.
+ */
 function downloadOut() {
     if (outView.value === "server") {
-        downloadText("xray-inbound.json", serverJson.value);
+        downloadText(
+            serverJson.value,
+            "AnyTech_Architect_XRay_inbound.json",
+            "application/json",
+        );
     } else {
-        downloadText("xray-clients.txt", clientUris.value.join("\n"));
+        downloadText(
+            clientUris.value.join("\n"),
+            "AnyTech_Architect_XRay_clients.txt",
+            "text/plain",
+        );
     }
 }
 
@@ -615,7 +693,7 @@ function setServerNames(event: Event) {
         <!-- ══ Setup ═══════════════════════════════════════════════════ -->
         <h2 class="gen-section">{{ t("xg.section.setup") }}</h2>
 
-        <div class="gen-zones">
+        <div class="gen-zones zone-row">
             <!--
                 Our server and the donor are opposite things and were in the
                 same box: the address is where the tunnel actually is, the
@@ -667,6 +745,14 @@ function setServerNames(event: Event) {
                             </option>
                         </select>
                     </label>
+                    <!--
+                        The mark left where a short card cannot fill its row.
+                        Sheet furniture rather than a joke pasted into a gap,
+                        and hidden from assistive technology and from narrow
+                        screens, where the cards stack and there is no gap.
+                    -->
+                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
+└ ATA ┘</div>
                 </div>
             </section>
 
@@ -700,6 +786,32 @@ function setServerNames(event: Event) {
                                 {{ x || "—" }}
                             </option>
                         </select>
+                    </label>
+
+                    <!--
+                        What the Client Hello looks like. A choice about your
+                        own traffic, and it had none — the catalogue listed it
+                        as chosen for you with nothing to choose with.
+                    -->
+                    <label class="field">
+                        <span class="label">fingerprint</span>
+                        <select v-model="input.fingerprint" class="select" @change="build">
+                            <optgroup
+                                v-for="g in FINGERPRINT_GROUPS"
+                                :key="g.family"
+                                :label="g.label"
+                            >
+                                <option v-for="b in g.items" :key="b.id" :value="b.id">
+                                    {{ b.label }}
+                                </option>
+                            </optgroup>
+                        </select>
+                    </label>
+
+                    <label class="switch">
+                        <input v-model="input.pinFingerprint" type="checkbox" @change="build" />
+                        <span class="switch-track"></span>
+                        <span>{{ t("xg.field.pinFingerprint") }}</span>
                     </label>
                 </div>
             </section>
@@ -746,6 +858,14 @@ function setServerNames(event: Event) {
                             @change="setServerNames"
                         />
                     </label>
+                    <!--
+                        The mark left where a short card cannot fill its row.
+                        Sheet furniture rather than a joke pasted into a gap,
+                        and hidden from assistive technology and from narrow
+                        screens, where the cards stack and there is no gap.
+                    -->
+                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
+└ ATA ┘</div>
                 </div>
 
                 <!--
@@ -903,6 +1023,20 @@ function setServerNames(event: Event) {
                 <Sparkles :size="16" />
                 {{ hasConfig ? t("xg.act.regenerate") : t("xg.act.generate") }}
             </button>
+
+            <div class="inputgroup">
+                <input
+                    v-model.number="batchCount"
+                    class="input xg-batch-count"
+                    type="number"
+                    min="2"
+                    max="500"
+                />
+                <button class="btn btn--secondary" @click="downloadBatch">
+                    <Dices :size="15" />
+                    {{ t("gen.act.batch") }}
+                </button>
+            </div>
         </div>
 
         <!-- ══ Result ══════════════════════════════════════════════════ -->
@@ -1001,10 +1135,10 @@ function setServerNames(event: Event) {
                 <button class="btn btn--secondary btn--sm" @click="copyOut">
                     <Check v-if="isCopied('out')" :size="14" />
                     <Copy v-else :size="14" />
-                    {{ t("gen.out.copyConf") }}
+                    {{ outView === 'server' ? t("xg.out.copyJson") : t("xg.out.copyLinks") }}
                 </button>
                 <button class="btn btn--ghost btn--sm" @click="downloadOut">
-                    <Download :size="14" /> {{ t("gen.out.downloadConf") }}
+                    <Download :size="14" /> {{ outView === 'server' ? t("xg.out.downloadJson") : t("xg.out.downloadLinks") }}
                 </button>
             </div>
         </section>
@@ -1123,6 +1257,7 @@ function setServerNames(event: Event) {
 .xg-layers {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-content: start;
     gap: var(--sp-4);
 }
 
@@ -1316,6 +1451,11 @@ function setServerNames(event: Event) {
 }
 
 /* ── Actions and output ───────────────────────────────────────────────── */
+
+.xg-batch-count {
+    width: 80px;
+    text-align: center;
+}
 
 .gen-actions {
     display: flex;
