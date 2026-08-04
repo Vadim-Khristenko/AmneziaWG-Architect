@@ -95,7 +95,38 @@ export function validateXray(cfg: XrayConfig): Finding[] {
     }));
   }
 
-  /* ── REALITY ────────────────────────────────────────────────────────────── */
+  /** Host part of a `host:port` destination, lowercased. */
+function destHost(dest: string): string {
+  const trimmed = dest.trim().replace(/^[|]$/g, "");
+  const cut = trimmed.lastIndexOf(":");
+  return (cut > 0 ? trimmed.slice(0, cut) : trimmed).toLowerCase();
+}
+
+/**
+ * Is the donor host one of the names the client will ask for?
+ *
+ * A leading `*.` entry covers one label, which is what a wildcard certificate
+ * actually does — `*.example.com` matches `www.example.com` and not
+ * `a.b.example.com`.
+ */
+function destCoveredByNames(reality: { dest: string; serverNames: string[] }): boolean {
+  const host = destHost(reality.dest);
+  if (!host) return true;
+
+  return reality.serverNames.some((raw) => {
+    const name = raw.trim().toLowerCase();
+    if (!name) return false;
+    if (name === host) return true;
+    if (!name.startsWith("*.")) return false;
+
+    const suffix = name.slice(1);
+    if (!host.endsWith(suffix)) return false;
+    // One label deep, as a wildcard certificate is.
+    return !host.slice(0, host.length - suffix.length).includes(".");
+  });
+}
+
+/* ── REALITY ────────────────────────────────────────────────────────────── */
 
   const reality = cfg.reality;
   if (cfg.security === "reality") {
@@ -113,6 +144,30 @@ export function validateXray(cfg: XrayConfig): Finding[] {
 
       if (!reality.dest.trim()) {
         findings.push(error("dest", "xray.dest_missing"));
+      } else if (reality.serverNames.length && !destCoveredByNames(reality)) {
+        /*
+         * The donor and the SNI have to be the same site.
+         *
+         * REALITY dials `dest` and forwards that site's real TLS handshake,
+         * while the client sends an SNI from `serverNames`. If the two
+         * disagree, the certificate coming back is for one host and the name
+         * asked for is another — which a passive observer sees on the wire and
+         * an active prober confirms in one connection.
+         *
+         * This is the mistake that burns a server, and it is easy to make:
+         * the two are separate fields, and changing one without the other
+         * produces a config that starts, works, and is trivially detectable.
+         *
+         * A warning rather than an error, because a certificate can carry
+         * several names and nothing here can read it — but the default answer
+         * is that the dest host should be among the names.
+         */
+        findings.push(
+          warn("serverNames", "xray.sni_dest_mismatch", {
+            dest: destHost(reality.dest),
+            names: reality.serverNames.join(", "),
+          }),
+        );
       }
 
       if (![0, 1, 2].includes(reality.xver)) {

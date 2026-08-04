@@ -37,6 +37,7 @@ import {
     Globe,
     Layers as LayersIcon,
     Cpu,
+    TriangleAlert,
 } from "lucide-vue-next";
 
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
@@ -68,6 +69,15 @@ const ENGINES = [
 const input = ref<XrayInput>(createDefaults());
 const config = ref<XrayConfig | null>(null);
 const outView = ref<"server" | "client">("server");
+
+/**
+ * How much of it, kept separate from whose.
+ *
+ * "The server config, value by value" and "the client link, whole" are both
+ * things people want, and one switch with four positions would have made them
+ * choose between two unrelated questions.
+ */
+const outDetail = ref<"one" | "whole">("whole");
 
 const versions = XRAY_VERSIONS;
 
@@ -118,6 +128,11 @@ const GROUP_ORDER = [
 
 const coverage = xrayCoverage();
 
+const groupNote = (group: string) => t(("xg.group." + group + ".note") as never);
+
+const sideLabel = (side: string) => t(("xg.side." + side) as never);
+const sideHint = (side: string) => t(("xg.side." + side + ".hint") as never);
+
 /** Which parameters exist at the selected core version. */
 const available = computed(
     () => new Set(xrayParamsFor(input.value.version).map((p) => p.key)),
@@ -135,6 +150,9 @@ const groups = computed(() =>
                   : "missing") as ParamState,
             /** Dimmed rather than hidden: absent here is a fact about the version. */
             inVersion: available.value.has(p.key),
+            /** What it is worth in the config on screen, if anything. */
+            value: serverValues.value[p.key] ?? "",
+            side: sideOf(p.key),
         }));
         return {
             group,
@@ -157,6 +175,126 @@ const clientUris = computed(() =>
 );
 
 const hasConfig = computed(() => config.value !== null);
+
+/* ── What each parameter is actually worth right now ─────────────────────── */
+
+/**
+ * Every leaf of the produced inbound, keyed by its own name.
+ *
+ * The catalogue names a parameter the way the core spells it — `shortIds`,
+ * `xPaddingBytes`, `tcpcongestion` — and the config nests them differently in
+ * every section. Matching on the leaf name rather than the path means a
+ * parameter finds its value wherever the renderer decided to put it, and a
+ * parameter with no value simply has none to show.
+ */
+function leafValues(value: unknown, out: Record<string, string> = {}) {
+    if (value === null || value === undefined) return out;
+    if (Array.isArray(value)) {
+        for (const v of value) leafValues(v, out);
+        return out;
+    }
+    if (typeof value === "object") {
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+            if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+                leafValues(v, out);
+            } else if (Array.isArray(v)) {
+                out[k] = v.map((x) => String(x)).join(", ");
+                leafValues(v, out);
+            } else {
+                out[k] = String(v);
+            }
+        }
+    }
+    return out;
+}
+
+const serverValues = computed(() =>
+    config.value ? leafValues(buildServerInbound(config.value)) : {},
+);
+
+/**
+ * Which query keys the client link carries.
+ *
+ * This is the honest answer to "what does the client see": not a list somebody
+ * maintained by hand, but the parameters that are really in the URI the user
+ * is about to send to their phone.
+ */
+const clientKeys = computed(() => {
+    const uri = clientUris.value[0];
+    if (!uri) return new Set<string>();
+    const q = uri.slice(uri.indexOf("?") + 1);
+    return new Set(
+        q
+            .split("&")
+            .map((pair) => pair.split("=")[0] ?? "")
+            .filter(Boolean),
+    );
+});
+
+/**
+ * Where a parameter ends up.
+ *
+ * The URI spells some of them differently from the config — `pbk` is the
+ * REALITY public key, `sid` a shortId, `fp` the fingerprint — so the few that
+ * are renamed on the way out are stated rather than guessed at.
+ */
+const URI_ALIAS: Record<string, string> = {
+    publicKey: "pbk",
+    shortIds: "sid",
+    fingerprint: "fp",
+    serverNames: "sni",
+    spiderX: "spx",
+    flow: "flow",
+    path: "path",
+    host: "host",
+    mode: "mode",
+};
+
+type Side = "server" | "both" | "none";
+
+function sideOf(key: string): Side {
+    const inClient = clientKeys.value.has(URI_ALIAS[key] ?? key);
+    const inServer = key in serverValues.value;
+    if (inClient) return "both";
+    return inServer ? "server" : "none";
+}
+
+/** The whole thing, as text, for whichever side is selected. */
+const wholeText = computed(() =>
+    outView.value === "server" ? serverJson.value : clientUris.value.join("\n"),
+);
+
+/**
+ * The same thing value by value.
+ *
+ * For the server that is every leaf of the inbound; for the client it is the
+ * query the link carries, which is what a person pasting one field at a time
+ * into a client app is actually looking for.
+ */
+const outRows = computed(() => {
+    if (outView.value === "server") {
+        return Object.entries(serverValues.value).map(([key, value]) => ({ key, value }));
+    }
+    const uri = clientUris.value[0];
+    if (!uri) return [];
+
+    const rows: { key: string; value: string }[] = [];
+    const at = uri.indexOf("?");
+    const head = at === -1 ? uri : uri.slice(0, at);
+    rows.push({ key: "uri", value: head });
+
+    if (at !== -1) {
+        for (const pair of uri.slice(at + 1).split("&")) {
+            const [k, v = ""] = pair.split("=");
+            if (k) rows.push({ key: k, value: decodeURIComponent(v) });
+        }
+    }
+    return rows;
+});
+
+function copyRow(key: string, value: string) {
+    void copy("r:" + key, value);
+}
 
 function copyOut() {
     const text =
@@ -229,6 +367,15 @@ function setServerNames(event: Event) {
                 </div>
                 <p class="zone-note">{{ t("xg.zone.donor.note") }}</p>
                 <div class="zone-body xg-donor">
+                    <label class="field">
+                        <span class="label">address</span>
+                        <input
+                            v-model="input.address"
+                            class="input input--mono"
+                            placeholder="203.0.113.10"
+                            @change="build"
+                        />
+                    </label>
                     <label class="field">
                         <span class="label">dest</span>
                         <input
@@ -341,6 +488,8 @@ function setServerNames(event: Event) {
                     </span>
                 </div>
 
+                <p class="zone-note">{{ groupNote(g.group) }}</p>
+
                 <div class="zone-body">
                     <div class="gen-tiles">
                         <!--
@@ -355,8 +504,26 @@ function setServerNames(event: Event) {
                             class="gen-tile xg-param"
                             :class="[`is-${p.state}`, { 'is-absent': !p.inVersion }]"
                         >
-                            <span class="gen-tile-key">{{ p.kind }}</span>
+                            <span class="xg-tile-top">
+                                <span class="gen-tile-key">{{ p.kind }}</span>
+                                <!--
+                                    Where the value ends up. "both" means it is
+                                    in the link the user sends to their phone
+                                    as well as in the server file, which is the
+                                    question anyone setting this up actually
+                                    has.
+                                -->
+                                <span
+                                    v-if="p.side !== 'none'"
+                                    class="xg-side"
+                                    :class="'is-' + p.side"
+                                    :data-tooltip="sideHint(p.side)"
+                                >
+                                    {{ sideLabel(p.side) }}
+                                </span>
+                            </span>
                             <span class="gen-tile-val">{{ p.key }}</span>
+                            <span v-if="p.value" class="xg-value">{{ p.value }}</span>
                             <span
                                 class="xg-state"
                                 :data-tooltip="stateHint(p.state)"
@@ -384,6 +551,11 @@ function setServerNames(event: Event) {
             <div class="zone-head">
                 <span class="zone-title">{{ t("gen.out.title") }}</span>
                 <span class="zone-aside">
+                    <!--
+                        Two switches, not one with four positions: whose config
+                        and how much of it are unrelated questions, and folding
+                        them together makes answering one mean answering both.
+                    -->
                     <div class="segment">
                         <button
                             class="segment-opt"
@@ -400,6 +572,22 @@ function setServerNames(event: Event) {
                             {{ t("xg.out.client") }}
                         </button>
                     </div>
+                    <div class="segment">
+                        <button
+                            class="segment-opt"
+                            :class="{ 'is-active': outDetail === 'one' }"
+                            @click="outDetail = 'one'"
+                        >
+                            {{ t("gen.view.one") }}
+                        </button>
+                        <button
+                            class="segment-opt"
+                            :class="{ 'is-active': outDetail === 'whole' }"
+                            @click="outDetail = 'whole'"
+                        >
+                            {{ t("gen.view.whole") }}
+                        </button>
+                    </div>
                 </span>
             </div>
 
@@ -407,13 +595,32 @@ function setServerNames(event: Event) {
                 <div v-if="!hasConfig" class="empty">
                     <span class="empty-desc">{{ t("xg.out.empty") }}</span>
                 </div>
-                <pre v-else-if="outView === 'server'" class="well gen-out">{{ serverJson }}</pre>
-                <div v-else class="chain">
-                    <div v-for="(uri, i) in clientUris" :key="i" class="chain-row">
-                        <span class="chain-key">{{ i + 1 }}</span>
-                        <span class="chain-val">{{ uri }}</span>
-                    </div>
+
+                <!--
+                    No address means no link to build. Saying so is the whole
+                    difference between an empty panel and a broken one.
+                -->
+                <div v-else-if="outView === 'client' && !clientUris.length" class="note note--warn">
+                    <TriangleAlert :size="15" class="note-icon" />
+                    <span>{{ t("xg.out.needAddress") }}</span>
                 </div>
+
+                <div v-else-if="outDetail === 'one'" class="gen-tiles">
+                    <button
+                        v-for="row in outRows"
+                        :key="row.key"
+                        class="gen-tile xg-copyable"
+                        :data-tooltip="t('gen.params.copyHint')"
+                        @click="copyRow(row.key, row.value)"
+                    >
+                        <span class="gen-tile-key">{{ row.key }}</span>
+                        <span class="gen-tile-val">{{ row.value }}</span>
+                        <Check v-if="isCopied('r:' + row.key)" :size="13" class="xg-copy-ok" />
+                        <Copy v-else :size="13" class="xg-copy" />
+                    </button>
+                </div>
+
+                <pre v-else class="well gen-out">{{ wholeText }}</pre>
             </div>
 
             <div v-if="hasConfig" class="zone-foot gen-outacts">
@@ -581,6 +788,82 @@ function setServerNames(event: Event) {
  * the one thing a reader with a colour vision difference cannot use, and this
  * is a page whose entire purpose is that distinction.
  */
+/* The value the parameter actually has in the config on screen. */
+.xg-value {
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    color: var(--accent-ink);
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+}
+
+.xg-tile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    width: 100%;
+}
+
+/*
+ * Which side carries it. Two words rather than an icon, because "does the
+ * client need this too" is the question, and an icon would need a legend to
+ * answer it.
+ */
+.xg-side {
+    font-family: var(--fm);
+    font-size: 9px;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: var(--r-1);
+    cursor: help;
+    white-space: nowrap;
+}
+
+.xg-side.is-server {
+    background: var(--ground-4);
+    color: var(--ink-3);
+}
+
+.xg-side.is-both {
+    background: var(--surface-solid-2);
+    color: var(--accent-ink);
+}
+
+/* The result tiles are clickable; the catalogue ones are not. */
+.xg-copyable {
+    cursor: pointer;
+    padding-right: var(--sp-7);
+    transition:
+        border-color var(--dur-2) var(--ease-out-quart),
+        background-color var(--dur-2) var(--ease-out-quart);
+}
+
+.xg-copyable:hover {
+    border-color: var(--accent);
+    background: var(--surface-solid);
+}
+
+.xg-copy,
+.xg-copy-ok {
+    position: absolute;
+    top: var(--sp-3);
+    right: var(--sp-3);
+}
+
+.xg-copy {
+    color: var(--ink-faint);
+}
+
+.xg-copyable:hover .xg-copy {
+    color: var(--accent-ink);
+}
+
+.xg-copy-ok {
+    color: var(--green);
+}
+
 .xg-state {
     font-family: var(--fm);
     font-size: 10px;

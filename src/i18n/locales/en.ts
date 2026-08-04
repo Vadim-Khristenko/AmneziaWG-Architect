@@ -221,6 +221,20 @@ export const en: Catalog = {
   "xg.out.server": "Server",
   "xg.out.client": "Client",
   "xg.out.empty": "Press Generate.",
+  "xg.out.needAddress": "To build the client link, set the server address in the REALITY donor section.",
+  "xg.side.server": "server",
+  "xg.side.both": "server + client",
+  "xg.side.server.hint": "The value lives only in the server config.",
+  "xg.side.both.hint": "The value goes into the server config and the client link — it has to match on both sides.",
+  "xg.group.inbound.note": "The port the server listens on, and what to do with traffic that failed authentication.",
+  "xg.group.vless.note": "Who connects and how: the client identity, the flow, and the VLESS encryption mode.",
+  "xg.group.reality.note": "Wearing someone else's handshake. Donor, names, keys and shortIds — the section where a mistake costs the most.",
+  "xg.group.tls.note": "Ordinary TLS instead of REALITY: the certificate, ALPN and the client fingerprint.",
+  "xg.group.xhttp.note": "Transport over HTTP. Path, mode, padding, and everything that makes the stream look like an ordinary site.",
+  "xg.group.xmux.note": "Multiplexing: how many streams share one connection, and for how long.",
+  "xg.group.transport.note": "Settings for the specific transport — gRPC, WebSocket, HTTPUpgrade.",
+  "xg.group.sockopt.note": "How the socket underneath behaves: congestion control, keepalive, MPTCP.",
+  "xg.group.finalmask.note": "An extra masking layer on top of QUIC.",
   "xg.act.generate": "Generate",
   "xg.act.regenerate": "Generate again",
 
@@ -807,6 +821,8 @@ export const en: Catalog = {
     "REALITY is selected but its parameter block is missing.",
   "find.xray.server_names_empty":
     "serverNames cannot be empty on the server side.",
+  "find.xray.sni_dest_mismatch":
+    "The donor {dest} does not match the names the client will ask for ({names}). The certificate comes from one site and the SNI names another — visible on the wire and confirmed by a single probe.",
   "find.xray.server_name_risky":
     "{name}: the core warns that this target raises the chance of the IP being blocked.",
   "find.xray.dest_missing":
