@@ -304,7 +304,7 @@ const MORE = [
 
                 <router-link
                     :to="at('/xray')"
-                    class="card lift press landing-engine landing-engine--soon"
+                    class="card lift press landing-engine"
                 >
                     <span class="landing-engine-head">
                         <Network :size="20" class="landing-engine-icon" />
@@ -617,10 +617,6 @@ const MORE = [
     display: flex;
     flex-direction: column;
     gap: var(--sp-3);
-}
-
-.landing-engine--soon {
-    background: var(--ground);
 }
 
 .landing-engine-head {

@@ -64,7 +64,7 @@ export const en: Catalog = {
   /* The tools themselves. */
   "landing.tools.title": "The tools themselves",
   "landing.tools.lede":
-    "Two engines, one method. Everything is computed in this tab and sent nowhere.",
+    "Two engines, one method: every number is derived from the text of a standard rather than picked by eye. Everything is computed in this tab and sent nowhere.",
 
   "landing.awg.name": "AmneziaWG",
   "landing.awg.tag": "from the start",
@@ -74,11 +74,11 @@ export const en: Catalog = {
   "landing.awg.go": "To the generator",
 
   "landing.xray.name": "XRay",
-  "landing.xray.tag": "the new one",
+  "landing.xray.tag": "the second engine",
   "landing.xray.desc":
-    "Sees through, and lets nobody see where they should not. From outside it looks like a packet from some ordinary site, which it is not. Endless settings, everything adjustable. The engine is done and the interface is being built.",
-  "landing.xray.status": "In progress",
-  "landing.xray.go": "What is ready",
+    "Sees through, and lets nobody see where they should not. From outside it is a real handshake from someone else's site — their certificate, their name — with your tunnel inside it. Seventy-six parameters: REALITY, VLESS, XHTTP, browser fingerprints, FinalMask.",
+  "landing.xray.status": "Working",
+  "landing.xray.go": "To the generator",
 
   /* The profile dial: the one place the page plays. */
   "landing.fun.title": "Who shall we be today?",
@@ -264,7 +264,6 @@ export const en: Catalog = {
   "xg.act.generate": "Generate",
   "xg.act.regenerate": "Generate again",
 
-  /* ── XRay page ────────────────────────────────────────────────────────── */
   "xray.badge": "In progress",
   "xray.title": "XRay / REALITY",
   "xray.lede":
