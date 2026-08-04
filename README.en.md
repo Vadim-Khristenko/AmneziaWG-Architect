@@ -56,11 +56,14 @@ still describe 2.0 at the time of writing.
 
 > [!WARNING]
 > **With header protection on, S1–S4 cannot go below 12.** The cipher nonce is
-> never transmitted — it is taken from the first 12 bytes of the S-padding. If
-> the padding is shorter, that slice runs past its end into the message body and
-> the "nonce" stops being random. No error is raised; the cipher just quietly
-> weakens. The generator raises S to 12 automatically, and the validator rejects
-> configs that break it.
+> never transmitted — it is taken from the first 12 bytes of the S-padding, and
+> a padding shorter than twelve bytes has none to give. You will not have to
+> find that out the hard way: both implementations refuse the configuration
+> before the interface comes up — `amneziawg-go` returns `S%d must be more then
+> %d to use headerProtection`, and the kernel module logs the same sentence and
+> returns `-EINVAL`. The interface does not start, and the reason is named. The
+> generator raises S to 12 automatically, and the validator rejects configs that
+> break it.
 
 The `<d>`, `<ds>` and `<dz>` tags parse in v3.0.1 but are not wired into the
 send path — they are groundwork for AWG 4.0, so the generator does not emit them.

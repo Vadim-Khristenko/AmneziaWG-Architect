@@ -49,11 +49,20 @@ export const HEADER_CIPHER_NONCE_SIZE = 12;
 /**
  * Minimum S1–S4 when HeaderProtectionKey is set.
  *
- * send.go builds `crypt := buf[:padding]` and then uses
- * `crypt[:HeaderCipherNonceSize]` as the ChaCha20 nonce. With padding < 12 the
- * slice silently runs past the padding into the message body (legal in Go —
- * still inside `cap`), so the "nonce" stops being random padding. No crash,
- * just a quietly weakened cipher. We refuse to generate that.
+ * Where the number comes from: send.go builds `crypt := buf[:padding]` and
+ * then uses `crypt[:HeaderCipherNonceSize]` as the ChaCha20 nonce, so a
+ * padding under twelve bytes has no nonce to give it.
+ *
+ * What happens if you try it: nothing runs. Both implementations check the
+ * bound before the interface comes up and refuse the configuration by name —
+ * `device/uapi.go` returns `S%d must be more then %d to use headerProtection`,
+ * and the kernel module's `src/netlink.c` logs the same sentence and returns
+ * -EINVAL. This comment used to say there was no crash and merely a quietly
+ * weakened cipher, which is the wrong thing to tell someone: they get an
+ * interface that will not start and a log line saying exactly why, and a
+ * warning about silent weakening sends them looking anywhere but at it.
+ *
+ * Corrected against both upstreams by @bivlked, issue #8.
  */
 export const MIN_S_WITH_HEADER_PROTECTION = HEADER_CIPHER_NONCE_SIZE;
 
