@@ -27,7 +27,7 @@
  * else is shown read-only, which is the truthful state of it today.
  */
 
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
     Sparkles,
     Copy,
@@ -38,6 +38,7 @@ import {
     Layers as LayersIcon,
     Cpu,
     Dices,
+    Info,
     History as HistoryIcon,
     Server,
     Search,
@@ -168,6 +169,24 @@ const STATE_HINT: Record<ParamState, string> = {
 const stateLabel = (state: ParamState) => t(STATE_LABEL[state] as never);
 const stateHint = (state: ParamState) => t(STATE_HINT[state] as never);
 
+/*
+ * The same explanation, for a screen with no pointer.
+ *
+ * A tooltip answers a pointer that rests on something, and a phone has none —
+ * so a word whose meaning lives only in a tooltip has no meaning at all on a
+ * touch screen. A tap brings the text up at the foot of the screen instead.
+ */
+const toast = ref("");
+let toastTimer = 0;
+
+function explain(state: ParamState) {
+    toast.value = stateHint(state);
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => (toast.value = ""), 4200);
+}
+
+onUnmounted(() => window.clearTimeout(toastTimer));
+
 const GROUP_ORDER = [
     "inbound",
     "vless",
@@ -191,6 +210,33 @@ const sideHint = (side: string) => t(("xg.side." + side + ".hint") as never);
 const available = computed(
     () => new Set(xrayParamsFor(input.value.version).map((p) => p.key)),
 );
+
+/**
+ * How wide each visible group is.
+ *
+ * The narrow ones pair up, and a leftover takes the whole row rather than
+ * sitting in half of one with nothing beside it. Which groups are visible
+ * changes with the transport and the security, so this is decided over the
+ * list that is actually on screen and not by a fixed table: on `raw` FinalMask
+ * is alone and goes wide, and the moment xmux appears the two share a row.
+ */
+function assignWidths<T extends { group: string }>(list: T[]) {
+    const out: (T & { wide: boolean })[] = [];
+    const narrow: number[] = [];
+
+    for (const item of list) {
+        const wide = ALWAYS_WIDE.has(item.group);
+        out.push({ ...item, wide });
+        if (!wide) narrow.push(out.length - 1);
+    }
+
+    // Pairs stay narrow; an odd one out is widened.
+    if (narrow.length % 2 === 1) {
+        const last = narrow[narrow.length - 1]!;
+        out[last]!.wide = true;
+    }
+    return out;
+}
 
 const groups = computed(() =>
     GROUP_ORDER.map((group) => {
@@ -217,12 +263,14 @@ const groups = computed(() =>
             group,
             label: t(("xg.group." + group) as never),
             items,
-            wide: WIDE_GROUPS.has(group),
             done: coverage[group]?.done ?? 0,
             total: coverage[group]?.total ?? 0,
         };
     }).filter((g) => g.items.length > 0 && groupApplies(g.group)),
 );
+
+/** The same list, with the widths worked out over what is visible. */
+const laidOut = computed(() => assignWidths(groups.value));
 
 /* ── Parameters you can actually set ─────────────────────────────────────── */
 
@@ -317,12 +365,11 @@ function groupApplies(group: string): boolean {
 
 /** REALITY and XHTTP carry most of the surface; they get the whole row. */
 /*
- * The groups that read better across the page than in a two-tile column.
- * Reality and XHTTP because they carry the most; socket and FinalMask because
- * their parameters are short and eleven of them stacked in half a row is a
- * ladder.
+ * Groups that are always the full width because of how much they carry.
+ * REALITY has fifteen parameters and XHTTP twenty-eight; socket has eleven,
+ * and eleven short ones stacked in half a row is a ladder.
  */
-const WIDE_GROUPS = new Set(["reality", "xhttp", "sockopt", "finalmask"]);
+const ALWAYS_WIDE = new Set(["reality", "xhttp", "sockopt"]);
 
 /* ── The help drawers, as on the AmneziaWG page ──────────────────────────── */
 
@@ -1017,7 +1064,7 @@ function setServerNames(event: Event) {
 
         <div class="gen-zones">
             <section
-                v-for="g in groups"
+                v-for="g in laidOut"
                 :key="g.group"
                 class="zone"
                 :class="g.wide ? 'gen-span-12' : 'gen-span-6'"
@@ -1144,12 +1191,14 @@ function setServerNames(event: Event) {
                                 {{ f.text }}
                             </span>
 
-                            <span
+                            <button
                                 class="xg-state"
+                                type="button"
                                 :data-tooltip="stateHint(p.state)"
+                                @click="explain(p.state)"
                             >
                                 {{ stateLabel(p.state) }}
-                            </span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1296,6 +1345,15 @@ function setServerNames(event: Event) {
                 </button>
             </div>
         </section>
+        <!-- The explanation, for a screen with no pointer to rest. -->
+        <div class="toast-dock">
+            <transition name="toast">
+                <div v-if="toast" class="toast" role="status">
+                    <Info :size="15" class="xg-toast-icon" />
+                    <span>{{ toast }}</span>
+                </div>
+            </transition>
+        </div>
     </div>
 </template>
 
@@ -1597,11 +1655,21 @@ function setServerNames(event: Event) {
 }
 
 .xg-state {
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
     font-family: var(--fm);
     font-size: 10px;
     letter-spacing: var(--track-label);
     text-transform: uppercase;
     cursor: help;
+}
+
+.xg-toast-icon {
+    flex-shrink: 0;
+    color: var(--accent-ink);
+    margin-top: 1px;
 }
 
 .is-generated {

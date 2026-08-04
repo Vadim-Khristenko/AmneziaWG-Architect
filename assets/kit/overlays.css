@@ -169,3 +169,50 @@
         transform: none;
     }
 }
+
+/*
+ * A toast pinned to the foot of the screen.
+ *
+ * The tooltip layer answers a pointer that rests on something, and a phone has
+ * no pointer to rest — so a label whose meaning is only in a tooltip has no
+ * meaning at all on a touch screen. This is the same text, brought up by a tap
+ * and put where a thumb is not covering it.
+ */
+.toast-dock {
+    position: fixed;
+    left: 50%;
+    bottom: max(var(--sp-5), env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: var(--z-toast);
+    width: min(420px, calc(100vw - 2 * var(--sp-4)));
+    pointer-events: none;
+}
+
+.toast-dock .toast {
+    pointer-events: auto;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+    transition:
+        opacity var(--dur-3) var(--ease-out-quart),
+        transform var(--dur-3) var(--ease-out-quart);
+}
+
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-enter-active,
+    .toast-leave-active {
+        transition: none;
+    }
+
+    .toast-enter-from,
+    .toast-leave-to {
+        transform: none;
+    }
+}

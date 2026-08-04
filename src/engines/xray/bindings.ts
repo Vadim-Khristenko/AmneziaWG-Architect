@@ -33,9 +33,32 @@ const RENAMED: Record<string, string> = {
   interface: "bindInterface",
 };
 
-/** Where a group's values live on the input. */
+/** Where a group whose parameters all live under one object are kept. */
 const GROUP_ROOT: Record<string, string> = {
   sockopt: "sockopt",
+};
+
+/**
+ * Single parameters, for groups the input does not gather under one object.
+ *
+ * REALITY is mostly generated — keys, shortIds, the target — and four of its
+ * parameters are deliberately left to the user, because a value invented for
+ * either of them makes a worse tool. `maxTimeDiff` cuts off clients whose
+ * clocks have drifted, and the two fallback limits throttle traffic that
+ * failed authentication; guessing at those is guessing about someone else's
+ * deployment.
+ *
+ * They live at the top of the input rather than under a `reality` object, so
+ * they are named here one at a time instead of by a prefix that does not
+ * exist.
+ */
+const EXPLICIT: Record<string, Record<string, string>> = {
+  reality: {
+    maxClientVer: "maxClientVer",
+    maxTimeDiff: "maxTimeDiff",
+    limitFallbackUpload: "limitFallbackUpload",
+    limitFallbackDownload: "limitFallbackDownload",
+  },
 };
 
 /**
@@ -46,10 +69,19 @@ const GROUP_ROOT: Record<string, string> = {
  * which is worse than a control that is honestly absent.
  */
 export function inputPathFor(group: string, key: string): string | null {
+  const named = EXPLICIT[group]?.[key];
+  if (named) return named;
+
   const root = GROUP_ROOT[group];
   if (!root) return null;
   return `${root}.${RENAMED[key] ?? key}`;
 }
+
+/** Every explicitly bound parameter, for the test that checks they resolve. */
+export const EXPLICIT_BINDINGS: readonly { group: string; key: string }[] =
+  Object.entries(EXPLICIT).flatMap(([group, keys]) =>
+    Object.keys(keys).map((key) => ({ group, key })),
+  );
 
 /** Read a dotted path off an object. */
 export function readPath(obj: unknown, path: string): unknown {

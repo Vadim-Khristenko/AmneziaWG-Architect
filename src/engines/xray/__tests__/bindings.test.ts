@@ -9,7 +9,13 @@
 import { describe, it, expect } from "vitest";
 import { createDefaults } from "../generate";
 import { XRAY_PARAMETERS } from "../params";
-import { EDITABLE_GROUPS, inputPathFor, readPath, writePath } from "../bindings";
+import {
+  EDITABLE_GROUPS,
+  EXPLICIT_BINDINGS,
+  inputPathFor,
+  readPath,
+  writePath,
+} from "../bindings";
 
 describe("editable parameter bindings", () => {
   const covered = XRAY_PARAMETERS.filter((p) =>
@@ -44,5 +50,28 @@ describe("editable parameter bindings", () => {
 
   it("refuses a group it does not cover", () => {
     expect(inputPathFor("xhttp", "path")).toBeNull();
+  });
+
+  /*
+   * The parameters named one at a time, for groups the input does not gather
+   * under one object. A typo here is a control that silently changes nothing.
+   */
+  it("resolves every explicitly named parameter", () => {
+    const input = createDefaults();
+    const broken = EXPLICIT_BINDINGS.filter(
+      ({ group, key }) => readPath(input, inputPathFor(group, key)!) === undefined,
+    ).map(({ group, key }) => `${group}.${key}`);
+    expect(broken).toEqual([]);
+  });
+
+  it("offers a control for every REALITY parameter left to the user", () => {
+    const manual = XRAY_PARAMETERS.filter(
+      (p) => p.group === "reality" && p.offered && !p.generated,
+    );
+    expect(manual.length).toBeGreaterThan(0);
+    const unbound = manual
+      .filter((p) => inputPathFor(p.group, p.key) === null)
+      .map((p) => p.key);
+    expect(unbound).toEqual([]);
   });
 });
