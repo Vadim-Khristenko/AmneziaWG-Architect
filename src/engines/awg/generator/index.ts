@@ -14,7 +14,13 @@ import type {
 } from "./types";
 import { PROFILE_LABELS } from "./constants";
 import { clientCaps } from "./clients";
-import { drawParams } from "./strategy";
+import {
+  drawParams,
+  ROUTER_S_MAX,
+  S_MAX,
+  S3_MAX,
+  S3_MAX_EXTREME,
+} from "./strategy";
 import { paramsFor } from "./params";
 import { rnd, rRange } from "./utils";
 import {
@@ -90,6 +96,34 @@ function liftAboveFloor(value: number, floor: number, high: number): number {
   return high > floor ? rnd(floor, high) : floor;
 }
 
+/**
+ * Step a size off a colliding length without leaving its range.
+ *
+ * Nudging up by one is the cheap way to break a collision, and it was the only
+ * way this did it — so a value already sitting on its ceiling stepped over it.
+ * S1 94 with S2 150 produced S2 151, past a cap the draw had honoured; the same
+ * shape sent S3 to 65 out of a 1–64 range. Rare enough to look like a flaky
+ * test rather than what it was: a config carrying a padding size the client
+ * will not accept.
+ *
+ * At the ceiling the step goes down instead. The direction does not matter to
+ * the rule — the collision is with one specific length, and either neighbour
+ * misses it — and downwards never runs out of room, because a collision means
+ * the value is at least 56 to begin with.
+ */
+export function avoidCollision(
+  value: number,
+  ceiling: number,
+  collides: (v: number) => boolean,
+): number {
+  if (!collides(value)) return value;
+
+  const step = value >= ceiling ? -1 : 1;
+  let v = value + step;
+  for (let attempts = 0; collides(v) && attempts < 10; attempts++) v += step;
+  return v;
+}
+
 
 /* ── Constraints between parameters ───────────────────────────────────────── */
 
@@ -124,36 +158,42 @@ interface SizeRules {
 function resolveSizes(drawn: Sizes, rules: SizeRules): Sizes {
   let { s1, s2, s3, s4 } = drawn;
 
+  // Router mode caps S1/S2 at 20; S3 draws high only in extreme mode.
+  const sMax = rules.routerMode ? ROUTER_S_MAX : S_MAX;
+  const s3Max = rules.extreme ? S3_MAX_EXTREME : S3_MAX;
+
   if (!rules.hasExtraSizes) {
     s3 = 0;
     s4 = 0;
   }
 
-  // A collision is cheap to break: nudge by one and the lengths differ again.
-  if (s2 === s1 + INIT_TO_RESPONSE) s2 += 1;
+  // A collision is cheap to break: step by one and the lengths differ again.
+  s2 = avoidCollision(s2, sMax, (v) => v === s1 + INIT_TO_RESPONSE);
   if (rules.hasExtraSizes) {
-    let attempts = 0;
-    while ((s3 === s1 + INIT_TO_RESPONSE || s3 === s2 + RESPONSE_TO_COOKIE) && attempts < 10) {
-      s3 += 1;
-      attempts++;
-    }
+    s3 = avoidCollision(
+      s3,
+      s3Max,
+      (v) => v === s1 + INIT_TO_RESPONSE || v === s2 + RESPONSE_TO_COOKIE,
+    );
     s4 = Math.min(s4, rules.maxS4);
   }
 
   if (rules.needsFloor) {
     const floor = MIN_S_WITH_HEADER_PROTECTION;
-    // Router mode caps S1/S2 at 20, so the redraw range narrows to 12–20
-    // rather than disappearing.
-    const high = rules.routerMode ? 20 : 150;
-
-    s1 = liftAboveFloor(s1, floor, high);
-    s2 = liftAboveFloor(s2, floor, high);
-    if (s2 === s1 + INIT_TO_RESPONSE) s2 += 1;
+    // The redraw range narrows to 12–20 under router mode rather than
+    // disappearing.
+    s1 = liftAboveFloor(s1, floor, sMax);
+    s2 = liftAboveFloor(s2, floor, sMax);
+    s2 = avoidCollision(s2, sMax, (v) => v === s1 + INIT_TO_RESPONSE);
 
     if (rules.hasExtraSizes) {
-      s3 = liftAboveFloor(s3, floor, rules.extreme ? 256 : 64);
+      s3 = liftAboveFloor(s3, floor, s3Max);
       s4 = liftAboveFloor(s4, floor, rules.maxS4);
-      if (s3 === s1 + INIT_TO_RESPONSE || s3 === s2 + RESPONSE_TO_COOKIE) s3 += 1;
+      s3 = avoidCollision(
+        s3,
+        s3Max,
+        (v) => v === s1 + INIT_TO_RESPONSE || v === s2 + RESPONSE_TO_COOKIE,
+      );
       s4 = Math.min(s4, rules.maxS4);
     }
   }

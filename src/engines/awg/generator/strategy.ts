@@ -123,8 +123,18 @@ const drawHeaderSingle: Draw = (ctx, param) => {
 
 /* ── Padding sizes ────────────────────────────────────────────────────────── */
 
+/**
+ * The ceilings the padding draws respect.
+ *
+ * Exported because the draw is not the only place that touches these numbers:
+ * `resolveSizes` breaks collisions afterwards, and a repair that does not know
+ * the ceiling will step straight over it. They used to be written twice.
+ */
 /** Router mode keeps handshake padding small; the link is the bottleneck. */
-const ROUTER_S_MAX = 20;
+export const ROUTER_S_MAX = 20;
+export const S_MAX = 150;
+export const S3_MAX = 64;
+export const S3_MAX_EXTREME = 256;
 
 /**
  * What router mode allows the junk train to be.
@@ -152,10 +162,10 @@ const ROUTER_JMIN: [number, number] = [16, 31];
 const ROUTER_JMAX: [number, number] = [96, 128];
 
 const drawS1S2: Draw = (ctx) =>
-  rnd(1, ctx.routerMode ? ROUTER_S_MAX : 150);
+  rnd(1, ctx.routerMode ? ROUTER_S_MAX : S_MAX);
 
 const drawS3: Draw = (ctx) =>
-  ctx.extreme ? rnd(65, 256) : rnd(1, 64);
+  ctx.extreme ? rnd(S3_MAX + 1, S3_MAX_EXTREME) : rnd(1, S3_MAX);
 
 const drawS4: Draw = (ctx, param) => {
   // The protocol caps S4; a client may cap it lower still.
