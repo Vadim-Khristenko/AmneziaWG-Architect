@@ -1,16 +1,23 @@
-# AmneziaWG Architect — __TAG__
+# Any Tech ARCHITECT — __TAG__
 
 Русский · [English below](#english)
 
+__NOTICE_RU__
+
 Это собранный сайт. Ничего устанавливать не нужно, интернет для работы не
 требуется — вся генерация идёт в браузере.
+
+Внутри два движка: **AmneziaWG** — обфускация handshake и junk-трафика, и
+**XRay** — REALITY поверх VLESS, где снаружи видно рукопожатие чужого сайта.
+У каждого параметра написано, откуда взята его граница и обязан ли он совпасть
+с сервером.
 
 ## Что здесь лежит
 
 ```
 dist/            собранный сайт: HTML, CSS, JS, шрифты, изображения
 scripts/
-  awg-gen.sh     генератор конфигов прямо из терминала, без браузера
+  awg-gen.sh     генератор конфигов AmneziaWG из терминала, без браузера
   serve.sh       запуск сайта — Linux / macOS
   serve.ps1      запуск сайта — Windows PowerShell
   serve.bat      запуск сайта — Windows CMD
@@ -53,9 +60,10 @@ scripts\serve.bat              # Windows CMD
 
 Сайт откроется на русском; английская версия — по адресу `/en`.
 
-## Генерация конфига из терминала
+## Генерация конфига AmneziaWG из терминала
 
-Браузер не обязателен. `awg-gen.sh` применяет те же правила:
+Браузер не обязателен. `awg-gen.sh` применяет те же правила, что и страница.
+Для XRay терминального аналога пока нет — он только в браузере:
 
 ```bash
 ./scripts/awg-gen.sh -v 3.0 -p quic          # один конфиг в stdout
@@ -85,19 +93,26 @@ sha256sum -c checksums-__TAG__.sha256
 
 <a name="english"></a>
 
-# AmneziaWG Architect — __TAG__
+# Any Tech ARCHITECT — __TAG__
 
-[Русский выше](#amneziawg-architect--__TAG__) · English
+[Русский выше](#any-tech-architect--__TAG__) · English
+
+__NOTICE_EN__
 
 This is the built site. Nothing to install, and no internet needed — all
 generation happens in your browser.
+
+There are two engines inside: **AmneziaWG** — handshake and junk-traffic
+obfuscation — and **XRay**, REALITY over VLESS, where what shows on the wire is
+someone else's handshake. Every parameter says where its bound came from and
+whether it has to match on the server.
 
 ## What is in here
 
 ```
 dist/            the built site: HTML, CSS, JS, fonts, images
 scripts/
-  awg-gen.sh     generate configs from a terminal, no browser required
+  awg-gen.sh     generate AmneziaWG configs from a terminal, no browser
   serve.sh       run the site — Linux / macOS
   serve.ps1      run the site — Windows PowerShell
   serve.bat      run the site — Windows CMD
@@ -140,9 +155,10 @@ to sections do not: a browser will not serve `dist/faq/index.html` for `/faq`.
 
 The site opens in Russian; the English version lives at `/en`.
 
-## Generating a config from a terminal
+## Generating an AmneziaWG config from a terminal
 
-No browser required — `awg-gen.sh` applies the same rules:
+No browser required — `awg-gen.sh` applies the same rules the page does. XRay
+has no terminal equivalent yet; it is browser-only:
 
 ```bash
 ./scripts/awg-gen.sh -v 3.0 -p quic          # one config to stdout

@@ -1,7 +1,7 @@
 {
-  "name": "amneziawg-architect",
-  "version": "3.2.4",
-  "description": "AmneziaWG Architect — advanced config generator, batch tooling, packet simulator and health checker for AmneziaWG obfuscation.",
+  "name": "any-tech-architect",
+  "version": "4.0.0",
+  "description": "Any Tech Architect — obfuscation config generator for AmneziaWG and XRay/REALITY, with batch tooling, a packet simulator and a health checker.",
   "author": "Vadim Khristenko <vadim@vai-rice.space>",
   "private": true,
   "type": "module",

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# AmneziaWG Architect — CI/CD Pipeline
+# Any Tech ARCHITECT — CI/CD Pipeline
 #
 # Architecture:
 #
@@ -32,6 +32,20 @@
 # starts with `#`, which silently deletes all Markdown headings from the
 # message — and the deletion happens at tag time, so nothing downstream can
 # tell it happened.
+#
+# Pre-releases follow SemVer rather than a list of blessed words: any tag
+# carrying a hyphen after the version is one.
+#
+#   v4.0.0        release
+#   v4.0.0-pre    pre-release — usable, but part of the tool has not caught up
+#   v4.1.0-rc.1   pre-release
+#
+# The list this used to match against held -rc, -beta and -alpha, so any other
+# suffix shipped as a full release with nothing to say it was not one. What the
+# flag changes is not cosmetic: GitHub keeps "latest release" pointing at the
+# previous version, so a pre-release does not become what people are handed by
+# default. The notes and the archive README say so in words as well, because
+# the badge is easy to miss.
 #
 # Commit message directives:
 #   [skip ci]    / [ci skip]       — skip entire pipeline
@@ -339,7 +353,7 @@ jobs:
       - name: 📦 Upload standalone artifact
         uses: actions/upload-artifact@v7
         with:
-          name: amneziawg-architect-v${{ steps.meta.outputs.version }}
+          name: any-tech-architect-v${{ steps.meta.outputs.version }}
           path: |
             dist/
             scripts/
@@ -494,16 +508,53 @@ jobs:
           path: bin
           merge-multiple: true
 
+      - name: 🚦 Work out the release channel
+        id: channel
+        # SemVer: everything after the first hyphen is the pre-release
+        # identifier. Matching a fixed list of suffixes meant any tag outside
+        # it — `-pre` among them — went out labelled as a full release.
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+-'; then
+            {
+              echo "prerelease=true"
+              echo "label=Pre-release"
+              echo "label_ru=Пре-релиз"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "prerelease=false"
+              echo "label=Release"
+              echo "label_ru=Релиз"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 📋 Assemble archive contents
         env:
           TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ steps.channel.outputs.prerelease }}
         run: |
           chmod +x bin/awg-serve-linux bin/awg-serve-macos 2>/dev/null || true
 
           # The archive gets its own README: someone downloading a release has
           # no repository to read, so the layout and the ways to run it have to
           # be explained in the thing they actually have.
-          sed "s/__TAG__/${TAG}/g" scripts/archive-README.md > README.md
+          #
+          # A pre-release says so at the top, in both languages. Somebody who
+          # unpacks a zip is not looking at the badge on the release page.
+          if [ "$PRERELEASE" = "true" ]; then
+            NOTICE_RU='> **Это пре-релиз.** Пользоваться можно — генераторы работают полностью. Часть страниц ещё не прошла ребрендинг и редизайн, поэтому «последним релизом» на GitHub эта версия не считается.'
+            NOTICE_EN='> **This is a pre-release.** It is usable — the generators are complete. Some pages have not been through the rebrand and redesign yet, which is why GitHub does not count this as the latest release.'
+          else
+            NOTICE_RU=''
+            NOTICE_EN=''
+          fi
+
+          sed -e "s/__TAG__/${TAG}/g" \
+              -e "s|__NOTICE_RU__|${NOTICE_RU}|" \
+              -e "s|__NOTICE_EN__|${NOTICE_EN}|" \
+            scripts/archive-README.md > README.md
 
           # The template is a build input, not something to ship twice.
           rm -f scripts/archive-README.md
@@ -522,16 +573,16 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          zip -rq "amneziawg-architect-${TAG}.zip" dist/ scripts/ bin/ README.md
-          tar -czf "amneziawg-architect-${TAG}.tar.gz" dist/ scripts/ bin/ README.md
+          zip -rq "any-tech-architect-${TAG}.zip" dist/ scripts/ bin/ README.md
+          tar -czf "any-tech-architect-${TAG}.tar.gz" dist/ scripts/ bin/ README.md
 
-          sha256sum "amneziawg-architect-${TAG}.zip" \
-                    "amneziawg-architect-${TAG}.tar.gz" \
+          sha256sum "any-tech-architect-${TAG}.zip" \
+                    "any-tech-architect-${TAG}.tar.gz" \
             > "checksums-${TAG}.sha256"
 
           echo "✅ Archives:"
-          ls -lh "amneziawg-architect-${TAG}.zip" \
-                 "amneziawg-architect-${TAG}.tar.gz" \
+          ls -lh "any-tech-architect-${TAG}.zip" \
+                 "any-tech-architect-${TAG}.tar.gz" \
                  "checksums-${TAG}.sha256"
 
       - name: 📝 Generate release notes
@@ -541,6 +592,8 @@ jobs:
           BUILD_TIME: ${{ needs.build.outputs.build-time }}
           DIST_SIZE: ${{ needs.build.outputs.dist-size }}
           FILE_COUNT: ${{ needs.build.outputs.file-count }}
+          PRERELEASE: ${{ steps.channel.outputs.prerelease }}
+          CHANNEL: ${{ steps.channel.outputs.label }}
         run: |
           # The checkout gives us the tag ref, but not necessarily the tag
           # *object* the message lives in. Fetch it explicitly, or the notes
@@ -564,6 +617,16 @@ jobs:
           TAG_BODY=$(git tag -l --format='%(contents:body)' "${TAG}")
 
           {
+            # A pre-release announces itself before anything else. The badge on
+            # the release page is small and the notes are what gets quoted.
+            if [ "$PRERELEASE" = "true" ]; then
+              echo "> **Pre-release.** Usable, and not what GitHub hands out as"
+              echo "> the latest release. Install it if you want what is being"
+              echo "> built right now rather than the last version that was"
+              echo "> finished everywhere."
+              echo ""
+            fi
+
             if [ -n "$TAG_SUBJECT" ]; then
               # Tag messages are written as Markdown, so they go out verbatim
               # and bring their own heading. Adding one here on top produced a
@@ -578,13 +641,14 @@ jobs:
               echo ""
             else
               # Nothing on the tag — fall back to naming the release.
-              echo "## AmneziaWG Architect ${TAG}"
+              echo "## Any Tech ARCHITECT ${TAG}"
               echo ""
             fi
 
             echo "| | |"
             echo "|---|---|"
             echo "| **Version** | \`${VERSION}\` |"
+            echo "| **Channel** | ${CHANNEL} |"
             echo "| **Built at** | ${BUILD_TIME} |"
             echo "| **Dist size** | ${DIST_SIZE} (${FILE_COUNT} files) |"
             echo "| **Commit** | \`${GITHUB_SHA::7}\` |"
@@ -656,8 +720,9 @@ jobs:
             echo "without starting anything."
             echo ""
             echo "The archive also carries \`scripts/awg-gen.sh\`, which"
-            echo "generates configurations from a terminal with no browser"
-            echo "and no network, and a \`README.md\` describing the layout."
+            echo "generates AmneziaWG configurations from a terminal with no"
+            echo "browser and no network, and a \`README.md\` describing the"
+            echo "layout. The XRay side is browser-only for now."
             echo ""
             echo "## Checksums"
             echo ""
@@ -669,15 +734,17 @@ jobs:
       - name: 🚀 Create Release
         uses: softprops/action-gh-release@v3
         with:
-          name: "AmneziaWG Architect ${{ github.ref_name }}"
+          name: "Any Tech ARCHITECT ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
+          # A pre-release must not become what the download button points at.
+          make_latest: ${{ steps.channel.outputs.prerelease == 'true' && 'false' || 'true' }}
           generate_release_notes: false
           files: |
-            amneziawg-architect-${{ github.ref_name }}.zip
-            amneziawg-architect-${{ github.ref_name }}.tar.gz
+            any-tech-architect-${{ github.ref_name }}.zip
+            any-tech-architect-${{ github.ref_name }}.tar.gz
             checksums-${{ github.ref_name }}.sha256
 
       - name: 📋 Summary
@@ -685,13 +752,14 @@ jobs:
         # comes in through the environment here too.
         env:
           TAG: ${{ github.ref_name }}
+          CHANNEL: ${{ steps.channel.outputs.label }}
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          ### 🏷️ Release \`${TAG}\` created
+          ### 🏷️ ${CHANNEL} \`${TAG}\` created
 
           | File | |
           |------|---|
-          | amneziawg-architect-${TAG}.zip | ✅ |
-          | amneziawg-architect-${TAG}.tar.gz | ✅ |
+          | any-tech-architect-${TAG}.zip | ✅ |
+          | any-tech-architect-${TAG}.tar.gz | ✅ |
           | checksums-${TAG}.sha256 | ✅ |
           EOF
