@@ -63,6 +63,11 @@ import {
     generateXrayBatch,
 } from "@/engines/xray/generate";
 import { validateXray } from "@/engines/xray/validate";
+import {
+    inputPathFor,
+    readPath,
+    writePath,
+} from "@/engines/xray/bindings";
 import { buildServerInbound, buildClientUris } from "@/engines/xray/render";
 import type { XrayConfig, XrayInput } from "@/engines/xray/types";
 import { localizePath, useI18n } from "@/i18n";
@@ -202,6 +207,11 @@ const groups = computed(() =>
             /** What it is worth in the config on screen, if anything. */
             value: serverValues.value[p.key] ?? "",
             side: sideOf(p.key),
+            /* Where it writes, and what the control needs to know. */
+            path: pathFor(group, p.key),
+            options: p.bounds?.oneOf ?? [],
+            min: p.bounds?.min,
+            max: p.bounds?.max,
         }));
         return {
             group,
@@ -213,6 +223,66 @@ const groups = computed(() =>
         };
     }).filter((g) => g.items.length > 0 && groupApplies(g.group)),
 );
+
+/* ── Parameters you can actually set ─────────────────────────────────────── */
+
+/**
+ * Where a parameter writes, or null when it is not wired yet.
+ *
+ * Null is a real answer: a control that appears to work and changes nothing is
+ * worse than one that is honestly absent, and the binding table exists to keep
+ * the difference visible rather than guessed.
+ */
+const pathFor = (group: string, key: string) => inputPathFor(group, key);
+
+/** The value on screen for a bound parameter. */
+function valueOf(group: string, key: string): string | number | boolean | "" {
+    const path = pathFor(group, key);
+    if (!path) return "";
+    const v = readPath(input.value, path);
+    if (v === undefined || v === null) return "";
+    return v as string | number | boolean;
+}
+
+/**
+ * Write it back, then rebuild.
+ *
+ * Numbers arrive from the DOM as strings and an empty field is not zero — a
+ * blank keepalive is "leave the kernel's own", and coercing it to 0 would set
+ * a real value nobody asked for.
+ */
+function setValue(group: string, key: string, kind: string, raw: unknown) {
+    const path = pathFor(group, key);
+    if (!path) return;
+
+    let value: unknown = raw;
+    if (kind === "int") {
+        const text = String(raw).trim();
+        value = text === "" ? 0 : Number(text);
+        if (!Number.isFinite(value as number)) return;
+    }
+    writePath(input.value, path, value);
+    build();
+}
+
+/**
+ * What is wrong with the config right now, indexed by the field it is about.
+ *
+ * The validator already names the field of every finding; nothing was reading
+ * it, so a rejected value was reported far from the control that produced it.
+ */
+const findingsByField = computed(() => {
+    const out: Record<string, { level: string; text: string }[]> = {};
+    if (!config.value) return out;
+
+    for (const f of validateXray(config.value)) {
+        (out[f.field] ??= []).push({
+            level: f.level,
+            text: t(("find." + f.code) as never, f.values ?? {}),
+        });
+    }
+    return out;
+});
 
 /* ── What is on screen, and what is not ──────────────────────────────────── */
 
@@ -246,7 +316,13 @@ function groupApplies(group: string): boolean {
 }
 
 /** REALITY and XHTTP carry most of the surface; they get the whole row. */
-const WIDE_GROUPS = new Set(["reality", "xhttp"]);
+/*
+ * The groups that read better across the page than in a two-tile column.
+ * Reality and XHTTP because they carry the most; socket and FinalMask because
+ * their parameters are short and eleven of them stacked in half a row is a
+ * ladder.
+ */
+const WIDE_GROUPS = new Set(["reality", "xhttp", "sockopt", "finalmask"]);
 
 /* ── The help drawers, as on the AmneziaWG page ──────────────────────────── */
 
@@ -731,7 +807,7 @@ function setServerNames(event: Event) {
                 </div>
             </section>
 
-            <section class="zone gen-span-4">
+            <section class="zone gen-span-3">
                 <div class="zone-head">
                     <Cpu :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.core") }}</span>
@@ -751,12 +827,20 @@ function setServerNames(event: Event) {
                         and hidden from assistive technology and from narrow
                         screens, where the cards stack and there is no gap.
                     -->
-                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
-└ ATA ┘</div>
+                    <div class="zone-filler" aria-hidden="true">
+                        <i class="zone-filler-tick"></i>
+                        XRAY · {{ input.version }}
+                    </div>
                 </div>
             </section>
 
-            <section class="zone gen-span-4">
+            <!--
+                The tallest of the five, and it keeps its column for two rows
+                rather than stretching four short cards to match it. That is
+                the shape of the content: three selects, a picker and a switch
+                against two fields.
+            -->
+            <section class="zone gen-span-5 gen-tall">
                 <div class="zone-head">
                     <LayersIcon :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.layers") }}</span>
@@ -817,7 +901,7 @@ function setServerNames(event: Event) {
             </section>
 
             <!-- Only when REALITY is the security in play. -->
-            <section v-if="input.security === 'reality'" class="zone gen-span-8">
+            <section v-if="input.security === 'reality'" class="zone gen-span-7">
                 <div class="zone-head">
                     <Globe :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.donor") }}</span>
@@ -864,8 +948,10 @@ function setServerNames(event: Event) {
                         and hidden from assistive technology and from narrow
                         screens, where the cards stack and there is no gap.
                     -->
-                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
-└ ATA ┘</div>
+                    <div class="zone-filler" aria-hidden="true">
+                        <i class="zone-filler-tick"></i>
+                        XRAY · {{ input.version }}
+                    </div>
                 </div>
 
                 <!--
@@ -880,7 +966,7 @@ function setServerNames(event: Event) {
                 </div>
             </section>
 
-            <section class="zone gen-span-4">
+            <section class="zone gen-span-7">
                 <div class="zone-head">
                     <KeyRound :size="15" class="zone-icon" />
                     <span class="zone-title">{{ t("xg.zone.ids") }}</span>
@@ -968,17 +1054,13 @@ function setServerNames(event: Event) {
                             v-for="p in g.items"
                             :key="p.key"
                             class="gen-tile xg-param"
-                            :class="[`is-${p.state}`, { 'is-absent': !p.inVersion }]"
+                            :class="[
+                                `is-${p.state}`,
+                                { 'is-absent': !p.inVersion, 'is-editable': p.path },
+                            ]"
                         >
                             <span class="xg-tile-top">
                                 <span class="gen-tile-key">{{ p.kind }}</span>
-                                <!--
-                                    Where the value ends up. "both" means it is
-                                    in the link the user sends to their phone
-                                    as well as in the server file, which is the
-                                    question anyone setting this up actually
-                                    has.
-                                -->
                                 <span
                                     v-if="p.side !== 'none'"
                                     class="xg-side"
@@ -989,7 +1071,79 @@ function setServerNames(event: Event) {
                                 </span>
                             </span>
                             <span class="gen-tile-val">{{ p.key }}</span>
-                            <span v-if="p.value" class="xg-value">{{ p.value }}</span>
+
+                            <!--
+                                A control when the parameter is wired, the
+                                value when it is not. The shape comes from the
+                                catalogue — bounds for a number, `oneOf` for an
+                                enum — so a parameter gains its control by
+                                being described, not by being hand-written.
+                            -->
+                            <template v-if="p.path">
+                                <label v-if="p.kind === 'flag'" class="switch xg-edit">
+                                    <input
+                                        type="checkbox"
+                                        :checked="!!valueOf(g.group, p.key)"
+                                        @change="
+                                            setValue(
+                                                g.group,
+                                                p.key,
+                                                p.kind,
+                                                ($event.target as HTMLInputElement).checked,
+                                            )
+                                        "
+                                    />
+                                    <span class="switch-track"></span>
+                                </label>
+
+                                <select
+                                    v-else-if="p.kind === 'enum' && p.options.length"
+                                    class="select xg-edit"
+                                    :value="valueOf(g.group, p.key)"
+                                    @change="
+                                        setValue(
+                                            g.group,
+                                            p.key,
+                                            p.kind,
+                                            ($event.target as HTMLSelectElement).value,
+                                        )
+                                    "
+                                >
+                                    <option v-for="o in p.options" :key="o" :value="o">
+                                        {{ o || "—" }}
+                                    </option>
+                                </select>
+
+                                <input
+                                    v-else
+                                    class="input input--mono xg-edit"
+                                    :type="p.kind === 'int' ? 'number' : 'text'"
+                                    :min="p.min"
+                                    :max="p.max"
+                                    :value="valueOf(g.group, p.key)"
+                                    @change="
+                                        setValue(
+                                            g.group,
+                                            p.key,
+                                            p.kind,
+                                            ($event.target as HTMLInputElement).value,
+                                        )
+                                    "
+                                />
+                            </template>
+
+                            <span v-else-if="p.value" class="xg-value">{{ p.value }}</span>
+
+                            <!-- Said next to the control that produced it. -->
+                            <span
+                                v-for="(f, i) in findingsByField[p.key] ?? []"
+                                :key="i"
+                                class="xg-finding"
+                                :class="'is-' + f.level"
+                            >
+                                {{ f.text }}
+                            </span>
+
                             <span
                                 class="xg-state"
                                 :data-tooltip="stateHint(p.state)"
@@ -1230,15 +1384,42 @@ function setServerNames(event: Event) {
 
 /* ── Zones ────────────────────────────────────────────────────────────── */
 
+/*
+ * Dense, because sections come and go.
+ *
+ * Half the parameter groups are conditional — socket and FinalMask always,
+ * XHTTP and xmux only on that transport, REALITY and TLS on their security —
+ * so with mixed widths and the default flow, hiding one leaves a hole where it
+ * was and the rest keep their places. Dense backfills it: the row closes and
+ * the layout stays a layout rather than a layout with a gap in it.
+ */
 .gen-zones {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-flow: row dense;
     align-items: start;
     gap: var(--sp-4);
 }
 
+.gen-span-3 {
+    grid-column: span 3;
+}
+
 .gen-span-4 {
     grid-column: span 4;
+}
+
+.gen-span-5 {
+    grid-column: span 5;
+}
+
+.gen-span-7 {
+    grid-column: span 7;
+}
+
+/* Two rows tall, which is what lets the row beside it be a different shape. */
+.gen-tall {
+    grid-row: span 2;
 }
 
 .gen-span-6 {
@@ -1377,6 +1558,44 @@ function setServerNames(event: Event) {
     color: var(--green);
 }
 
+/* A control inside a tile: full width, and no taller than the tile needs. */
+.xg-edit {
+    width: 100%;
+    margin-top: 2px;
+}
+
+.xg-edit.switch {
+    width: auto;
+}
+
+/* Tiles that can be changed read as controls rather than as readings. */
+.is-editable {
+    background: var(--ground-2);
+    border-color: var(--line-soft);
+}
+
+/*
+ * What is wrong with this value, beside the control that set it. The validator
+ * has always named the field; nothing read it, so a rejected value was
+ * reported at the other end of the page.
+ */
+.xg-finding {
+    font-size: var(--t-2xs);
+    line-height: 1.4;
+}
+
+.xg-finding.is-error {
+    color: var(--red);
+}
+
+.xg-finding.is-warn {
+    color: var(--accent-ink);
+}
+
+.xg-finding.is-info {
+    color: var(--ink-3);
+}
+
 .xg-state {
     font-family: var(--fm);
     font-size: 10px;
@@ -1500,11 +1719,18 @@ function setServerNames(event: Event) {
 }
 
 @media (max-width: 900px) {
+    .gen-span-3,
     .gen-span-4,
+    .gen-span-5,
     .gen-span-6,
+    .gen-span-7,
     .gen-span-8,
     .gen-span-12 {
         grid-column: 1 / -1;
+    }
+
+    .gen-tall {
+        grid-row: auto;
     }
 }
 </style>

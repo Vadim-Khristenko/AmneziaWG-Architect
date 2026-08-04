@@ -627,8 +627,10 @@ function toSimulator() {
                         the sheet's own furniture rather than a joke pasted
                         into a gap.
                     -->
-                    <div class="zone-filler" aria-hidden="true">┌─ · ─┐
-└ ATA ┘</div>
+                    <div class="zone-filler" aria-hidden="true">
+                        <i class="zone-filler-tick"></i>
+                        AWG · {{ version }}
+                    </div>
                 </div>
             </section>
 

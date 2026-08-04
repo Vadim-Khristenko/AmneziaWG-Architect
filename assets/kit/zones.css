@@ -446,25 +446,51 @@
 /*
  * The mark left in the space a short card cannot fill.
  *
- * It is the drawing sheet's own furniture — a corner tick and a scale note —
- * rather than a joke pasted into a gap. Hidden from assistive technology and
- * from narrow screens, where the cards stack and there is no gap to fill.
+ * A sheet designation rather than a decorative bracket: on a real drawing the
+ * corner carries which sheet you are holding, and here it carries which engine
+ * and which version produced what is above it. That makes it furniture that
+ * says something — the same rule every other motif in this kit obeys.
+ *
+ * Drawn with a corner rule instead of typed box characters, which never line
+ * up across fonts and cannot be sized.
  */
 .zone-filler {
+    position: relative;
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
     flex: 1;
-    min-height: 34px;
-    padding-top: var(--sp-4);
+    min-height: 40px;
+    padding: var(--sp-4) 0 2px var(--sp-4);
     font-family: var(--fm);
     font-size: 9px;
     line-height: 1.35;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
     color: var(--ink-faint);
-    white-space: pre;
     pointer-events: none;
     user-select: none;
+}
+
+/* The corner: two rules meeting, as a title block is ruled off. */
+.zone-filler::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 26px;
+    height: 26px;
+    border-right: var(--rule) solid var(--line-faint);
+    border-bottom: var(--rule) solid var(--line-faint);
+}
+
+.zone-filler-tick {
+    position: absolute;
+    right: 30px;
+    bottom: 0;
+    width: 5px;
+    height: var(--rule);
+    background: var(--line-faint);
 }
 
 @media (max-width: 900px) {
