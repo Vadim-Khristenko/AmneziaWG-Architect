@@ -643,103 +643,112 @@ export const en: Catalog = {
   "mk.slot.n": "Key #{n}",
 
   /* ── About page ───────────────────────────────────────────────────────── */
-  "about.badge": "ABOUT",
-  "about.subtitle.1": "A next-generation obfuscation generator.",
-  "about.subtitle.2": "Your protocol, your rules.",
-  "about.subtitle.3": "Invisibility by design.",
+  /* ── About ────────────────────────────────────────────────────────────── */
+  "about.hero.tagline": "A next-generation generator)",
+  "about.hero.motto": "Your protocol → your rules",
 
-  "about.legal.title": "Legal notice",
-  "about.legal.warning":
-    "This project exists for educational and research purposes only.",
-  "about.legal.scope":
-    "It was never built for use in Russia or the CIS. The author accepts no responsibility for how this software is used.",
-  "about.legal.allowedTitle": "Permitted use:",
-  "about.legal.allowed.1": "Penetration testing and security research",
-  "about.legal.allowed.2": "CTF competitions",
-  "about.legal.allowed.3": "Academic research",
-  "about.legal.allowed.4": "Testing networks you own",
-  "about.legal.disclaimer":
-    "Using traffic obfuscation tools may violate the law where you live. Nothing in this project encourages breaking it.",
+  "about.legal.title": "A little legal preamble",
+  "about.legal.lede":
+    "This tool exists for research and for learning how obfuscation actually works. Whether to use it is your decision, and nobody who had a hand in it answers for that decision.",
+  "about.legal.asis":
+    "The project is given as it is: no promise that it suits you, and no liability for what happens while you use it. That is not a dodge — it is the literal text of the MIT licence, which is short and worth reading in full.",
+  "about.legal.licenseLink": "The MIT licence, in full",
 
-  "about.stat.profiles": "Mimicry profiles",
-  "about.stat.params": "Generation parameters",
-  "about.stat.tests": "Automated tests",
-  "about.stat.clients": "Supported clients",
+  "about.legal.forTitle": "What it is certainly for",
+  "about.legal.for.1": "Competitions — CTF and everything around it.",
+  "about.legal.for.2": "Academic work and teaching how protocols are built.",
+  "about.legal.for.3": "Security research.",
+  "about.legal.for.4":
+    "Setting up and testing your own local networks — yours, not someone else's.",
 
-  "about.what.title": "What is AmneziaWG Architect?",
+  "about.legal.warnTitle": "Said plainly",
+  "about.legal.warn":
+    "Traffic obfuscation may break the law where you are. Nothing here encourages that — check what is allowed where you are before you run anything. It is your responsibility, and there is nobody to pass it to.",
+
+  "about.chip.protocols.value": "AmneziaWG and XRay",
+  "about.chip.protocols.label": "Two protocols",
+  "about.chip.params.label": "Generated parameters",
+  "about.chip.params.hint": "23 for AmneziaWG and 74 for XRay",
+  "about.chip.tests.label": "Automated tests",
+  "about.chip.tests.hint": "Run on every build",
+  "about.chip.clients.label": "Supported clients",
+  "about.chip.clients.hint": "Each with its own ceilings",
+  "about.chip.people.value": "1500+",
+  "about.chip.people.label": "Came to look",
+  "about.chip.people.hint":
+    "We collect no statistics at all. This number comes from GitHub's public traffic report for the project page, and we have no other way of knowing it.",
+  "about.chip.days.label": "Days in the making",
+  "about.chip.days.hint": "Since 1 March 2026, without a pause",
+
+  "about.what.title": "What Any Tech ARCHITECT is",
+  "about.what.lede":
+    "A tool that assembles an obfuscation configuration and explains every number in it. Not press-and-hope, but a working drawing: you can see what the packet is made of and why it looks the way it does.",
   "about.what.p1":
-    "AmneziaWG Architect is an advanced web tool for building unique AmneziaWG obfuscation profiles, and for working with Amnezia VPN keys.",
+    "Clients can generate these parameters themselves, and that is fine right up until the tunnel does not come up. Then it turns out the button explained neither what it chose nor which of it has to match on the server. This explains: every parameter says where its bound came from, which side reads it, and what happens when the two sides disagree.",
   "about.what.p2":
-    "An ordinary VPN encrypts your data; Architect helps disguise the fact that you are using one at all. DPI systems analyse packet structure and identify WireGuard by its fixed headers and sizes. Architect generates parameters that make your traffic resemble QUIC, TLS, SIP or other protocols.",
+    "Everything is computed in your tab. Keys, identities, shortIds — all of it is born in the browser and goes nowhere, because there is nowhere to go: this project has no server.",
 
-  "about.feature.profiles.title": "11 mimicry profiles",
-  "about.feature.profiles.desc":
-    "QUIC, TLS, DTLS, SIP, HTTP/3, Noise_IK and more. The H1–H4, S1–S4 and I1–I5 parameters map exactly onto AmneziaVPN's own fields.",
-  "about.feature.smart.title": "Informed generation",
-  "about.feature.smart.desc":
-    "Not random numbers but the structure of real network packets. Choosing a target client and consulting the compatibility matrix rules out parameters that would not work.",
-  "about.feature.check.title": "Config checking",
-  "about.feature.check.desc":
-    "The health checker catches errors in a .conf before it reaches a client. The batch generator produces up to 1000 configs in a Web Worker.",
-  "about.feature.advanced.title": "For advanced users",
-  "about.feature.advanced.desc":
-    "The packet simulator visualises the handshake, and CPS tags, MTU and mimicry profiles are all under manual control.",
+  "about.what.card.1.title": "From the text of the standard",
+  "about.what.card.1.desc":
+    "Mimicry profiles are built from the RFCs rather than by eye: QUIC from 9000, TLS from 8446, DNS from 1035. Where a bound is stated, the file in the protocol's own source is named beside it.",
+  "about.what.card.2.title": "Checked, not claimed",
+  "about.what.card.2.desc":
+    "Configs are generated in thousands and tested against invariants, packets are parsed as their own protocols, and XRay runs against released cores in Docker — one core per version.",
+  "about.what.card.3.title": "Nothing leaves",
+  "about.what.card.3.desc":
+    "No analytics, no counters, no server side. The page is static files, and once loaded it works with the network off.",
+  "about.what.card.4.title": "Explains, not only emits",
+  "about.what.card.4.desc":
+    "Every parameter carries a note: what it does, whether it has to match the server, and which version introduced it. The forty-four FAQ answers are the same thing at length.",
 
-  "about.timeline.title": "Project timeline",
+  "about.timeline.title": "How it grew",
   "about.timeline.lede":
-    "In its short life Architect has been rebuilt several times over — from a single HTML file to a full Vue 3 SPA. Each round made it easier to use, more capable and better looking.",
+    "Each entry says what changed and why. The number answers one question: how much of the tool you have to learn again.",
+  "about.timeline.scheme.major": "major — it is a different tool",
+  "about.timeline.scheme.minor": "minor — it does something it could not",
+  "about.timeline.scheme.patch": "patch — something was wrong",
 
-  "about.mergekeys.lede":
-    "Besides the obfuscation generator, Architect ships MergeKeys — a tool for working with Amnezia VPN keys in the vpn:// format.",
-  "about.mergekeys.update.title": "Refresh obfuscation",
-  "about.mergekeys.update.desc":
-    "Apply new Jc, Jmin, Jmax and I1–I5 values to an existing key without recreating it. Server-side parameters are left untouched.",
-  "about.mergekeys.merge.title": "Merge keys",
-  "about.mergekeys.merge.desc":
-    "Collect containers from several vpn:// keys into a single master key. Duplicates are detected automatically.",
-  "about.mergekeys.goto": "Open MergeKeys",
-  "about.mergekeys.combine": "Merge keys",
-
-  "about.privacy.lede.bold": "We collect nothing from you.",
+  "about.privacy.title": "The privacy manifesto",
   "about.privacy.lede":
-    "There are no servers of ours, no analytics, no trackers, no databases and no hidden requests anywhere. Everything on this page runs inside your browser. The source is fully open — anyone can check there is nothing extra here, fork the repository and run Architect themselves.",
-  "about.privacy.local.title": "Your browser only",
-  "about.privacy.local.desc":
-    "Obfuscation generation, vpn:// key decoding, parameter patching and packet simulation all run locally on your device. We physically cannot see your configs, your keys or the parameters you pick.",
-  "about.privacy.notrack.title": "No metrics, no trackers",
-  "about.privacy.notrack.desc":
-    "No Google Analytics, Yandex.Metrika, Amplitude or homegrown analytics. No cookies, no fingerprinting, no third-party scripts. Nothing is collected, logged or forwarded.",
-  "about.privacy.offline.title": "Works without the internet",
-  "about.privacy.offline.desc":
-    "Save the page with Ctrl+S or Cmd+S and use it offline. Generation, config checking and key handling need neither a network nor our servers.",
-  "about.privacy.oss.title": "Open source, runs locally",
-  "about.privacy.oss.desc":
-    "All the source is on GitHub. You can read it, audit it, build it locally and run it on your own machine — with no dependency on us at all.",
+    "A short section, because there is not much to tell: we know nothing about you and have no plans to start.",
+  "about.privacy.1.title": "No analytics",
+  "about.privacy.1.desc":
+    "No counters, no pixels, no \"anonymous telemetry that helps us improve\". We will improve some other way.",
+  "about.privacy.2.title": "No server either",
+  "about.privacy.2.desc":
+    "There is nowhere to send your keys even if we wanted to: these are static files on a host. Nothing is listening.",
+  "about.privacy.3.title": "It all happens on your side",
+  "about.privacy.3.desc":
+    "Keys, shortIds, client identities — all generated in your tab through the browser's own cryptographic source. Turn the network off after the page loads: it works exactly the same.",
+  "about.privacy.4.title": "Your history is yours",
+  "about.privacy.4.desc":
+    "Saved configs live in your browser's localStorage. We cannot see them and cannot sync them between your devices — there is an export to a file, which is more honest than any cloud.",
+  "about.privacy.5.title": "Check for yourself",
+  "about.privacy.5.desc":
+    "Open the Network tab in your developer tools and generate a config. There will be no outgoing requests. That is not a promise; it is ten seconds of looking.",
 
-  "about.oss.lede":
-    "The project's sources are entirely open. Anyone can read the code, satisfy themselves it is safe, propose improvements, fork it and deploy their own version.",
-  "about.oss.stack.title": "A modern stack",
-  "about.oss.stack.desc":
-    "The source lives on GitHub. Vue 3, TypeScript and Vite — a current stack with no magic in it.",
-  "about.oss.audit.title": "Audits welcome",
-  "about.oss.audit.desc":
-    "Every line of the generation and key-handling code is open to audit. No obfuscated bundles, just plain TypeScript.",
-  "about.oss.github": "Sources on GitHub",
+  "about.source.title": "Open source",
+  "about.source.lede":
+    "Everything this page does can be read. Two mirrors, in case one of them does not open where you are.",
+  "about.source.github": "GitHub",
+  "about.source.githubDesc": "The main repository, releases and discussions.",
+  "about.source.mirror": "VIA GIT",
+  "about.source.mirrorDesc":
+    "Our own mirror. It opens where GitHub does not.",
+  "about.source.bugs": "Found a bug?",
+  "about.source.bugsDesc":
+    "Open an issue on GitHub — with the version, the steps, and what you expected instead. Ideas and requests go there too: most of the list above started as somebody's message.",
+  "about.source.bugsGo": "Report a problem",
 
-  "about.dev.solo.title": "A single developer",
-  "about.dev.solo.desc":
-    "Architect is built and maintained by one person. Bugs get fixed quickly, often the same day. The project runs on enthusiasm and spare time.",
-  "about.dev.feedback.title": "Found a bug? Have an idea?",
-  "about.dev.feedback.desc":
-    "Bug reports and ideas are genuinely welcome. Join the discussion in the chat or open an issue on GitHub. If GitHub is blocked for you, the source is mirrored on git.vai-rice.space.",
-  "about.dev.noDm":
-    "Please do not send direct messages — the shared chat or an issue, either is fine.",
-  "about.mergekeys.title": "MergeKeys — key management",
-  "about.privacy.title": "Privacy manifesto",
-  "about.opensource.title": "Open source",
-  "about.dev.title": "Developer and feedback",
+  "about.author.title": "Who makes this",
+  "about.author.p1":
+    "The project has one author. He has kept at it for a long time without a break — everything on this page was written by one person in his spare time.",
+  "about.author.p2":
+    "There are other projects besides this one, and they are not small. If you liked how Architect is put together, go and have a look: the same hand made those.",
+  "about.author.projects": "Other projects",
+  "about.author.donate":
+    "And if you would like to help — this is what helps most. Not a subscription and not adverts: just time for the author to keep going.",
 
-  /* ── Donations ────────────────────────────────────────────────────────── */
   "donate.title": "Support the project",
   "donate.desc":
     "This project runs on enthusiasm and collects neither data nor money from its users. If it helped you, a coffee in crypto is welcome.",

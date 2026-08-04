@@ -1,6 +1,11 @@
 <script setup lang="ts">
 /**
- * Support section — fiat links, crypto addresses and other projects.
+ * Support section — fiat links and crypto addresses.
+ *
+ * The author's other projects used to sit at the bottom of this block, which
+ * put "here is where to send money" and "here is what else I make" in one
+ * breath. They are a paragraph of their own on the About page now, at the end,
+ * where the sentence about who writes this belongs.
  *
  * Lives on the About page under the `#support` anchor, which the footer's
  * donate button links to.
@@ -21,7 +26,6 @@ import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import {
     CRYPTO_WALLETS,
     FIAT_METHODS,
-    OTHER_PROJECTS,
 } from "@/data/support";
 
 const { locale, t } = useI18n();
@@ -112,40 +116,6 @@ const isInternal = (url: string) => url.startsWith("/");
             </ul>
         </div>
 
-        <!-- ── Other projects ──────────────────────────────────────────── -->
-        <div class="projects-block">
-            <div class="crypto-head">
-                <Compass :size="16" />
-                <h3>{{ t("donate.projects.title") }}</h3>
-            </div>
-            <p class="projects-lede">
-                {{ t("donate.projects.lede") }}
-            </p>
-
-            <div class="projects-grid">
-                <component
-                    :is="isInternal(p.url) ? 'router-link' : 'a'"
-                    v-for="p in OTHER_PROJECTS"
-                    :key="p.id"
-                    v-bind="
-                        isInternal(p.url)
-                            ? { to: p.url }
-                            : {
-                                  href: p.url,
-                                  target: '_blank',
-                                  rel: 'noopener noreferrer',
-                              }
-                    "
-                    class="project-card"
-                >
-                    <span class="project-title">
-                        {{ p.title[locale] }}
-                        <ArrowUpRight :size="14" />
-                    </span>
-                    <span class="project-desc">{{ p.desc[locale] }}</span>
-                </component>
-            </div>
-        </div>
     </section>
 </template>
 

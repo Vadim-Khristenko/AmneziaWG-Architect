@@ -7,6 +7,20 @@
  * entries also mention AmneziaWG 1.0/2.0/3.0 — that is the protocol, and the
  * two numbering schemes are unrelated. Keep the distinction explicit in the
  * text: "AWG 2.0" for the protocol, "v2.0" for a release of this tool.
+ *
+ * WHAT A NUMBER MEANS HERE
+ *
+ * Not semver: nothing imports this as a library, so "breaking change" has no
+ * one to break. The number answers a different question — how much of the tool
+ * a returning user has to re-learn.
+ *
+ *   major   it is a different tool than it was. A second engine, a rebrand,
+ *           a redesign of how the thing is read.
+ *   minor   it does something it could not do, inside what it already is.
+ *   patch   something was wrong. The entry says what, not that it was fixed.
+ *
+ * Which is why the two engines are 4.0 and the FAQ growing from 33 answers to
+ * 44 was not: more of the same is not a different tool.
  */
 
 import type { Locale, Localised } from "@/i18n";
@@ -260,7 +274,7 @@ export const TIMELINE: TimelineEntry[] = [
   },
   {
     version: "3.2.4",
-    date: { ru: "Текущий", en: "Current" },
+    date: { ru: "Текст", en: "Text" },
     title: {
       ru: "Текст, который можно читать",
       en: "Text you can actually read",
@@ -270,6 +284,20 @@ export const TIMELINE: TimelineEntry[] = [
     desc: {
       ru: "**44 ответа FAQ и вся эта хронология были сплошными абзацами без единого выделения.** Формально верно, читать невозможно: правило и оговорка выглядели одинаково, а имя параметра терялось в прозе.\n\n## Почему не просто HTML\n\nОтветы используются дважды: рендерятся на странице и уходят в разметку `FAQPage` JSON-LD, где разметки быть не должно. Хранить HTML значило бы сломать второе применение, хранить плоский текст — первое.\n\nПоэтому источник несёт минимальный набор знаков: пустая строка на абзац, `##` и `###` на подзаголовки, `**жирный**` для того, что нельзя пропустить, `*курсив*` для оговорок, бэктики для имён, которые пишутся точно, и ссылки на исходники. Страница рендерит их элементами, а структурированные данные и поисковый индекс получают текст очищенным. *HTML не появляется нигде, поэтому экранировать нечего и внедрять некуда*; схемы ссылок проверяются по списку разрешённых при разборе.\n\n## Проверка\n\nПереформатирование не имело права изменить ни слова, и это проверено машинно: очищенный текст всех 88 строк совпал с исходным побайтово. Тесты держат инвариант дальше — парность знаков, отсутствие разметки в JSON-LD и запрет на ответ длиннее экрана без единого абзаца.",
       en: "**Forty-four FAQ answers and this whole timeline were solid paragraphs with no emphasis anywhere.** Technically correct and unreadable: a rule and an aside looked identical, and a parameter name vanished into the prose.\n\n## Why not just HTML\n\nAnswers are used twice: rendered into the page, and emitted into `FAQPage` JSON-LD, which must not carry markup. Storing HTML would break the second use; storing flat text broke the first.\n\nSo the source carries a minimal set of marks: a blank line for a paragraph, `##` and `###` for subheadings, `**bold**` for what must not be missed, `*italic*` for caveats, backticks for names spelled exactly, and links to sources. The page renders them as elements, while the structured data and the search index get the text stripped. *No HTML exists anywhere in the pipeline, so there is nothing to escape and nothing to inject*; link schemes are checked against an allowlist at parse time.\n\n## Verification\n\nReformatting was not allowed to change a single word, and that was checked mechanically: the stripped text of all 88 strings matched the original exactly. Tests hold the invariant from here — balanced marks, no markup reaching JSON-LD, and no answer longer than a screenful left as one unbroken block.",
+    },
+  },
+  {
+    version: "4.0",
+    date: { ru: "Готовится", en: "In preparation" },
+    title: {
+      ru: "Два движка, один инструмент",
+      en: "Two engines, one tool",
+    },
+    icon: "Rocket",
+    color: "amber",
+    desc: {
+      ru: "**Самое большое изменение с первого прототипа: инструмент перестал быть генератором для одного протокола.**\n\n## XRay встал рядом с AmneziaWG\n\nДвижок написан и проверен против выпущенных ядер в Docker — по одному ядру на версию. К нему появился интерфейс: девяносто семь параметров каталога на двух страницах, каждый со своим состоянием — *подбирается сам, задаётся вами, или пока не выражается*. Секции появляются и исчезают по составу конфига: на `raw` нет XHTTP, на `tls` нет REALITY, и грид смыкается сам.\n\n## Форма вместо списка\n\nГенератор AmneziaWG перерисован: каждая группа параметров нарисована как то, чем она управляет. Junk-поезд — поездом, паддинг — полосами в масштабе, заголовки — четырьмя отрезками на одной оси. Последнее и оправдывает подход: единственное правило `H1–H4` в том, что диапазоны не пересекаются, и четыре пары десятизначных чисел в списке проверить глазом нельзя, а на общей оси это единственное, что видно.\n\n## Что нашлось по дороге\n\nПроверка обнаружила, что **рассогласование донора REALITY и SNI не ловилось вообще**: сертификат приходит от одного сайта, имя запрошено от другого, и это видно на проводе. Теперь есть правило с тестами.\n\nРазвёртка на шестистах генерациях подтвердила обратное про сам генератор: ни ключи, ни идентификаторы, ни shortId не повторяются — инструмент не подписывает свою работу.\n\n## Внешность\n\nБренд-кит: токены, примитивы и оболочка в `assets/kit/`, светлая схема, которой раньше не было, шесть акцентов по страницам. Обе схемы проходят WCAG AA на каждой странице — измерено обходом всех текстовых узлов, а не на глаз.",
+      en: "**The largest change since the first prototype: the tool stopped being a generator for one protocol.**\n\n## XRay stands beside AmneziaWG\n\nThe engine was written and tested against released cores in Docker, one core per version. It has an interface now: ninety-seven catalogued parameters across two pages, each showing its state — *chosen for you, set by you, or not yet expressible*. Sections appear and disappear with the shape of the config: no XHTTP on `raw`, no REALITY on `tls`, and the grid closes its own gaps.\n\n## Drawn rather than listed\n\nThe AmneziaWG generator was redrawn so that each group of parameters is drawn as the thing it controls. The junk train as a train, the padding as bars to scale, the headers as four spans on one axis. That last one justifies the approach: the only rule `H1–H4` have is that their ranges must not overlap, and four pairs of ten-digit numbers in a list make that impossible to check by eye — on a shared axis it is the only thing you can see.\n\n## What turned up on the way\n\nA review found that **a mismatch between the REALITY donor and the SNI was not caught at all**: the certificate comes from one site while the name asked for is another, and that is visible on the wire. There is a rule for it now, with tests.\n\nA sweep over six hundred generations confirmed the opposite about the generator itself: no key, identity or shortId repeats. The tool does not sign its own work.\n\n## The look\n\nA brand kit — tokens, primitives and the shell in `assets/kit/` — a light scheme that did not exist before, and six accents, one per page. Both schemes clear WCAG AA on every page, measured by walking every rendered text node rather than by eye.",
     },
   },
 ];
