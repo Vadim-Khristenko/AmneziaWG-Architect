@@ -45,8 +45,8 @@ import { AWG_CLIENT_PROFILES } from "@/engines/awg/generator/clients";
 const { locale, t } = useI18n();
 const at = (path: string) => localizePath(path, locale.value);
 
-const SOURCE_URL = "https://github.com/Vadim-Khristenko/AmneziaWG-Architect";
-const MIRROR_URL = "https://git.vai-rice.space/vai_prog/AmneziaWG-Architect";
+const SOURCE_URL = "https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT";
+const MIRROR_URL = "https://git.vai-rice.space/vai_prog/Any-Tech-ARCHITECT";
 const LICENSE_URL = "https://opensource.org/license/mit";
 
 /* ── The numbers, counted rather than remembered ─────────────────────────── */

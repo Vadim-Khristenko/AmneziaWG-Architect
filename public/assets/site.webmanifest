@@ -1,15 +1,15 @@
 {
-  "name": "AWG ARCHITECT",
-  "short_name": "AWG-AiT",
+  "name": "Any Tech ARCHITECT",
+  "short_name": "ARCHITECT",
   "icons": [
     {
-      "src": "/AmneziaWG-Architect/assets/web-app-manifest-192x192.png",
+      "src": "/assets/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/AmneziaWG-Architect/assets/web-app-manifest-512x512.png",
+      "src": "/assets/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

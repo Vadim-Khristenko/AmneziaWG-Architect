@@ -1,15 +1,16 @@
 <div align="center">
 
-<img src=".github/assets/github-preview.png" alt="AmneziaWG Architect" width="100%">
+<img src=".github/assets/github-preview.png" alt="Any Tech ARCHITECT" width="100%">
 
 [Русский](README.md) · **English**
 
 [![Open the generator](https://img.shields.io/badge/Open_the_generator-architect.vai--rice.space-e8a840?style=for-the-badge)](https://architect.vai-rice.space/en)
-[![AmneziaWG 3.0](https://img.shields.io/badge/AmneziaWG-3.0-5fbf7f?style=for-the-badge)](#supported-versions)
+[![AmneziaWG 3.0](https://img.shields.io/badge/AmneziaWG-3.0-5fbf7f?style=for-the-badge)](#amneziawg)
+[![XRay REALITY](https://img.shields.io/badge/XRay-REALITY-5b9bd5?style=for-the-badge)](#xray)
 [![MIT](https://img.shields.io/badge/License-MIT-c49040?style=for-the-badge)](LICENSE)
 
-An AmneziaWG obfuscation parameter generator. Everything is computed in your
-browser — neither keys nor configs are sent anywhere.
+Obfuscation configs, with every number in them explained. Everything is computed
+in your browser — neither keys nor configs are sent anywhere.
 
 </div>
 
@@ -17,14 +18,20 @@ browser — neither keys nor configs are sent anywhere.
 
 ## What this is
 
-Plain WireGuard is trivial to identify: a fixed message-type byte and
-predictable packet sizes (148 bytes for a handshake initiation, 92 for a
-response) let DPI classify the protocol from the very first packet and block it
-wholesale.
+The tool assembles an obfuscation configuration and explains what it is made of.
+Not press-and-hope, but a working drawing: every parameter says where its bound
+came from, which side reads it, and what happens when the two sides disagree.
 
-AmneziaWG adds an obfuscation layer over the same cryptography. **Architect**
-picks its parameters so they are valid, compatible with your client, and do not
-accidentally recreate the very fingerprint you were escaping.
+Clients can generate these parameters themselves, and that is fine right up
+until the tunnel does not come up. Then it turns out the button explained
+neither what it chose nor which of it has to match on the server.
+
+There are two engines, doing the same job from opposite directions.
+
+| | What it does | Parameters |
+|:--|:--|:--:|
+| **[AmneziaWG](#amneziawg)** | Hides the traffic type: junk packets ahead of the handshake, padded messages, a substituted type byte. What shows on the wire is QUIC, TLS or DNS rather than WireGuard. | 23 |
+| **[XRay](#xray)** | REALITY over VLESS. Outside is a genuine handshake with someone else's site, carrying that site's own certificate; inside is your tunnel. | 74 |
 
 > [!IMPORTANT]
 > This project exists for research and educational purposes and was never built
@@ -33,7 +40,16 @@ accidentally recreate the very fingerprint you were escaping.
 
 ---
 
-## Supported versions
+## AmneziaWG
+
+Plain WireGuard is trivial to identify: a fixed message-type byte and
+predictable packet sizes (148 bytes for a handshake initiation, 92 for a
+response) let DPI classify the protocol from the very first packet and block it
+wholesale.
+
+AmneziaWG adds an obfuscation layer over the same cryptography. Architect picks
+its parameters so they are valid, compatible with your client, and do not
+accidentally recreate the very fingerprint you were escaping.
 
 | | Junk `Jc/Jmin/Jmax` | `S1 S2` | `S3 S4` | CPS `I1–I5` | Headers `H1–H4` | 3.0 parameters |
 |:--|:--:|:--:|:--:|:--:|:--:|:--:|
@@ -67,6 +83,42 @@ still describe 2.0 at the time of writing.
 
 The `<d>`, `<ds>` and `<dz>` tags parse in v3.0.1 but are not wired into the
 send path — they are groundwork for AWG 4.0, so the generator does not emit them.
+
+Plus **11 mimicry profiles** (QUIC Initial, QUIC 0-RTT, TLS 1.3, DTLS 1.3,
+HTTP/3, SIP, DNS, Noise_IK and composites) and a **compatibility matrix covering
+10 clients** — each has its own ceilings, and the generator knows them.
+
+---
+
+## XRay
+
+REALITY solves the same problem the other way round: rather than disguising
+traffic as another protocol, it borrows a whole handshake. An observer sees a
+TLS session with a real donor site, carrying that site's real certificate —
+because it *is* the donor's certificate, obtained from the donor.
+
+Architect covers **74 Xray-core parameters**, laid out in sections:
+
+| Section | What is in it |
+|:--|:--|
+| **REALITY** | `dest`, `serverNames`, the x25519 key pair, `shortIds`, `spiderX`, version limits and fallback caps |
+| **Transport** | XHTTP in every mode, `xmux`, `sockopt`, TCP/WS/gRPC |
+| **FinalMask** | Stream post-processing on top of the chosen transport |
+| **VLESS** | `flow`, `encryption`, client identities |
+
+Every parameter is marked: **generated** — chosen for you; **yours to set** —
+you can, and the hint explains what to reason from; **not covered** — said
+plainly, rather than left to look like an omission.
+
+> [!NOTE]
+> The donor domain and your server's address are different things, and they sit
+> in different places in the interface. The donor is whose certificate you show;
+> the server is where the connection actually goes. If `dest` points at one site
+> while `serverNames` names another, an observer sees the mismatch from a single
+> passive look — Architect warns about exactly that.
+
+The donor database holds **over 1100 entries** with a regional filter, each
+recording what is actually known about the site rather than an invented "status".
 
 ---
 
@@ -103,10 +155,26 @@ from anywhere. Coming soon.
 </tr>
 </table>
 
-Plus **11 mimicry profiles** (QUIC Initial, QUIC 0-RTT, TLS 1.3, DTLS 1.3,
-HTTP/3, SIP, DNS, Noise_IK and composites), a **compatibility matrix covering 10
-clients**, **batch generation of up to 1000 configs** in a Web Worker, and
-**config health checking** before anything reaches a client.
+Both generators do **batch generation** in a Web Worker, keep a **history** that
+exports to a file, and **check configs** before anything reaches a client.
+
+---
+
+## How this is checked
+
+Claiming and checking are different things, so:
+
+- Configs are generated in thousands and tested against invariants — including
+  that no key material repeats between generations.
+- Packets are parsed as their own protocols: QUIC per RFC 9000, TLS per 8446,
+  DNS per 1035.
+- XRay configurations are handed to **real cores in Docker, one core per
+  version**. A single core for all of them proves nothing: unknown keys are
+  ignored, so a config naming a feature the core lacks passes anyway.
+
+That last one found three mistakes the unit tests would have kept: VLESS
+Encryption offered on v25.8.29, which has none; ML-DSA-65 treated as optional on
+v25.7.23, which requires it; and an XHTTP mode v24.11.11 does not have.
 
 ---
 
@@ -116,7 +184,7 @@ There is no backend — nothing exists that could receive your data. No analytic
 no trackers, no cookies, no third-party scripts; fonts are served from the site's
 own domain rather than Google Fonts. All randomness comes from
 `crypto.getRandomValues()` with rejection sampling to eliminate modulo bias —
-`Math.random()` appears nowhere in the generator.
+`Math.random()` appears nowhere in the generators.
 
 Save the page with <kbd>Ctrl</kbd>+<kbd>S</kbd> and it works offline.
 
@@ -127,8 +195,8 @@ Save the page with <kbd>Ctrl</kbd>+<kbd>S</kbd> and it works offline.
 **Online:** [architect.vai-rice.space](https://architect.vai-rice.space/en)
 
 ```bash
-git clone https://github.com/Vadim-Khristenko/AmneziaWG-Architect.git
-cd AmneziaWG-Architect
+git clone https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT.git
+cd Any-Tech-ARCHITECT
 bun install
 bun run dev
 ```
@@ -162,7 +230,8 @@ npx or python, and `--check` reports what they found without starting anything.
 ### Standalone generator
 
 If a browser is not available, the same rules exist as a plain shell script —
-no dependencies, no network:
+no dependencies, no network. It covers AmneziaWG only; XRay lives in the browser
+for now:
 
 ```bash
 ./scripts/awg-gen.sh -v 3.0 -p quic          # one config to stdout
@@ -197,12 +266,12 @@ here are mirrors on a self-hosted Forgejo. Feel free to share them:
 
 | What | Mirror |
 |:--|:--|
-| Architect (this repository) | [git.vai-rice.space/vai_prog/AmneziaWG-Architect](https://git.vai-rice.space/vai_prog/AmneziaWG-Architect) |
+| Architect (this repository) | [git.vai-rice.space/vai_prog/Any-Tech-ARCHITECT](https://git.vai-rice.space/vai_prog/Any-Tech-ARCHITECT) |
 | Server installer | [git.vai-rice.space/vai_prog/awg-containers-and-tools](https://git.vai-rice.space/vai_prog/awg-containers-and-tools) |
 | Amnezia apps | [git.vai-rice.space/amnezia-vpn](https://git.vai-rice.space/amnezia-vpn) |
 
 ```bash
-git clone https://git.vai-rice.space/vai_prog/AmneziaWG-Architect.git
+git clone https://git.vai-rice.space/vai_prog/Any-Tech-ARCHITECT.git
 ```
 
 The first two mirror my own repositories. The third, for the Amnezia apps, is
@@ -214,12 +283,16 @@ signatures before installing.
 ## Found a bug, or have an idea?
 
 Please say so — it is the best way to fix what we do not know about. Open an
-[issue](https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues), join the
+[issue](https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT/issues), join the
 discussion in the chat, and soon on `git.vai-rice.space` too.
 
-If the problem is a specific config, include the AmneziaWG version, the client
-and its version, and the parameters themselves — **with private keys removed**.
-That is almost always enough to reproduce it.
+If the problem is a specific config, include the AmneziaWG or Xray version, the
+client and its version, and the parameters themselves — **with private keys
+removed**. That is almost always enough to reproduce it.
+
+Reading the code against the upstream sources is the most useful kind of issue
+there is here: three mistakes in the rules and in the text were found and fixed
+that way, and nobody would have known about them otherwise.
 
 See [CONTRIBUTING.en.md](CONTRIBUTING.en.md) for how development works.
 

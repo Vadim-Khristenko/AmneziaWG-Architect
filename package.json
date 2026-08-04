@@ -44,8 +44,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Vadim-Khristenko/AmneziaWG-Architect.git",
-    "issues": "https://github.com/Vadim-Khristenko/AmneziaWG-Architect/issues",
+    "url": "git+https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT.git",
+    "issues": "https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT/issues",
     "directory": "src"
   },
   "license": "MIT"

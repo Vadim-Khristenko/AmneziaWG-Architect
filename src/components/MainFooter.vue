@@ -27,7 +27,7 @@ import { localizePath, useI18n } from "@/i18n";
 
 const { locale, t } = useI18n();
 
-const SOURCE_URL = "https://github.com/Vadim-Khristenko/AmneziaWG-Architect";
+const SOURCE_URL = "https://github.com/Vadim-Khristenko/Any-Tech-ARCHITECT";
 
 /** About page, anchored at the support block. */
 const supportLink = computed(() => ({
@@ -113,7 +113,7 @@ watch(locale, formatBuild);
                         <Github :size="15" /> {{ t("footer.link.source") }}
                     </a>
                     <a
-                        href="https://git.vai-rice.space/vai_prog/AmneziaWG-Architect"
+                        href="https://git.vai-rice.space/vai_prog/Any-Tech-ARCHITECT"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="footer-link"
