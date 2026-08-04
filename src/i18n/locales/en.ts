@@ -32,46 +32,64 @@ export const en: Catalog = {
   "brand.main": "ARCHITECT",
 
   "landing.lede":
-    "This builds obfuscation parameters and explains every number in them. Not generate-and-hope — a drawing: what the packet is made of, and why it looks the way it does.",
+    "A tool that just does its job. Free, with nothing to sell you, no ads and no subscriptions. Simply because it can be.",
+  "landing.trust": "Hundreds of people rely on this, and we are not about to let them down.",
+
   "landing.sheet": "Sheet",
   "landing.drawing": "QUIC Initial · RFC 9000 §17.2.2",
   "landing.scale": "Scale",
   "landing.scale.value": "1 square = 1 byte",
   "landing.rev": "Rev.",
 
-  "landing.hero.cta": "Open the AmneziaWG generator",
+  "landing.hero.cta": "Pick a tool",
   "landing.hero.second": "What this actually is",
 
-  "landing.tools.title": "Two engines",
+  /* What it does and what it does not: two columns of one thought. */
+  "landing.can.title": "What this tool does",
+  "landing.can.1":
+    "Builds a configuration that fits you: your protocol version, your client, your link.",
+  "landing.can.2":
+    "Gives you a config that simply works under normal conditions, and stays out of your way while you build it.",
+  "landing.can.3":
+    "Explains every number: what it does, what has to match on the server, and where it breaks.",
+
+  "landing.cant.title": "What it will not give you",
+  "landing.cant.1":
+    "A one-click VPN. The server and the keys stay yours, and neither of them is here.",
+  "landing.cant.2":
+    "A guarantee against whitelists. Obfuscation helps against some kinds of them, but promising it will work for you specifically would be a lie.",
+  "landing.cant.3":
+    "Anonymity. Obfuscation hides that this is a tunnel, not who you are.",
+
+  /* The tools themselves. */
+  "landing.tools.title": "The tools themselves",
   "landing.tools.lede":
-    "One method, two protocols. Parameters are computed in your browser and sent nowhere — not here, not there.",
+    "Two engines, one method. Everything is computed in this tab and sent nowhere.",
 
   "landing.awg.name": "AmneziaWG",
+  "landing.awg.tag": "from the start",
   "landing.awg.desc":
-    "Junk trains, header ranges, size padding and CPS signature chains. Eleven mimicry profiles built from the RFCs rather than by eye. Versions 1.0–3.0, ten clients, each with its own ceilings.",
+    "Our first project, and still going. Where all of this started, and what it still does best.",
   "landing.awg.status": "Working",
   "landing.awg.go": "To the generator",
 
-  "landing.xray.name": "XRay / REALITY",
+  "landing.xray.name": "XRay",
+  "landing.xray.tag": "the new one",
   "landing.xray.desc":
-    "REALITY, the VLESS encryption DSL, XHTTP transports, browser fingerprints and FinalMask. The engine is written and tested against released cores; the interface to it is still being built.",
-  "landing.xray.status": "Engine done, interface in progress",
+    "Sees through, and lets nobody see where they should not. From outside it looks like a packet from some ordinary site, which it is not. Endless settings, everything adjustable. The engine is done and the interface is being built.",
+  "landing.xray.status": "In progress",
   "landing.xray.go": "What is ready",
 
-  "landing.profiles.title": "What it can look like",
-  "landing.profiles.lede":
-    "Every profile is built from the text of the standard — field lengths, order, variants — so a third-party stack parsing it does not trip.",
-
-  "landing.trust.title": "Why you can believe it",
-  "landing.trust.local.title": "Nowhere to leak to",
-  "landing.trust.local.desc":
-    "There is no server. Keys and parameters are computed in this tab and stay in it — there is nowhere to take them from and nobody to take them.",
-  "landing.trust.refuse.title": "It refuses a bad config",
-  "landing.trust.refuse.desc":
-    "The tool knows the rules: S1–S4 at least 12 with header protection on, H1–H4 ranges that do not overlap, a ceiling per client. What fails the check is not emitted.",
-  "landing.trust.open.title": "Checked, not claimed",
-  "landing.trust.open.desc":
-    "Mimicry profiles are parsed back as real packets and parameters are drawn tens of thousands of times against invariants. That is how two QUIC length defects turned up that reading the code had missed.",
+  /* The profile dial: the one place the page plays. */
+  "landing.fun.title": "Who shall we be today?",
+  "landing.fun.lede":
+    "Every profile is built from the text of the standard rather than by eye. Press it and see what the tunnel can pass for.",
+  "landing.fun.again": "Again",
+  "landing.fun.inside": "Inside",
+  "landing.fun.insideValue": "your tunnel",
+  "landing.fun.outside": "From outside it looks like",
+  "landing.fun.spec": "built from",
+  "landing.fun.count": "profiles to choose from",
 
   "landing.more.title": "What else is here",
   "landing.more.mergekeys":

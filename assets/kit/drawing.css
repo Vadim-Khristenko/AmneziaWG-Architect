@@ -254,7 +254,35 @@
     }
 
     .fieldmap-field {
-        min-width: 38px;
+        min-width: 42px;
         padding: var(--sp-2) 4px;
     }
+
+    /*
+     * Smaller lettering rather than a shorter name. A field called "Fla…" has
+     * stopped being a label; at nine pixels "Flags" still fits and still reads,
+     * which is the whole job.
+     */
+    .fieldmap-name {
+        font-size: 9px;
+    }
+}
+
+/*
+ * The ruler, read from below.
+ *
+ * Under a field map its ticks are a scale for the drawing above them, which is
+ * where a scale belongs. Above it, the ticks and the field boundaries are two
+ * sets of vertical lines a few pixels apart and the eye has to work out which
+ * is which.
+ */
+.ruler--under {
+    border-bottom: none;
+    border-top: var(--rule) solid var(--draw-soft);
+    align-items: flex-start;
+}
+
+.ruler--under .ruler-tick > span {
+    bottom: auto;
+    top: 2px;
 }

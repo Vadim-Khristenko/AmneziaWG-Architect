@@ -185,3 +185,30 @@
     border-color: var(--accent);
     color: var(--on-accent);
 }
+
+/* ── When the button is a link ────────────────────────────────────────────── */
+
+/*
+ * `a:hover` in base.css recolours any anchor to the accent, and it wins on
+ * specificity over `.btn--primary`, which is a class. So every link styled as
+ * a filled button turned its own label the colour of its fill on hover — amber
+ * text on amber, which reads as the button going soft rather than as text.
+ *
+ * Stated per variant rather than with a blanket `color: inherit`, because each
+ * one has a different right answer.
+ */
+a.btn--primary:hover {
+    color: var(--on-accent);
+}
+
+a.btn--secondary:hover {
+    color: var(--ink);
+}
+
+a.btn--ghost:hover {
+    color: var(--accent-ink);
+}
+
+a.btn--danger:hover {
+    color: var(--red);
+}

@@ -497,17 +497,26 @@ button.card:hover .card-go {
  */
 .typing {
     display: inline-block;
-    overflow: hidden;
     white-space: nowrap;
-    vertical-align: bottom;
-    width: calc(var(--chars, 20) * 1ch);
     animation: typing calc(var(--chars, 20) * 45ms) steps(var(--chars, 20), end)
         backwards;
 }
 
+/*
+ * Revealed by a clip, not by a width.
+ *
+ * Animating the width meant computing one, and a width computed in `ch` is the
+ * width of a zero times the character count — close for a monospaced face and
+ * not exact, so the last glyph of a long string sat outside the box and was
+ * cut off. `clip-path` needs no measurement at all: the element is its natural
+ * size the whole time and the reveal is a rectangle moving across it.
+ */
 @keyframes typing {
     from {
-        width: 0;
+        clip-path: inset(0 100% 0 0);
+    }
+    to {
+        clip-path: inset(0 0 0 0);
     }
 }
 
@@ -550,7 +559,6 @@ button.card:hover .card-go {
     }
 
     .typing {
-        width: auto;
         animation: none;
     }
 

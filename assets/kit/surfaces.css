@@ -225,3 +225,13 @@ button.card:focus-visible {
     border-bottom: var(--rule) solid var(--line-faint);
     background: var(--surface-solid);
 }
+
+/*
+ * The same specificity problem as the linked button: a card is usually an
+ * anchor, and the base `a:hover` would repaint everything inside it — heading,
+ * prose and all — in the accent. A card highlights by its border and its
+ * ground, not by turning its own contents a different colour.
+ */
+a.card:hover {
+    color: inherit;
+}

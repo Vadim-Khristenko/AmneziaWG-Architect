@@ -2,31 +2,30 @@
 /**
  * The landing.
  *
- * A working drawing rather than a product page. The hero object is the packet
- * the tool actually builds — an octet ruler, the fields at the widths they
- * really have, and two of the ranges the generator really emits. It is drawn
- * from data rather than decorated, which is the whole argument the page is
- * making: this thing shows you what it did.
+ * A working drawing, not a product page. The hero object is the packet the
+ * generator builds — an octet ruler, the header fields at the byte widths RFC
+ * 9000 §17.2.2 gives them, and two of the ranges the tool really emits. It is
+ * data rather than scenery, which is the argument the page is making: this
+ * thing shows you what it did.
  *
- * What it deliberately is not: a hero metric, a row of identical feature
- * cards, an eyebrow above every section, or a stack of adjectives about
- * privacy. The two engines get unequal weight because they are unequal — one
- * works and one is half-built, and saying so is worth more than symmetry.
+ * The page states what it does and then, at the same size, what it does not.
+ * That pairing is the voice: a tool that will not promise a one-click VPN or a
+ * guarantee against a whitelist is a tool you can believe about the rest.
  */
 
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
     ArrowRight,
     ArrowUpRight,
+    Check,
+    X,
     Layers,
     Network,
-    ShieldCheck,
-    Lock,
-    Microscope,
     Combine,
     Activity,
     HelpCircle,
     Info,
+    Shuffle,
 } from "lucide-vue-next";
 import { localizePath, useI18n } from "@/i18n";
 
@@ -48,10 +47,6 @@ const PACKET = [
     { name: "Payload", bytes: 27, ours: true },
 ];
 
-const totalBytes = computed(() =>
-    PACKET.reduce((n, f) => n + Math.max(f.bytes, 1), 0),
-);
-
 const ticks = Array.from({ length: 32 }, (_, i) => i);
 
 /** Two real header ranges, so the dimension line has something to measure. */
@@ -62,26 +57,64 @@ const RANGES = [
 
 const nf = new Intl.NumberFormat("ru-RU");
 
+/* ── What it does, and what it does not ──────────────────────────────────── */
+
+const CAN = ["landing.can.1", "landing.can.2", "landing.can.3"] as const;
+const CANT = ["landing.cant.1", "landing.cant.2", "landing.cant.3"] as const;
+
+/* ── The dial ────────────────────────────────────────────────────────────── */
+
 /**
- * The profiles, with the document each was built from. The citation is the
- * point: it is the difference between imitating a protocol and guessing at it.
+ * What a tunnel can pass for, from both engines.
+ *
+ * Each entry names the document it was built from, which is the point of the
+ * whole section: it is the difference between imitating a protocol and
+ * guessing at one. AmneziaWG shapes its own packets; XRay borrows a real
+ * TLS session, so its entries cite the protocol rather than an RFC number.
  */
 const PROFILES = [
-    { name: "QUIC Initial", spec: "RFC 9000" },
-    { name: "TLS ClientHello", spec: "RFC 8446" },
-    { name: "DTLS", spec: "RFC 6347" },
-    { name: "DNS", spec: "RFC 1035" },
-    { name: "DNS-over-HTTPS", spec: "RFC 8484" },
-    { name: "SIP", spec: "RFC 3261" },
-    { name: "STUN", spec: "RFC 5389" },
-    { name: "NTP", spec: "RFC 5905" },
+    { name: "QUIC Initial", spec: "RFC 9000", engine: "AmneziaWG" },
+    { name: "TLS ClientHello", spec: "RFC 8446", engine: "AmneziaWG" },
+    { name: "DTLS ClientHello", spec: "RFC 6347", engine: "AmneziaWG" },
+    { name: "DNS query", spec: "RFC 1035", engine: "AmneziaWG" },
+    { name: "DNS-over-HTTPS", spec: "RFC 8484", engine: "AmneziaWG" },
+    { name: "SIP INVITE", spec: "RFC 3261", engine: "AmneziaWG" },
+    { name: "STUN binding", spec: "RFC 5389", engine: "AmneziaWG" },
+    { name: "NTP client", spec: "RFC 5905", engine: "AmneziaWG" },
+    { name: "REALITY", spec: "TLS 1.3", engine: "XRay" },
+    { name: "XHTTP stream-up", spec: "HTTP/2", engine: "XRay" },
+    { name: "XHTTP packet-up", spec: "HTTP/3", engine: "XRay" },
 ];
 
-const TRUST = [
-    { icon: Lock, title: "landing.trust.local.title", desc: "landing.trust.local.desc" },
-    { icon: ShieldCheck, title: "landing.trust.refuse.title", desc: "landing.trust.refuse.desc" },
-    { icon: Microscope, title: "landing.trust.open.title", desc: "landing.trust.open.desc" },
-] as const;
+/** The junk train the AmneziaWG card draws: five decoys, then the handshake. */
+const JUNK = [34, 58, 41, 72, 49];
+
+/** Chips under each engine name, so the cards say something concrete. */
+const AWG_DOES = ["Jc / Jmin / Jmax", "S1–S4", "H1–H4", "CPS I1–I5", "AWG 3.0"];
+const XRAY_DOES = ["REALITY", "VLESS", "XHTTP", "FinalMask", "fingerprints"];
+
+const dial = ref(0);
+const profile = computed(() => PROFILES[dial.value % PROFILES.length]!);
+
+/* The character count drives the step count and the duration, nothing else. */
+const profileChars = computed(() => profile.value.name.length);
+
+function spin() {
+    dial.value += 1;
+}
+
+/*
+ * One turn shortly after arrival, so the section is doing something the first
+ * time it is seen rather than waiting to be poked. It stops there — a dial
+ * that keeps spinning by itself is an advert.
+ */
+let firstSpin = 0;
+onMounted(() => {
+    firstSpin = window.setTimeout(spin, 1400);
+});
+onUnmounted(() => window.clearTimeout(firstSpin));
+
+/* ── Everything else on the site ─────────────────────────────────────────── */
 
 const MORE = [
     { icon: Combine, to: "/mergekeys", label: "nav.mergekeys", desc: "landing.more.mergekeys" },
@@ -93,7 +126,7 @@ const MORE = [
 
 <template>
     <div class="landing">
-        <!-- ══ Hero: the wordmark and the drawing ═══════════════════════ -->
+        <!-- ══ Hero ═════════════════════════════════════════════════════ -->
         <header class="landing-hero">
             <div class="landing-hero-text stagger">
                 <h1 class="wordmark">
@@ -103,11 +136,16 @@ const MORE = [
 
                 <p class="lede landing-lede">{{ t("landing.lede") }}</p>
 
+                <p class="landing-trust">
+                    <span class="dot dot--live"></span>
+                    {{ t("landing.trust") }}
+                </p>
+
                 <div class="row landing-actions">
-                    <router-link :to="at('/amneziawg')" class="btn btn--primary btn--lg">
+                    <a href="#tools" class="btn btn--primary btn--lg">
                         {{ t("landing.hero.cta") }}
                         <ArrowRight :size="16" />
-                    </router-link>
+                    </a>
                     <router-link :to="at('/about')" class="btn btn--secondary btn--lg">
                         {{ t("landing.hero.second") }}
                     </router-link>
@@ -127,8 +165,32 @@ const MORE = [
                     <span class="rev is-active">B</span>
                 </figcaption>
 
-                <div class="landing-drawing-body">
-                    <div class="ruler draw-in">
+                <div class="landing-drawing-body sheet-field">
+                    <div class="fieldmap">
+                        <div
+                            v-for="f in PACKET"
+                            :key="f.name"
+                            class="fieldmap-field"
+                            :class="{
+                                'fieldmap-field--ours': f.ours,
+                                'fieldmap-field--void': f.absent,
+                            }"
+                            :style="{ flexGrow: Math.max(f.bytes, 1), flexBasis: 0 }"
+                        >
+                            <span class="fieldmap-name">{{ f.name }}</span>
+                            <span class="fieldmap-size">
+                                {{ f.bytes ? `${f.bytes} B` : "—" }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!--
+                        The ruler reads the drawing above it, the way a scale
+                        sits under a plan rather than over it. Above the field
+                        map its ticks collided with the field boundaries and
+                        the eye had to work out which line meant what.
+                    -->
+                    <div class="ruler ruler--under">
                         <span
                             v-for="i in ticks"
                             :key="i"
@@ -139,40 +201,12 @@ const MORE = [
                         </span>
                     </div>
 
-                    <div class="fieldmap draw-in">
-                        <div
-                            v-for="f in PACKET"
-                            :key="f.name"
-                            class="fieldmap-field"
-                            :class="{
-                                'fieldmap-field--ours': f.ours,
-                                'fieldmap-field--void': f.absent,
-                            }"
-                            :style="{
-                                /*
-                                 * Grow carries the proportion and the basis is
-                                 * zero. As a percentage of the row it competed
-                                 * with the min-width every field needs to keep
-                                 * its label, and the widest field — the payload
-                                 * — came out among the narrowest.
-                                 */
-                                flexGrow: Math.max(f.bytes, 1),
-                                flexBasis: 0,
-                            }"
-                        >
-                            <span class="fieldmap-name">{{ f.name }}</span>
-                            <span class="fieldmap-size">
-                                {{ f.bytes ? `${f.bytes} B` : "—" }}
-                            </span>
-                        </div>
-                    </div>
-
                     <div class="landing-dims">
                         <div v-for="r in RANGES" :key="r.key" class="landing-dimrow">
                             <span class="rev">{{ r.key }}</span>
                             <div class="dim">
                                 <span class="dim-end">{{ nf.format(r.lo) }}</span>
-                                <span class="dim-line">
+                                <span class="dim-line trace">
                                     <span class="dim-span">{{ nf.format(r.hi - r.lo) }}</span>
                                 </span>
                                 <span class="dim-end">{{ nf.format(r.hi) }}</span>
@@ -198,36 +232,106 @@ const MORE = [
             </figure>
         </header>
 
-        <!-- ══ The two engines ══════════════════════════════════════════ -->
+        <!-- ══ Does / does not ══════════════════════════════════════════ -->
         <section class="landing-section">
+            <div class="landing-ledger">
+                <div class="landing-ledger-col">
+                    <h2 class="h2">{{ t("landing.can.title") }}</h2>
+                    <ul class="landing-points">
+                        <li v-for="k in CAN" :key="k" class="landing-point">
+                            <Check :size="16" class="landing-point-yes" />
+                            <span>{{ t(k) }}</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="landing-ledger-col">
+                    <h2 class="h2">{{ t("landing.cant.title") }}</h2>
+                    <ul class="landing-points">
+                        <li v-for="k in CANT" :key="k" class="landing-point">
+                            <X :size="16" class="landing-point-no" />
+                            <span>{{ t(k) }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ The tools ════════════════════════════════════════════════ -->
+        <section id="tools" class="landing-section">
             <h2 class="h2">{{ t("landing.tools.title") }}</h2>
             <p class="lede">{{ t("landing.tools.lede") }}</p>
 
             <div class="landing-engines">
-                <router-link :to="at('/amneziawg')" class="card landing-engine">
+                <router-link :to="at('/amneziawg')" class="card lift press landing-engine">
                     <span class="landing-engine-head">
                         <Layers :size="20" class="landing-engine-icon" />
                         <span class="h3">{{ t("landing.awg.name") }}</span>
+                        <span class="rev landing-engine-tag">{{ t("landing.awg.tag") }}</span>
                         <span class="badge badge--ok landing-engine-status">
                             {{ t("landing.awg.status") }}
                         </span>
                     </span>
+
+                    <!--
+                        The junk train, drawn: five decoy packets of different
+                        sizes and then the handshake they hide. It is what Jc,
+                        Jmin and Jmax mean, at a glance and to scale.
+                    -->
+                    <span class="landing-train" aria-hidden="true">
+                        <span
+                            v-for="(w, i) in JUNK"
+                            :key="i"
+                            class="landing-train-car"
+                            :style="{ width: `${w}px` }"
+                        ></span>
+                        <span class="landing-train-real">handshake</span>
+                    </span>
+
                     <p class="prose">{{ t("landing.awg.desc") }}</p>
+
+                    <span class="landing-chips">
+                        <span v-for="c in AWG_DOES" :key="c" class="badge badge--quiet">
+                            {{ c }}
+                        </span>
+                    </span>
+
                     <span class="landing-engine-go">
                         {{ t("landing.awg.go") }}
                         <ArrowRight :size="15" class="card-go" />
                     </span>
                 </router-link>
 
-                <router-link :to="at('/xray')" class="card landing-engine landing-engine--soon">
+                <router-link
+                    :to="at('/xray')"
+                    class="card lift press landing-engine landing-engine--soon"
+                >
                     <span class="landing-engine-head">
                         <Network :size="20" class="landing-engine-icon" />
                         <span class="h3">{{ t("landing.xray.name") }}</span>
+                        <span class="rev landing-engine-tag">{{ t("landing.xray.tag") }}</span>
                         <span class="badge landing-engine-status">
                             {{ t("landing.xray.status") }}
                         </span>
                     </span>
+
+                    <!--
+                        Two layers, because that is the whole trick: a real TLS
+                        session on the outside and the tunnel inside it.
+                    -->
+                    <span class="landing-layers" aria-hidden="true">
+                        <span class="landing-layer landing-layer--outer">TLS 1.3</span>
+                        <span class="landing-layer landing-layer--inner">VLESS</span>
+                    </span>
+
                     <p class="prose">{{ t("landing.xray.desc") }}</p>
+
+                    <span class="landing-chips">
+                        <span v-for="c in XRAY_DOES" :key="c" class="badge badge--quiet">
+                            {{ c }}
+                        </span>
+                    </span>
+
                     <span class="landing-engine-go">
                         {{ t("landing.xray.go") }}
                         <ArrowRight :size="15" class="card-go" />
@@ -236,30 +340,55 @@ const MORE = [
             </div>
         </section>
 
-        <!-- ══ Mimicry profiles ═════════════════════════════════════════ -->
+        <!-- ══ The dial ═════════════════════════════════════════════════ -->
+        <!--
+            The one place the page plays. Still made of facts: eleven profiles
+            across both engines, each with the document it was built from.
+        -->
         <section class="landing-section">
-            <h2 class="h2">{{ t("landing.profiles.title") }}</h2>
-            <p class="lede">{{ t("landing.profiles.lede") }}</p>
+            <h2 class="h2">{{ t("landing.fun.title") }}</h2>
+            <p class="lede">{{ t("landing.fun.lede") }}</p>
 
-            <ul class="landing-profiles">
-                <li v-for="p in PROFILES" :key="p.name" class="landing-profile">
-                    <span class="landing-profile-name">{{ p.name }}</span>
-                    <span class="landing-profile-spec">{{ p.spec }}</span>
-                </li>
-            </ul>
-        </section>
-
-        <!-- ══ Why believe it ═══════════════════════════════════════════ -->
-        <section class="landing-section">
-            <h2 class="h2">{{ t("landing.trust.title") }}</h2>
-
-            <div class="landing-trust">
-                <div v-for="item in TRUST" :key="item.title" class="landing-trust-item">
-                    <component :is="item.icon" :size="18" class="landing-trust-icon" />
-                    <div>
-                        <h3 class="h3">{{ t(item.title) }}</h3>
-                        <p class="prose">{{ t(item.desc) }}</p>
+            <div class="plate landing-dial">
+                <div class="landing-dial-row">
+                    <div class="landing-dial-inside">
+                        <span class="note-label">{{ t("landing.fun.inside") }}</span>
+                        <span class="mono landing-dial-was">
+                            {{ t("landing.fun.insideValue") }}
+                        </span>
                     </div>
+
+                    <div class="landing-dial-arrow" aria-hidden="true">
+                        <span class="landing-dial-line"></span>
+                        <ArrowRight :size="16" />
+                    </div>
+
+                    <div class="landing-dial-outside">
+                        <span class="note-label">{{ t("landing.fun.outside") }}</span>
+                        <span class="landing-dial-line2">
+                            <span
+                                :key="dial"
+                                class="mono landing-dial-name typing"
+                                :style="{ '--chars': profileChars }"
+                            >{{ profile.name }}</span>
+                            <span :key="`e${dial}`" class="badge landing-dial-engine pop-in">
+                                {{ profile.engine }}
+                            </span>
+                        </span>
+                        <span :key="`s${dial}`" class="landing-dial-spec fade-swap">
+                            {{ t("landing.fun.spec") }} {{ profile.spec }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="landing-dial-foot">
+                    <span class="note-label">
+                        {{ PROFILES.length }} {{ t("landing.fun.count") }}
+                    </span>
+                    <button class="btn btn--secondary" @click="spin">
+                        <Shuffle :size="15" />
+                        {{ t("landing.fun.again") }}
+                    </button>
                 </div>
             </div>
         </section>
@@ -292,12 +421,21 @@ const MORE = [
     gap: var(--sp-section);
 }
 
+.landing-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.landing-section > .lede {
+    margin-bottom: var(--sp-3);
+}
+
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 
 /*
  * Asymmetric on purpose: the text column is narrower than the drawing, so the
- * page opens on the object rather than on a centred block of copy. Below the
- * breakpoint they stack and the drawing keeps its place under the words.
+ * page opens on the object rather than on a centred block of copy.
  */
 .landing-hero {
     display: grid;
@@ -314,9 +452,9 @@ const MORE = [
 }
 
 /*
- * The lockup. "Any Tech" is a qualifier and sits at label size above the name
- * itself; ARCHITECT is the brand and takes the display scale. Two weights of
- * one family rather than two families — the contrast is size, not voice.
+ * The lockup. "Any Tech" is a qualifier and sits at label size above the name;
+ * ARCHITECT is the brand and takes the display scale. Two sizes of one family
+ * rather than two families — the contrast is scale, not voice.
  */
 .wordmark {
     display: flex;
@@ -338,10 +476,10 @@ const MORE = [
 .wordmark-main {
     font-family: var(--fu);
     /*
-     * Not `--t-display-lg`. Nine wide letters at its 5.5rem ceiling are about
-     * ninety pixels broader than the column they have to live in, and a
-     * headline that runs under the figure beside it is the one typographic
-     * failure that is never a matter of taste.
+     * Not the display scale's ceiling. Nine wide letters at 5.5rem are broader
+     * than the column they have to live in, and a headline that runs under the
+     * figure beside it is the one typographic failure that is never a matter
+     * of taste.
      */
     font-size: clamp(2.25rem, 5.6vw, 4.25rem);
     font-weight: 800;
@@ -353,6 +491,16 @@ const MORE = [
 
 .landing-lede {
     font-size: var(--t-md);
+}
+
+/* The claim the page makes about itself, marked as a live signal. */
+.landing-trust {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--ink-2);
 }
 
 .landing-actions {
@@ -367,6 +515,7 @@ const MORE = [
 
 .landing-drawing {
     margin: 0;
+    padding: var(--sp-3);
     overflow: hidden;
 }
 
@@ -375,15 +524,13 @@ const MORE = [
     align-items: center;
     justify-content: space-between;
     gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-4);
-    border-bottom: var(--rule) solid var(--line-faint);
+    padding: var(--sp-2) var(--sp-2) var(--sp-3);
 }
 
 .landing-drawing-body {
     display: flex;
     flex-direction: column;
     gap: var(--sp-4);
-    padding: var(--sp-5) var(--sp-4);
 }
 
 .landing-dims {
@@ -399,32 +546,58 @@ const MORE = [
     gap: var(--sp-3);
 }
 
-/* The dimension label sits on the sheet, so it has to mask the sheet. */
-.landing-drawing :deep(.dim-span) {
-    background: var(--ground-2);
-}
-
 .landing-titleblock {
+    margin-top: var(--sp-3);
     border: none;
-    border-top: var(--rule) solid var(--line-faint);
     border-radius: 0;
+    background: transparent;
 }
 
-/* The second line delays behind the first, so the sheet assembles downward. */
-.landing-drawing .draw-in:nth-of-type(2) {
-    animation-delay: 120ms;
+/* ── Does / does not ──────────────────────────────────────────────────── */
+
+/*
+ * Two columns of equal weight, because the point is that they are equal: a
+ * tool willing to print what it cannot do is worth believing about the rest.
+ */
+.landing-ledger {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--sp-7);
 }
 
-/* ── Sections ─────────────────────────────────────────────────────────── */
-
-.landing-section {
+.landing-ledger-col {
     display: flex;
     flex-direction: column;
     gap: var(--sp-4);
 }
 
-.landing-section > .lede {
-    margin-bottom: var(--sp-3);
+.landing-points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.landing-point {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--sp-3);
+    font-size: var(--t-base);
+    line-height: var(--lh-body);
+    color: var(--ink-2);
+    text-wrap: pretty;
+}
+
+.landing-point-yes {
+    margin-top: 4px;
+    color: var(--green);
+}
+
+.landing-point-no {
+    margin-top: 4px;
+    color: var(--red);
 }
 
 /* ── Engines ──────────────────────────────────────────────────────────── */
@@ -437,6 +610,7 @@ const MORE = [
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
     gap: var(--sp-4);
+    align-items: start;
 }
 
 .landing-engine {
@@ -476,70 +650,168 @@ const MORE = [
     font-weight: 700;
 }
 
-/* ── Profiles ─────────────────────────────────────────────────────────── */
+/* ── Engine signatures ────────────────────────────────────────────────── */
 
 /*
- * A specimen strip rather than eight cards: each entry is a name and the
- * document it came from, which is all there is to say about it.
+ * The junk train, drawn to scale: five decoy packets of different sizes and
+ * then the handshake they are hiding. It is what Jc, Jmin and Jmax mean,
+ * without a sentence about them.
  */
-.landing-profiles {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: var(--rule);
-    background: var(--line-faint);
-    border: var(--rule) solid var(--line-soft);
-    border-radius: var(--r-2);
-    overflow: hidden;
-}
-
-.landing-profile {
+.landing-train {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--sp-3);
-    padding: var(--sp-3) var(--sp-4);
-    background: var(--ground-2);
+    align-items: center;
+    gap: 4px;
+    padding: var(--sp-2) 0;
 }
 
-.landing-profile-name {
+.landing-train-car {
+    height: 16px;
+    border-radius: 2px;
+    background: var(--surface-solid-3);
+    border: var(--rule) solid var(--line-soft);
+}
+
+.landing-train-real {
+    display: flex;
+    align-items: center;
+    height: 16px;
+    padding: 0 var(--sp-2);
+    border-radius: 2px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-family: var(--fm);
+    font-size: 9px;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+}
+
+/* Two layers, because that is the whole trick: a real session around a tunnel. */
+.landing-layers {
+    display: flex;
+    align-items: center;
+    padding: var(--sp-2) 0;
+}
+
+.landing-layer {
+    display: flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 var(--sp-3);
+    font-family: var(--fm);
+    font-size: var(--t-2xs);
+    letter-spacing: var(--track-label);
+}
+
+.landing-layer--outer {
+    border: var(--rule) solid var(--line);
+    border-radius: var(--r-2) 0 0 var(--r-2);
+    background: var(--ground-3);
+    color: var(--ink-3);
+}
+
+.landing-layer--inner {
+    border: var(--rule) solid var(--accent);
+    border-left: none;
+    border-radius: 0 var(--r-2) var(--r-2) 0;
+    background: var(--surface-solid-2);
+    color: var(--accent-ink);
+}
+
+.landing-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+}
+
+/* A tag beside the name: what this engine is to us, in two words. */
+.landing-engine-tag {
+    min-width: 0;
+    padding: 0 var(--sp-2);
+    text-transform: lowercase;
+    letter-spacing: 0;
+    color: var(--ink-3);
+    border-color: var(--line-soft);
+}
+
+/* ── The dial ─────────────────────────────────────────────────────────── */
+
+.landing-dial {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+}
+
+.landing-dial-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-5);
+}
+
+.landing-dial-inside,
+.landing-dial-outside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    min-width: 0;
+}
+
+.landing-dial-was {
     font-size: var(--t-sm);
-    font-weight: 700;
-    color: var(--ink);
+    color: var(--ink-3);
 }
 
-.landing-profile-spec {
+/*
+ * The name and its engine on one line, and the line is allowed to wrap. The
+ * previous version put them in a fixed column that was narrower than
+ * "DTLS ClientHello", so the longest profile names were cut off mid-word.
+ */
+.landing-dial-line2 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+}
+
+.landing-dial-name {
+    font-size: var(--t-md);
+    font-weight: 700;
+    color: var(--accent-ink);
+}
+
+.landing-dial-engine {
+    flex-shrink: 0;
+}
+
+.landing-dial-spec {
     font-family: var(--fm);
     font-size: var(--t-2xs);
     letter-spacing: var(--track-label);
     color: var(--ink-3);
-    white-space: nowrap;
 }
 
-/* ── Trust ────────────────────────────────────────────────────────────── */
-
-.landing-trust {
+/* A leader from what it is to what it looks like. */
+.landing-dial-arrow {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-5);
-    max-width: var(--measure);
+    align-items: center;
+    gap: var(--sp-2);
+    color: var(--draw);
 }
 
-.landing-trust-item {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--sp-4);
+.landing-dial-line {
+    width: 44px;
+    height: var(--rule);
+    background: var(--draw);
 }
 
-.landing-trust-icon {
-    margin-top: 3px;
-    color: var(--accent-ink);
-}
-
-.landing-trust-item h3 {
-    margin-bottom: var(--sp-2);
+.landing-dial-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    padding-top: var(--sp-4);
+    border-top: var(--rule) solid var(--line-faint);
 }
 
 /* ── More ─────────────────────────────────────────────────────────────── */
@@ -547,6 +819,7 @@ const MORE = [
 .landing-more {
     border: var(--rule) solid var(--line-soft);
     border-radius: var(--r-2);
+    background: var(--ground-2);
     overflow: hidden;
 }
 
@@ -570,7 +843,7 @@ const MORE = [
 }
 
 .landing-more-link:hover {
-    background: var(--surface);
+    background: var(--surface-solid);
 }
 
 .landing-more-icon {
@@ -608,6 +881,18 @@ const MORE = [
 
     .landing-engines {
         grid-template-columns: 1fr;
+    }
+
+    /* The dial stacks, and the leader between the halves turns to point down. */
+    .landing-dial-row {
+        grid-template-columns: 1fr;
+        gap: var(--sp-4);
+    }
+
+    .landing-dial-arrow {
+        transform: rotate(90deg);
+        transform-origin: left center;
+        margin-left: var(--sp-4);
     }
 }
 
