@@ -138,3 +138,60 @@ describe("editorial content", () => {
     expect(walls).toEqual([]);
   });
 });
+
+/*
+ * Fenced blocks and images arrived together, for the FAQ: a `vless://` URI and
+ * the field list inside a `vpn://` key mean nothing run together as prose, and
+ * screenshots were wanted for later answers.
+ */
+describe("fenced blocks", () => {
+  it("keeps its contents verbatim and unparsed", () => {
+    const b = parseRich("before\n\n```\na **b** `c`\n```\n\nafter");
+    expect(b.map((x) => x.t)).toEqual(["p", "pre", "p"]);
+    expect(b[1].tokens).toEqual([{ t: "text", v: "a **b** `c`" }]);
+  });
+
+  it("survives blank lines inside the fence", () => {
+    // The whole reason fences are pulled out before the paragraph split.
+    const b = parseRich("```\none\n\ntwo\n```");
+    expect(b).toHaveLength(1);
+    expect(b[0].t).toBe("pre");
+    expect(b[0].tokens[0].v).toBe("one\n\ntwo");
+  });
+
+  it("ignores an info string after the opening fence", () => {
+    expect(parseRich("```json\n{}\n```")[0].tokens[0].v).toBe("{}");
+  });
+
+  it("flattens into the stripped text rather than vanishing", () => {
+    const flat = stripRich("intro\n\n```\nvless://uuid@host\n```\n\ntail");
+    expect(flat).toContain("vless://uuid@host");
+    expect(flat).not.toContain("`");
+  });
+});
+
+describe("images", () => {
+  it("reads an image and keeps its alt text", () => {
+    const [tok] = parseRich("![a diagram](/assets/x.png)")[0].tokens;
+    expect(tok.t).toBe("img");
+    expect(tok.v).toBe("a diagram");
+    expect(tok.href).toBe("/assets/x.png");
+  });
+
+  it("is not mistaken for a link", () => {
+    // An image is a link with a `!` in front; a link pattern tried first
+    // matches the tail and strands the `!` as text.
+    const kinds = parseRich("![a](/x.png) and [b](/y)")[0].tokens.map((t) => t.t);
+    expect(kinds).toEqual(["img", "text", "link"]);
+  });
+
+  it("degrades to alt text when the source is not a safe scheme", () => {
+    const toks = parseRich("![alt](javascript:alert(1))")[0].tokens;
+    expect(toks.map((t) => t.t)).not.toContain("img");
+    expect(toks.map((t) => t.v).join("")).toContain("alt");
+  });
+
+  it("leaves only alt text in the stripped form", () => {
+    expect(stripRich("see ![a chart](/c.png) here")).toBe("see a chart here");
+  });
+});
