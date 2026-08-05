@@ -214,8 +214,19 @@
     color: var(--ink-2);
 }
 
-.check input[type="checkbox"],
-.check input[type="radio"],
+/*
+ * Every rule from here down is written against the bare element, not against
+ * `.check`.
+ *
+ * The reset already was: it takes the native drawing away from any checkbox on
+ * the page. The state rules under it were not, so a checkbox outside a `.check`
+ * label lost its tick and its fill and kept nothing in return — a blank square
+ * that looked identical checked and unchecked. A reset that removes the
+ * browser's rendering owes a replacement to exactly what it stripped.
+ *
+ * `.check` stays, and is still the right thing to reach for: it lays out the
+ * box beside its text. It just is not what makes the box work.
+ */
 input[type="checkbox"],
 input[type="radio"] {
     appearance: none;
@@ -232,11 +243,12 @@ input[type="radio"] {
         border-color var(--dur-1) var(--ease-out-quart);
 }
 
-.check input[type="radio"] {
+input[type="radio"] {
     border-radius: 50%;
 }
 
-.check input:checked {
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
     background: var(--accent);
     border-color: var(--accent);
 }
@@ -250,14 +262,14 @@ input[type="radio"] {
  * in both schemes: the accent is a mid-light colour either way, so what reads
  * on top of it does not change.
  */
-.check input[type="checkbox"]:checked {
+input[type="checkbox"]:checked {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.4 4.6 9 10 3.2' fill='none' stroke='%230b0a0a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-size: 12px 12px;
     background-position: center;
     background-repeat: no-repeat;
 }
 
-.check input[type="checkbox"]:indeterminate {
+input[type="checkbox"]:indeterminate {
     background: var(--accent);
     border-color: var(--accent);
     background-image: linear-gradient(
@@ -268,7 +280,7 @@ input[type="radio"] {
     background-repeat: no-repeat;
 }
 
-.check input[type="radio"]:checked {
+input[type="radio"]:checked {
     background-image: radial-gradient(
         circle,
         var(--on-accent) 0 3.5px,
@@ -276,12 +288,14 @@ input[type="radio"] {
     );
 }
 
-.check input:focus-visible {
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
 }
 
-.check input:disabled {
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
     cursor: not-allowed;
     background-color: var(--ground-3);
     background-image: var(--hatch);
