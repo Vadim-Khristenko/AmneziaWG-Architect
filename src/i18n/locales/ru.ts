@@ -847,6 +847,58 @@ export const ru = {
     "Версия {version} неизвестна этой сборке.",
 
   /* ── Находки движка XRay ────────────────────────────────────────────── */
+  "find.vpn.subscription_key":
+    "Это подписочный ключ: он несёт доступ к сервису, а не туннель. Сливать и править обфускацию в нём нечего — конфигурацию сервис выдаёт позже, при подключении.",
+  "find.vpn.no_containers":
+    "В ключе нет ни одного контейнера. Возможно, он обрезан при копировании.",
+  "find.vpn.empty_container":
+    "Контейнер «{name}» пуст: настроек внутри нет.",
+  "find.vpn.container_inferred":
+    "Имя контейнера «{name}» неизвестно, но по полям это похоже на {guess}. Определено по содержимому, а не по названию.",
+  "find.vpn.container_unknown":
+    "Имя контейнера «{name}» неизвестно, и по полям тоже не удалось понять, что внутри.",
+  "find.vpn.container_mismatch":
+    "Контейнер называется {declared}, а поля внутри выглядят как {found}. Клиент прочитает имя и отдаст содержимое не тому протоколу.",
+  "find.vpn.last_config_unreadable":
+    "В контейнере «{name}» поле last_config не разбирается как JSON.",
+  "find.vpn.self_contradiction":
+    "Контейнер «{name}» противоречит сам себе: {field} равен {a} в полях и {b} в {where}. Какая копия победит — зависит от клиента.",
+  "find.vpn.s_below_floor":
+    "В контейнере «{name}» задан HeaderProtectionKey, а {field} равен {value} — меньше {min}. Обе реализации откажутся поднимать такой интерфейс и назовут причину в логе.",
+  "find.vpn.duplicate_container":
+    "Контейнер «{name}» встречается дважды: позиции {first} и {at}. Клиент возьмёт первый.",
+  "find.vpn.default_missing":
+    "defaultContainer указывает на «{name}», но такого контейнера в ключе нет.",
+  "find.vless.not_a_link":
+    "Это не похоже на ссылку vless:// — она должна начинаться с vless://.",
+  "find.vless.no_identifier":
+    "В ссылке нет идентификатора клиента: он стоит до знака @ и работает как пароль.",
+  "find.vless.no_host":
+    "В ссылке нет адреса сервера.",
+  "find.vless.bad_port":
+    "Порт «{port}» вне диапазона 1–65535.",
+  "find.vless.id_not_uuid":
+    "Идентификатор не похож на UUID. Некоторые панели выдают свой формат, и ядро его примет, — но опечатку так тоже легко не заметить.",
+  "find.vless.unknown_security":
+    "Неизвестное значение security: «{value}». Ядро ожидает none, tls или reality.",
+  "find.vless.unknown_transport":
+    "Неизвестный транспорт: «{value}».",
+  "find.vless.reality_no_pbk":
+    "При security=reality обязателен pbk — публичная половина ключевой пары. Без неё подключиться нельзя.",
+  "find.vless.reality_no_sni":
+    "При REALITY не задан sni. Клиент подставит адрес сервера, и это будет видно как расхождение с сертификатом донора.",
+  "find.vless.reality_no_fp":
+    "При REALITY не задан fp. Клиент оставит отпечаток своей библиотеки вместо браузерного — ровно то, от чего REALITY уходит.",
+  "find.vless.pbk_without_reality":
+    "Задан pbk, но security не reality. Ключ работать будет, только REALITY при этом выключен.",
+  "find.vless.unknown_flow":
+    "Неизвестное значение flow: «{value}». В текущих исходниках ядра принимается только xtls-rprx-vision.",
+  "find.vless.flow_without_tls":
+    "Задан flow, но security=none. Vision работает поверх TLS и здесь будет проигнорирован.",
+  "find.vless.odd_encryption":
+    "Значение encryption выглядит необычно: ожидается none или строка post-quantum шифрования.",
+  "find.vless.unknown_param":
+    "Параметр «{name}» не входит в стандарт ссылок. Клиент его, скорее всего, проигнорирует.",
   "find.xray.address_missing":
     "Не указан адрес сервера.",
   "find.xray.port_range":

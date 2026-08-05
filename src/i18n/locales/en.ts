@@ -839,6 +839,58 @@ export const en: Catalog = {
     "Version {version} is unknown to this build.",
 
   /* ── Находки движка XRay ────────────────────────────────────────────── */
+  "find.vpn.subscription_key":
+    "This is a subscription key: it carries access to a service rather than a tunnel. There is nothing here to merge or re-obfuscate — the service issues the configuration later, on connection.",
+  "find.vpn.no_containers":
+    "The key holds no containers at all. It may have been truncated when it was copied.",
+  "find.vpn.empty_container":
+    "Container \"{name}\" is empty: there are no settings inside it.",
+  "find.vpn.container_inferred":
+    "The container name \"{name}\" is not one we know, but its fields look like {guess}. Worked out from the contents rather than the name.",
+  "find.vpn.container_unknown":
+    "The container name \"{name}\" is not one we know, and its fields did not say what is inside either.",
+  "find.vpn.container_mismatch":
+    "The container is called {declared} while the fields inside look like {found}. A client reads the name and hands the body to the wrong protocol.",
+  "find.vpn.last_config_unreadable":
+    "In container \"{name}\", last_config does not parse as JSON.",
+  "find.vpn.self_contradiction":
+    "Container \"{name}\" contradicts itself: {field} is {a} in the fields and {b} in {where}. Which copy wins depends on the client.",
+  "find.vpn.s_below_floor":
+    "Container \"{name}\" sets HeaderProtectionKey while {field} is {value}, below {min}. Both implementations refuse to bring such an interface up, and name the reason in the log.",
+  "find.vpn.duplicate_container":
+    "Container \"{name}\" appears twice, at positions {first} and {at}. A client takes the first.",
+  "find.vpn.default_missing":
+    "defaultContainer points at \"{name}\", and no such container is in the key.",
+  "find.vless.not_a_link":
+    "This does not look like a vless:// link — it has to start with vless://.",
+  "find.vless.no_identifier":
+    "The link carries no client identifier. It sits before the @ and works as a password.",
+  "find.vless.no_host":
+    "The link carries no server address.",
+  "find.vless.bad_port":
+    "Port \"{port}\" is outside the range 1–65535.",
+  "find.vless.id_not_uuid":
+    "The identifier does not look like a UUID. Some panels issue their own format and the core accepts it — but a typo looks the same.",
+  "find.vless.unknown_security":
+    "Unknown security value: \"{value}\". The core expects none, tls or reality.",
+  "find.vless.unknown_transport":
+    "Unknown transport: \"{value}\".",
+  "find.vless.reality_no_pbk":
+    "security=reality requires pbk, the public half of the key pair. Without it the client cannot connect.",
+  "find.vless.reality_no_sni":
+    "REALITY is on and sni is unset. The client will use the server address, which shows up as a mismatch with the donor's certificate.",
+  "find.vless.reality_no_fp":
+    "REALITY is on and fp is unset. The client will present its own library's handshake rather than a browser's — the very thing REALITY avoids.",
+  "find.vless.pbk_without_reality":
+    "pbk is set but security is not reality. The link works; REALITY is simply off.",
+  "find.vless.unknown_flow":
+    "Unknown flow value: \"{value}\". The current core sources accept only xtls-rprx-vision.",
+  "find.vless.flow_without_tls":
+    "flow is set but security=none. Vision runs over TLS and will be ignored here.",
+  "find.vless.odd_encryption":
+    "The encryption value looks unusual: none, or a post-quantum encryption string, is expected.",
+  "find.vless.unknown_param":
+    "Parameter \"{name}\" is not part of the link standard. A client will most likely ignore it.",
   "find.xray.address_missing":
     "The server address is missing.",
   "find.xray.port_range":

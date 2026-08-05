@@ -216,10 +216,19 @@ export function awgKey(version: "1.0" | "2.0" | "3.0" = "2.0"): string {
     });
   }
 
+  /*
+   * The obfuscation fields go into the wg-quick text as well, which is what a
+   * real AmneziaWG key does — it is the third copy, and the one an editor is
+   * most likely to leave behind.
+   */
+  const quickExtra = Object.entries(base)
+    .map(([k, v]) => `${k} = ${String(v)}`)
+    .join("\n");
+
   return encodeCompressed(
     envelope("amnezia-awg", {
       ...base,
-      last_config: lastConfig(base),
+      last_config: lastConfig(base, quickExtra),
       port: "44200",
       subnet_address: "10.8.1.0",
       transport_proto: "udp",
