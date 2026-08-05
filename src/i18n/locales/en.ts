@@ -185,6 +185,7 @@ export const en: Catalog = {
   "gen.out.copyJson": "Copy JSON",
   "gen.out.downloadJson": "Download JSON",
 
+  "gen.forge.send": "Open in the key workbench",
   "gen.links.title": "If something does not add up",
   "gen.links.faq": "What each parameter does",
   "gen.links.merge": "Refresh the obfuscation in an existing key",
@@ -547,6 +548,114 @@ export const en: Catalog = {
   "sim.desc.xrayAppData": "Application data over {transport}, +{overhead} B of framing",
 
   /* ── MergeKeys ────────────────────────────────────────────────────────── */
+  "mk.build.addLabel":
+    "Add a part",
+  "mk.build.add":
+    "Add to the key",
+  "mk.err.noContainerToAdd":
+    "That key holds no containers to add. A subscription key carries no tunnel.",
+  "mk.refresh.keyLabel":
+    "The key being rewritten",
+  "mk.refresh.paramsLabel":
+    "The new obfuscation parameters",
+  "mk.refresh.paramsPlaceholder":
+    "Paste a .conf from a generator, or lines like Jc = 4",
+  "mk.refresh.run":
+    "Apply to the key",
+  "mk.refresh.done":
+    "Done. Fields updated: {fields}",
+  "mk.err.needKey":
+    "Paste the key you want to update first.",
+  "mk.err.needParams":
+    "No client-side field was found in those parameters: Jc, Jmin, Jmax or I1–I5 are expected.",
+  "mk.result.service.premium.title":
+    "An Amnezia Premium key",
+  "mk.result.service.premium.desc":
+    "This is Amnezia's paid subscription. What it holds is not a tunnel but access to a service: the app asks that service for a configuration when it connects. So there is nothing here to merge and no obfuscation to rewrite — the parameters arrive on the device later.",
+  "mk.result.service.free.title":
+    "An Amnezia Free key",
+  "mk.result.service.free.desc":
+    "This is Amnezia's free access. As with the paid subscription, what it holds is a key to a service rather than a tunnel: the app requests the configuration itself. There is nothing to edit here — but the key does say which protocol and region it will ask for.",
+  "mk.result.service.other.title":
+    "A subscription key",
+  "mk.result.service.other.desc":
+    "The key points at a service that issues a configuration on connection rather than carrying one. It holds no containers, so merging and rewriting obfuscation do not apply to it.",
+  "mk.result.service.protocol":
+    "Protocol",
+  "mk.result.service.region":
+    "Region",
+  "mk.err.confUnreadable":
+    "That .conf could not be read: it has no Endpoint line giving an address and a port.",
+  "mk.hero.pre":
+    "Key workbench",
+  "mk.hero.lede":
+    "Read a key, fold several into one, refresh the obfuscation, or assemble your own.",
+  "mk.hero.desc":
+    "It reads Amnezia's `vpn://` format and `vless://` links, shows what is inside, and says what is wrong with it. One key can carry several protocols at once — WireGuard, AmneziaWG, XRay, OpenVPN — and every one of them is listed.",
+  "mk.hero.privacy":
+    "Everything is computed in your tab. Keys go nowhere, because there is nowhere to send them: this project has no server. The private keys inside are access — treat them accordingly.",
+  "mk.modes.label":
+    "Modes",
+  "mk.mode.inspect.title":
+    "Read",
+  "mk.mode.inspect.hint":
+    "What this key is, and what is wrong with it",
+  "mk.mode.inspect.lede":
+    "Paste a `vpn://` key or a `vless://` link. It is decoded, identified and checked — nothing is sent anywhere.",
+  "mk.mode.merge.title":
+    "Merge",
+  "mk.mode.merge.hint":
+    "Several keys into one",
+  "mk.mode.merge.lede":
+    "Containers from every key are gathered into one. Ones that collide by name are not fused: the first is kept and the second reported.",
+  "mk.mode.refresh.title":
+    "Obfuscation",
+  "mk.mode.refresh.hint":
+    "Refresh the parameters in a key you have",
+  "mk.mode.refresh.lede":
+    "Reissue the client-side obfuscation in a key you already hold.",
+  "mk.mode.build.title":
+    "Build",
+  "mk.mode.build.hint":
+    "Assemble a key from parts",
+  "mk.mode.build.lede":
+    "Your own key from ready parts. Paste a key or a link and its containers become parts of the new one — as many ways to connect as you like, in a single key.",
+  "mk.input.placeholder":
+    "vpn://… or vless://…",
+  "mk.slot.unreadable":
+    "unreadable",
+  "mk.merge.run":
+    "Merge",
+  "mk.merge.total":
+    "containers",
+  "mk.merge.unique":
+    "unique",
+  "mk.merge.dupes":
+    "collided",
+  "mk.refresh.handoff":
+    "The parameters arrived from the generator and are filled in already. Paste the key you want them written into.",
+  "mk.refresh.scope":
+    "Only the client-side parameters change: Jc, Jmin, Jmax and the I1–I5 chain. H1–H4, S1–S4, the keys and the address stay as they were, or the tunnel will not come up. The edit reaches all three copies of the configuration at once.",
+  "mk.build.name":
+    "Name",
+  "mk.build.description":
+    "Description",
+  "mk.build.parts":
+    "The parts of the key",
+  "mk.build.empty":
+    "Nothing yet. Paste a key or a link above and press \\u201cAdd to the key\\u201d.",
+  "mk.build.removePart":
+    "Remove this part",
+  "mk.result.noContainers":
+    "No containers at all",
+  "mk.result.inferred":
+    "worked out from the fields",
+  "mk.result.service.other":
+    "Subscription key",
+  "mk.result.rename":
+    "Apply",
+  "mk.result.copy":
+    "Copy the key",
   "mk.subtitle": "Key editor and Amnezia VPN container merging",
   "mk.loaded.title": "Config loaded from the generator.",
   "mk.loaded.hint": "Open the Editor tab and press “Apply obfuscation”.",
@@ -572,13 +681,16 @@ export const en: Catalog = {
 
   "mk.slots.title": "Keys to merge",
   "mk.slots.limits": "minimum 2, maximum 4",
-  "mk.slot.remove": "Remove slot",
+  "mk.slot.remove":
+    "Remove this box",
   "mk.slot.viewJson": "View JSON",
   "mk.slot.clear": "Clear",
-  "mk.slot.add": "Add another key",
+  "mk.slot.add":
+    "Another key",
   "mk.action.merge": "Merge",
   "mk.action.clearAll": "Clear all",
-  "mk.result.title": "Keys merged",
+  "mk.result.title":
+    "What is inside",
   "mk.result.label": "Merged key",
   "mk.action.copy": "Copy",
   "mk.action.copied": "Copied",

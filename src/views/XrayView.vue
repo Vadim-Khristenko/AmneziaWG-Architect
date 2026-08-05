@@ -70,6 +70,7 @@ import {
     writePath,
 } from "@/engines/xray/bindings";
 import { buildServerInbound, buildClientUris } from "@/engines/xray/render";
+import SendToForge from "@/components/SendToForge.vue";
 import type { XrayConfig, XrayInput } from "@/engines/xray/types";
 import { localizePath, useI18n } from "@/i18n";
 
@@ -1376,6 +1377,17 @@ function setServerNames(event: Event) {
                 </button>
             </div>
         </section>
+        <!--
+            Straight into the workbench with the link already in it. The first
+            client's link is the one handed over: a key holds one XRay
+            container, so handing over several would mean choosing for the
+            reader which of them the key is about.
+        -->
+        <div v-if="clientUris.length" class="gen-forge">
+            <SendToForge :payload="clientUris[0]" :label="t('gen.forge.send')" />
+        </div>
+
+
         <!-- The explanation, for a screen with no pointer to rest. -->
         <div class="toast-dock">
             <transition name="toast">
@@ -1403,6 +1415,11 @@ function setServerNames(event: Event) {
     display: flex;
     flex-direction: column;
     gap: var(--sp-5);
+}
+
+.gen-forge {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .gen-head {

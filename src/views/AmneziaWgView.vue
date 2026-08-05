@@ -54,6 +54,7 @@ import { useGenerator } from "@/composables/useGenerator";
 import { useCopyFeedback } from "@/composables/useCopyFeedback";
 import { useHistory } from "@/composables/useHistory";
 import { downloadText } from "@/utils/download";
+import SendToForge from "@/components/SendToForge.vue";
 import HistoryPanel from "@/components/HistoryPanel.vue";
 import type { AwgHistoryEntry } from "@/engines/awg/history";
 import type { GeneratorHistoryEntry } from "@/types/generatorHistory";
@@ -1398,6 +1399,14 @@ function toSimulator() {
         </section>
 
         <!-- ══ Where to go when it does not work ═══════════════════════ -->
+        <!--
+            Straight into the workbench with the config already in it, because
+            the manual route is select, copy, navigate, paste.
+        -->
+        <div v-if="hasConfig" class="gen-forge">
+            <SendToForge :payload="plainText" :label="t('gen.forge.send')" />
+        </div>
+
         <section class="gen-links">
             <h2 class="note-label">{{ t("gen.links.title") }}</h2>
             <ul class="list gen-linklist">
@@ -1405,13 +1414,6 @@ function toSimulator() {
                     <router-link :to="at('/faq')" class="gen-link">
                         <HelpCircle :size="16" />
                         <span>{{ t("gen.links.faq") }}</span>
-                        <ChevronRight :size="15" class="gen-link-go" />
-                    </router-link>
-                </li>
-                <li class="list-item">
-                    <router-link :to="at('/mergekeys')" class="gen-link">
-                        <Combine :size="16" />
-                        <span>{{ t("gen.links.merge") }}</span>
                         <ChevronRight :size="15" class="gen-link-go" />
                     </router-link>
                 </li>
