@@ -86,7 +86,7 @@ const dayCount = computed(() =>
  * the suite does not exist in the bundle — so it is written as a floor rather
  * than an exact number, and a floor stays true as the suite grows.
  */
-const TEST_FLOOR = "800+";
+const TEST_FLOOR = "900+";
 
 const chips = computed(() => [
     {

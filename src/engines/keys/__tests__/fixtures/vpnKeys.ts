@@ -249,6 +249,9 @@ export function xrayKey(): string {
     envelope("amnezia-xray", {
       last_config: JSON.stringify({
         config: JSON.stringify({ outbounds: [{ protocol: "vless" }] }),
+        // The client identifier lives with the address, one level in, which
+        // is where a link has to be assembled from.
+        clientId: "b831381d-6324-4d53-ad4f-8cda48b30811",
         hostName: HOST,
         port: 443,
       }),
