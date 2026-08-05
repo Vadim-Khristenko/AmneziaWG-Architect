@@ -548,6 +548,8 @@ export const en: Catalog = {
   "sim.desc.xrayAppData": "Application data over {transport}, +{overhead} B of framing",
 
   /* ── MergeKeys ────────────────────────────────────────────────────────── */
+  "mk.err.notBase64":
+    "That does not look like a key: the string holds characters base64 never contains. Usually that means a key copied only in part, or copied along with something else.",
   "mk.act.copyGroup": "Copy",
   "mk.act.saveGroup": "Download as a file",
   "mk.view.indent": "Indent",

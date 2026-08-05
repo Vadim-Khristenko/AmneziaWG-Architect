@@ -24,7 +24,24 @@ export function vpnDecode(str: string): VpnConfig {
 
   // base64url → standard base64 (-→+, _→/)
   const b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(b64);
+
+  /*
+   * `atob` throws on anything outside Latin-1, and its message says so in
+   * English regardless of the reader's language. Someone who pasted a
+   * paragraph, a Cyrillic label, or half a key gets a browser exception where
+   * they should get a sentence about their key, so the check happens here.
+   */
+  let binary: string;
+  try {
+    binary = atob(b64);
+  } catch {
+    throw new LocalisedError(
+      "mk.err.notBase64",
+      {},
+      "the key is not valid base64",
+    );
+  }
+
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
