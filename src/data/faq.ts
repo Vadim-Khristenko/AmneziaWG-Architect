@@ -14,6 +14,8 @@ import type { Locale, Localised } from "@/i18n";
 
 export type FaqCategoryId =
   | "basics"
+  | "keys"
+  | "xray"
   | "params"
   | "awg2"
   | "awg3"
@@ -39,7 +41,13 @@ export interface FaqEntry {
 
 export const FAQ_CATEGORIES: FaqCategory[] = [
   { id: "basics", label: { ru: "Основы", en: "Basics" } },
-  { id: "params", label: { ru: "Параметры", en: "Parameters" } },
+  { id: "keys", label: { ru: "Ключи и форматы", en: "Keys and formats" } },
+  { id: "xray", label: { ru: "XRay и REALITY", en: "XRay and REALITY" } },
+  /*
+   * "Параметры" on its own stopped being enough the moment a second engine
+   * arrived: these are AmneziaWG's, and XRay's live under their own heading.
+   */
+  { id: "params", label: { ru: "Параметры AWG", en: "AWG parameters" } },
   { id: "awg2", label: { ru: "AmneziaWG 2.0", en: "AmneziaWG 2.0" } },
   { id: "awg3", label: { ru: "AmneziaWG 3.0", en: "AmneziaWG 3.0" } },
   { id: "clients", label: { ru: "Клиенты", en: "Clients" } },
@@ -94,6 +102,216 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     keywords: ["сервер", "server", "клиент", "client", "симметрия"],
   },
 
+  /* ── Key formats ──────────────────────────────────────────────────────── */
+  {
+    id: "vpn-key-format",
+    category: "keys",
+    question: {
+      ru: "Что такое ключ `vpn://` и что у него внутри?",
+      en: "What is a `vpn://` key and what is inside it?",
+    },
+    answer: {
+      ru: "Это формат приложения Amnezia VPN, и он **не является шифрованием** — это упаковка.\n\n## Как он устроен\n\nСтрока после `vpn://` — это base64url от четырёх байт длины (big-endian) и сжатого zlib JSON. Распаковывается в обе стороны кем угодно: ни пароля, ни подписи в формате нет.\n\n## Что в JSON\n\nВерхний уровень описывает не протокол, а *набор* протоколов:\n\n```\ncontainers[]        список контейнеров, по одному на протокол\ndefaultContainer    какой из них открывается по умолчанию\nhostName            адрес сервера\ndns1, dns2          DNS, которые получит клиент\ndescription         подпись, которую вы видите в приложении\n```\n\nКонтейнер — это один протокол: `amnezia-awg`, `amnezia-openvpn`, `xray` и так далее. **Поэтому один ключ `vpn://` может нести сразу несколько способов подключения**, и приложение переключается между ними без новой ссылки.\n\n## Что внутри AWG-контейнера\n\nКлиентские параметры обфускации лежат прямо полями: `Jc`, `Jmin`, `Jmax`, `I1`–`I5`. Рядом лежит сам конфиг, причём дважды: `last_config` — JSON-строкой, `config` — текстом в формате wg-quick. Это важно для правки: **изменить параметр в одном месте и забыть про два других значит получить ключ, который противоречит сам себе**.",
+      en: "It is the Amnezia VPN app's own format, and it is **not encryption** — it is packaging.\n\n## How it is built\n\nThe string after `vpn://` is base64url of four big-endian length bytes followed by zlib-compressed JSON. Anyone can unpack it, and pack it back: there is no password and no signature in the format.\n\n## What is in the JSON\n\nThe top level describes not a protocol but a *set* of them:\n\n```\ncontainers[]        one container per protocol\ndefaultContainer    which of them opens by default\nhostName            the server address\ndns1, dns2          the DNS the client will use\ndescription         the caption you see in the app\n```\n\nA container is one protocol: `amnezia-awg`, `amnezia-openvpn`, `xray` and so on. **So a single `vpn://` key can carry several ways to connect at once**, and the app switches between them without a new link.\n\n## Inside an AWG container\n\nThe client-side obfuscation parameters sit there as plain fields: `Jc`, `Jmin`, `Jmax`, `I1`–`I5`. Beside them the config itself appears twice: `last_config` as a JSON string and `config` as wg-quick text. That matters when editing: **changing a parameter in one place and forgetting the other two produces a key that contradicts itself**.",
+    },
+    keywords: ["vpn://", "amnezia", "base64", "zlib", "контейнер", "container"],
+  },
+  {
+    id: "vless-key-format",
+    category: "keys",
+    question: {
+      ru: "Что такое ссылка `vless://` и что означают её параметры?",
+      en: "What is a `vless://` link and what do its parameters mean?",
+    },
+    answer: {
+      ru: "Это текстовая ссылка на один сервер, стандарт которой описан в [обсуждении XTLS/Xray-core #716](https://github.com/XTLS/Xray-core/discussions/716). В отличие от `vpn://`, читается глазами.\n\n```\nvless://UUID@адрес:порт?параметры#подпись\n```\n\nUUID — идентификатор клиента. Адрес IPv6 берётся в квадратные скобки, подпись после `#` кодируется через `encodeURIComponent`.\n\n## Параметры, которые встречаются чаще всего\n\n`type` — транспорт: `tcp`, `ws`, `grpc`, `xhttp` и другие.\n\n`security` — `none`, `tls` или `reality`.\n\n`sni` — имя, которое клиент называет в TLS. При REALITY это имя сайта-донора.\n\n`pbk` — публичная половина ключевой пары REALITY. Она **и должна быть видна**: приватная остаётся на сервере.\n\n`sid` — shortId, короткая метка, по которой сервер узнаёт своего клиента.\n\n`fp` — под какой браузер подделывается TLS-рукопожатие: `chrome`, `firefox`, `safari` и прочие.\n\n`flow` — `xtls-rprx-vision`, если включён Vision.\n\n`spx` — путь, по которому REALITY ходит к донору (spiderX).\n\n`path`, `host`, `mode` — для транспортов, у которых есть HTTP-часть.\n\n`encryption` — `none` или строка post-quantum шифрования.\n\n**Порядок параметров значения не имеет, регистр имён — имеет.**",
+      en: "It is a plain-text link to one server, standardised in [XTLS/Xray-core discussion #716](https://github.com/XTLS/Xray-core/discussions/716). Unlike `vpn://`, you can read it with your eyes.\n\n```\nvless://UUID@host:port?parameters#remark\n```\n\nThe UUID identifies the client. An IPv6 host goes in square brackets, and the remark after `#` is `encodeURIComponent`-escaped.\n\n## The parameters you will meet most\n\n`type` — the transport: `tcp`, `ws`, `grpc`, `xhttp` and others.\n\n`security` — `none`, `tls` or `reality`.\n\n`sni` — the name the client presents in TLS. Under REALITY it is the donor site's name.\n\n`pbk` — the public half of the REALITY key pair. It **is meant to be visible**: the private half stays on the server.\n\n`sid` — the shortId, a small label by which the server recognises its own client.\n\n`fp` — which browser the TLS handshake imitates: `chrome`, `firefox`, `safari` and so on.\n\n`flow` — `xtls-rprx-vision` when Vision is on.\n\n`spx` — the path REALITY uses when it visits the donor (spiderX).\n\n`path`, `host`, `mode` — for transports with an HTTP part.\n\n`encryption` — `none`, or a post-quantum encryption string.\n\n**Parameter order does not matter; the case of their names does.**",
+    },
+    keywords: ["vless://", "uuid", "pbk", "sid", "sni", "fp", "spx", "ссылка", "link"],
+  },
+  {
+    id: "vpn-vs-vless",
+    category: "keys",
+    question: {
+      ru: "Чем `vpn://` отличается от `vless://` — это одно и то же?",
+      en: "How does `vpn://` differ from `vless://` — are they the same thing?",
+    },
+    answer: {
+      ru: "Нет. Это вещи разного уровня, и путать их легко, потому что оба называют «ключом».\n\n## `vless://` — один сервер, один протокол\n\nСсылка описывает ровно одно подключение по VLESS. Её понимает почти любой клиент Xray. Она текстовая, её можно прочитать и поправить руками.\n\n## `vpn://` — контейнер приложения Amnezia\n\nЭто набор подключений, упакованный в одну строку. Внутри может лежать AmneziaWG, OpenVPN и Xray одновременно, и приложение переключается между ними. Читать глазами нельзя — сначала распаковать.\n\n## Отсюда практическое следствие\n\n**`vless://` кладётся внутрь `vpn://`, а не наоборот.** Контейнер `xray` внутри ключа Amnezia несёт по сути ту же конфигурацию, что и ссылка `vless://`, только полями JSON, а не параметрами запроса.\n\nЕсли ваш клиент — приложение Amnezia, вам нужен `vpn://`. Если это v2rayN, Hiddify, sing-box, Streisand и подобные — `vless://`.",
+      en: "No. They live at different levels, and mixing them up is easy because both are called \"a key\".\n\n## `vless://` — one server, one protocol\n\nThe link describes exactly one VLESS connection. Almost any Xray client understands it. It is text: you can read it and edit it by hand.\n\n## `vpn://` — the Amnezia app's container\n\nThis is a set of connections packed into one string. It can hold AmneziaWG, OpenVPN and Xray at the same time, and the app switches between them. You cannot read it directly — it has to be unpacked first.\n\n## Which gives the practical rule\n\n**`vless://` goes inside `vpn://`, not the other way round.** An `xray` container inside an Amnezia key carries essentially the same configuration a `vless://` link does, only as JSON fields rather than query parameters.\n\nIf your client is the Amnezia app, you want `vpn://`. If it is v2rayN, Hiddify, sing-box, Streisand or similar, you want `vless://`.",
+    },
+    keywords: ["разница", "difference", "vpn://", "vless://", "контейнер"],
+  },
+  {
+    id: "key-secrets",
+    category: "keys",
+    question: {
+      ru: "Что в ключе секретно и чем нельзя делиться?",
+      en: "What in a key is secret, and what must not be shared?",
+    },
+    answer: {
+      ru: "**Ключ целиком — это доступ.** Оба формата хранят учётные данные открытым текстом; base64 и zlib ничего не скрывают, они только делают строку компактной.\n\n## В `vpn://`\n\nСекретны `PrivateKey`, `PresharedKey` и `HeaderProtectionKey`. Первый — это и есть ваша личность в туннеле; второй и третий общие с сервером, и по ним опознаются пакеты.\n\n## В `vless://`\n\nСекретен UUID. Он стоит в ссылке до знака `@` и работает как пароль: кто его знает, тот подключается.\n\n`pbk` секретным не является — это публичная половина пары. Приватная половина никогда не покидает сервер и в ссылке отсутствовать обязана.\n\n## Что делать\n\nПередавайте ключи по приватному каналу, а не в чате и не в issue. **Если ключ попал в публичное место — считайте его скомпрометированным и перевыпустите**, даже если «вроде никто не заметил».\n\nКогда прикладываете конфиг к сообщению об ошибке, вырезайте секреты: для воспроизведения проблемы они не нужны. Параметры обфускации при этом можно оставлять целиком — они не дают доступа.",
+      en: "**A key in full is access.** Both formats hold credentials in the clear; base64 and zlib hide nothing, they only make the string compact.\n\n## In `vpn://`\n\n`PrivateKey`, `PresharedKey` and `HeaderProtectionKey` are secret. The first is your identity in the tunnel; the other two are shared with the server and are what packets are recognised by.\n\n## In `vless://`\n\nThe UUID is secret. It sits in the link before the `@` and works as a password: whoever knows it connects.\n\n`pbk` is not secret — it is the public half of a pair. The private half never leaves the server and must not appear in a link at all.\n\n## What to do\n\nHand keys over through a private channel, not a group chat and not an issue. **If a key reaches a public place, treat it as compromised and reissue it**, even if nobody appears to have noticed.\n\nWhen attaching a config to a bug report, cut the secrets out: reproducing a problem never needs them. The obfuscation parameters can stay in full — they grant no access.",
+    },
+    keywords: ["секрет", "secret", "privatekey", "uuid", "утечка", "leak", "безопасность"],
+  },
+  {
+    id: "merge-keys-why",
+    category: "keys",
+    question: {
+      ru: "Зачем сливать несколько ключей в один и что при этом происходит?",
+      en: "Why merge several keys into one, and what happens when you do?",
+    },
+    answer: {
+      ru: "Затем, что подключений обычно больше одного: другой протокол на том же сервере, запасной сервер, отдельный ключ для телефона. Держать их четырьмя ссылками неудобно, и в приложении они выглядят четырьмя не связанными записями.\n\n## Что делает слияние\n\nБерутся списки `containers[]` из всех ключей и складываются в один. Получается ключ, внутри которого лежат все способы подключения, а приложение показывает их как варианты одной записи.\n\n## Что происходит с одинаковыми\n\nКонтейнеры совпадают по имени — например, два `amnezia-awg` из двух разных ключей. **Берётся первый, второй отбрасывается**, и об этом сообщается. Молча склеить два разных сервера в один контейнер нельзя: получилась бы конфигурация, которая не соответствует ни одному из них.\n\n## Что не меняется\n\nСлияние не трогает содержимое контейнеров. Ключи, адреса и параметры остаются ровно теми, какими были — переставляется только оболочка.\n\nВсё это делается в вашей вкладке: ключи никуда не отправляются, потому что отправлять их некуда.",
+      en: "Because there is usually more than one connection: another protocol on the same server, a spare server, a separate key for a phone. Four links are awkward to keep, and in the app they show up as four unrelated entries.\n\n## What merging does\n\nThe `containers[]` lists from every key are gathered into one. The result is a key holding every way to connect, which the app presents as options on a single entry.\n\n## What happens to duplicates\n\nContainers collide by name — two `amnezia-awg` from two different keys, say. **The first is kept and the second dropped**, and you are told so. Silently fusing two different servers into one container is not on offer: the result would match neither of them.\n\n## What does not change\n\nMerging does not touch container contents. Keys, addresses and parameters stay exactly as they were — only the wrapper is rebuilt.\n\nAll of it happens in your tab: the keys go nowhere, because there is nowhere to send them.",
+    },
+    keywords: ["слияние", "merge", "mergekeys", "контейнеры", "containers"],
+  },
+  {
+    id: "update-obfuscation-in-key",
+    category: "keys",
+    question: {
+      ru: "Можно ли обновить обфускацию в уже готовом ключе, не выпуская новый?",
+      en: "Can the obfuscation in an existing key be refreshed without issuing a new one?",
+    },
+    answer: {
+      ru: "Да, и это безопаснее, чем кажется, потому что менять разрешено не всё.\n\n## Что меняется\n\nТолько клиентские параметры: `Jc`, `Jmin`, `Jmax` и цепочка `I1`–`I5`. Их сервер не читает — мусорные пакеты и CPS-цепочка уходят до handshake и на приёме попадают в ветку «неизвестный пакет», для того и сделаны. **Поэтому их можно менять на одном устройстве, не трогая сервер и остальные устройства.**\n\n## Что не меняется\n\n`H1`–`H4`, `S1`–`S4`, `HeaderProtectionKey`, ключи, адрес и порт остаются нетронутыми. Правка любого из них в ключе без такой же правки на сервере даёт туннель, который не поднимется, — приёмная сторона просто не опознает пакеты.\n\n## Почему это не одна замена в тексте\n\nВ AWG-контейнере конфигурация лежит в трёх видах: полями контейнера, JSON-строкой в `last_config` и текстом wg-quick в `config`. Правку нужно внести во все три, иначе ключ начинает противоречить сам себе, и какая версия победит — зависит от клиента.\n\n**Практическая польза:** дать двум своим устройствам разные `Jc`/`Jmin`/`Jmax` полезнее, чем одинаковые. Один и тот же мусорный поезд у сотни клиентов — готовый шаблон для DPI.",
+      en: "Yes, and it is safer than it sounds, because not everything is allowed to change.\n\n## What changes\n\nThe client-side parameters only: `Jc`, `Jmin`, `Jmax` and the `I1`–`I5` chain. The server never reads them — junk packets and the CPS chain go out before the handshake and land in the \"unknown packet\" branch on arrival, which is their whole purpose. **So they can be changed on one device without touching the server or the other devices.**\n\n## What does not change\n\n`H1`–`H4`, `S1`–`S4`, `HeaderProtectionKey`, the keys, the address and the port are left alone. Editing any of those in a key without the same edit on the server gives a tunnel that will not come up — the receiving side simply fails to recognise the packets.\n\n## Why it is not one find-and-replace\n\nAn AWG container holds the configuration three times over: as container fields, as a JSON string in `last_config`, and as wg-quick text in `config`. The edit has to reach all three, or the key starts contradicting itself and which copy wins depends on the client.\n\n**Worth doing:** giving two of your own devices different `Jc`/`Jmin`/`Jmax` beats giving them the same. One junk train shared by a hundred clients is a ready-made template for DPI.",
+    },
+    keywords: ["обновить", "refresh", "jc", "jmin", "jmax", "i1", "cps", "патч", "patch"],
+  },
+  /* ── XRay and REALITY ─────────────────────────────────────────────────── */
+  {
+    id: "what-is-xray-reality",
+    category: "xray",
+    question: {
+      ru: "Что такое XRay и REALITY, и чем это отличается от AmneziaWG?",
+      en: "What are XRay and REALITY, and how do they differ from AmneziaWG?",
+    },
+    answer: {
+      ru: "Оба решают одну задачу — не дать опознать соединение — и решают её противоположными способами.\n\n## AmneziaWG подделывает\n\nОн меняет форму своих пакетов: добавляет мусор, паддинг, подменяет байт типа сообщения. Снаружи это *похоже* на QUIC, TLS или DNS. Похоже — но сделано нами.\n\n## REALITY заимствует\n\nОн не изображает чужое рукопожатие, а берёт настоящее. Сервер при подключении сам ходит к выбранному сайту-донору и отдаёт клиенту его подлинный сертификат. Наблюдатель видит TLS-сессию с реальным сайтом, потому что она **и есть** сессия с реальным сайтом — до того момента, когда сервер узнаёт своего по ключу и перехватывает соединение на себя.\n\nСледствие важное: активная проверка не помогает. Если DPI сам подключится к вашему серверу и посмотрит на сертификат, он увидит сертификат донора, выданный настоящим удостоверяющим центром.\n\n## Что из этого выбрать\n\nЗависит от того, что блокируют. Против блокировки по типу трафика работают оба. Против блокировки адреса — ни один. REALITY выигрывает там, где есть активное зондирование; AmneziaWG проще развернуть и он живёт поверх UDP, что иногда решает.",
+      en: "Both solve the same problem — do not let the connection be identified — and they solve it in opposite ways.\n\n## AmneziaWG imitates\n\nIt reshapes its own packets: adds junk, adds padding, substitutes the message-type byte. From outside it *looks like* QUIC, TLS or DNS. Looks like — but we made it.\n\n## REALITY borrows\n\nIt does not act out somebody else's handshake, it takes a real one. On connection the server visits the chosen donor site itself and hands the client that site's genuine certificate. An observer sees a TLS session with a real site, because it **is** a session with a real site — right up to the moment the server recognises its own client by key and takes the connection over.\n\nThe consequence matters: active probing does not help. If DPI connects to your server itself and inspects the certificate, it sees the donor's certificate, issued by a real certificate authority.\n\n## Which to choose\n\nIt depends on what is being blocked. Against blocking by traffic type, both work. Against blocking by address, neither does. REALITY wins where there is active probing; AmneziaWG is simpler to deploy and lives over UDP, which sometimes settles it.",
+    },
+    keywords: ["xray", "reality", "vless", "донор", "donor", "зондирование", "probing"],
+  },
+  {
+    id: "reality-dest-vs-sni",
+    category: "xray",
+    question: {
+      ru: "Почему `dest` и `serverNames` должны указывать на один и тот же сайт?",
+      en: "Why must `dest` and `serverNames` point at the same site?",
+    },
+    answer: {
+      ru: "Потому что иначе сертификат и имя расходятся, и это видно с одного пассивного взгляда.\n\n`dest` — куда сервер ходит за настоящим рукопожатием. `serverNames` — какие имена он готов принять в SNI от клиента. Если `dest` ведёт на один сайт, а `serverNames` называет другой, наблюдатель получает TLS-сессию, где клиент попросил `example.com`, а в ответ пришёл сертификат, выписанный на `microsoft.com`.\n\n**Настоящий сайт так себя не ведёт никогда.** Это не подозрительный признак — это ошибка, которой в природе не бывает: несовпадение имени и сертификата означает либо неверную конфигурацию, либо подмену.\n\n## Как проверить\n\nПравило простое: имена в `serverNames` должны обслуживаться тем сертификатом, который отдаёт `dest`. Обычно это тот же домен, иногда — имя из SAN того же сертификата.\n\nArchitect предупреждает, если `dest` и `serverNames` называют разные сайты. Раньше эта проверка отсутствовала вовсе, и конфигурация с таким расхождением выглядела совершенно нормальной.",
+      en: "Because otherwise the certificate and the name disagree, and that is visible from a single passive look.\n\n`dest` is where the server goes for a genuine handshake. `serverNames` is which names it will accept from a client in SNI. If `dest` leads to one site while `serverNames` names another, an observer gets a TLS session in which the client asked for `example.com` and the certificate that came back was issued for `microsoft.com`.\n\n**No real site ever behaves that way.** It is not a suspicious sign, it is an error that does not occur in nature: a mismatch between name and certificate means either a misconfiguration or an interception.\n\n## How to check it\n\nThe rule is short: the names in `serverNames` must be served by the certificate `dest` returns. Usually that is the same domain, sometimes a name from the same certificate's SAN list.\n\nArchitect warns when `dest` and `serverNames` name different sites. That check did not exist at all until recently, and a configuration with this mismatch looked perfectly normal.",
+    },
+    keywords: ["dest", "servernames", "sni", "сертификат", "certificate", "донор"],
+  },
+  {
+    id: "choose-donor",
+    category: "xray",
+    question: {
+      ru: "Как выбрать домен-донор для REALITY?",
+      en: "How do I choose a donor domain for REALITY?",
+    },
+    answer: {
+      ru: "Донор должен быть таким, чтобы обращение к нему с вашего адреса выглядело обычным делом.\n\n## Что действительно требуется\n\nСайт обязан поддерживать **TLS 1.3 и HTTP/2**, отдавать сертификат от настоящего удостоверяющего центра и быть доступен с вашего сервера. Без первого REALITY не заработает вовсе.\n\n## Что стоит учесть\n\nГеография. Донор в другом полушарии выглядит странно ровно настолько, насколько странно, что вы к нему постоянно ходите. Для российского сервера логичнее донор, к которому оттуда обращаются часто.\n\nПопулярность. Слишком редкий домен даёт всплеск трафика, заметный на общем фоне; слишком очевидные вроде `www.microsoft.com` берут все подряд, и это тоже след.\n\nСтабильность. Донор, который завтра сменит CDN или отключит TLS 1.3, унесёт с собой ваш туннель.\n\n## База в Architect\n\nБольше 1100 доменов с фильтром по регионам. Для каждого записано, **что про него известно** — где хостится, какие TLS и HTTP, — а не выдуманный статус вроде «хороший донор». Такие оценки устаревают быстрее, чем их успевают править, и создают ложную уверенность.\n\nПроверить конкретный домен всё равно стоит самому, с того сервера, где он будет работать.",
+      en: "The donor should be one that makes a visit from your address look ordinary.\n\n## What is actually required\n\nThe site must support **TLS 1.3 and HTTP/2**, present a certificate from a real authority, and be reachable from your server. Without the first, REALITY does not work at all.\n\n## What is worth weighing\n\nGeography. A donor on the other side of the planet looks odd in exactly the way that your visiting it constantly is odd. For a Russian server, a donor that is reached from there routinely makes more sense.\n\nPopularity. Too obscure a domain produces a traffic spike that stands out against the background; the too-obvious ones like `www.microsoft.com` are used by everybody, which is a trail of its own.\n\nStability. A donor that changes CDN tomorrow, or turns TLS 1.3 off, takes your tunnel with it.\n\n## The database in Architect\n\nOver 1100 domains with a regional filter. For each one it records **what is known about it** — where it is hosted, what its TLS and HTTP look like — rather than an invented status like \"good donor\". Such verdicts go stale faster than anyone can maintain them, and they manufacture false confidence.\n\nChecking a particular domain yourself, from the server it will run on, is still worth the minute.",
+    },
+    keywords: ["донор", "donor", "dest", "tls 1.3", "http/2", "домен", "domain", "регион"],
+  },
+  {
+    id: "reality-keys-shortids",
+    category: "xray",
+    question: {
+      ru: "Что такое ключевая пара REALITY, `shortIds` и `spiderX`?",
+      en: "What are the REALITY key pair, `shortIds` and `spiderX`?",
+    },
+    answer: {
+      ru: "Три разные вещи, которые часто путают.\n\n## Ключевая пара\n\nx25519. Приватная половина живёт на сервере и не покидает его никогда. Публичная попадает в клиентскую ссылку как `pbk`. По ней сервер отличает своего клиента от случайного посетителя — и решает, отдать ему туннель или спокойно проксировать его к настоящему донору.\n\n**Именно поэтому активное зондирование бесполезно**: у зондирующего нет приватной пары к `pbk`, и он получает ровно то, что получил бы любой прохожий — настоящий сайт.\n\n## shortIds\n\nКороткие метки в hex, до шестнадцати символов. Их несколько, и каждому клиенту можно выдать свой. Секретом они не являются — секрет в ключевой паре, — но разные `shortId` позволяют различать клиентов и отзывать доступ по одному, не трогая остальных.\n\nПустая строка в списке разрешает подключение без `sid`.\n\n## spiderX\n\nПуть, по которому сервер обращается к донору: `/` по умолчанию. Смысл в правдоподобии — обращение к главной странице выглядит иначе, чем обращение к странице раздела. Секретности он не добавляет.",
+      en: "Three different things, and they get mixed up constantly.\n\n## The key pair\n\nx25519. The private half lives on the server and never leaves it. The public half goes into the client link as `pbk`. It is what lets the server tell its own client from a passer-by — and decide whether to hand over a tunnel or quietly proxy them on to the real donor.\n\n**That is exactly why active probing gets nowhere**: a prober holds no private counterpart to `pbk`, so it receives what any passer-by receives — the real site.\n\n## shortIds\n\nShort hex labels, up to sixteen characters. There can be several, and each client can be given its own. They are not secrets — the secret is the key pair — but distinct `shortId`s let you tell clients apart and revoke one without disturbing the rest.\n\nAn empty string in the list permits connecting with no `sid` at all.\n\n## spiderX\n\nThe path the server uses when it visits the donor; `/` by default. The point is plausibility — fetching a front page looks different from fetching a section page. It adds no secrecy.",
+    },
+    keywords: ["x25519", "pbk", "shortid", "sid", "spiderx", "ключи", "keys"],
+  },
+  {
+    id: "vless-flow-vision",
+    category: "xray",
+    question: {
+      ru: "Что такое `flow` и `xtls-rprx-vision`, и откуда берётся суффикс `-udp443`?",
+      en: "What is `flow` and `xtls-rprx-vision`, and where does the `-udp443` suffix come from?",
+    },
+    answer: {
+      ru: "`flow` включает Vision — режим, в котором XTLS перестаёт шифровать уже зашифрованное.\n\nБез него трафик внутри TLS шифруется дважды: один раз протоколом, один раз внешним TLS. Vision после установления сессии передаёт часть данных напрямую, снимая второй слой. Это и быстрее, и — что важнее — **избавляет от характерного рисунка длин пакетов**, по которому двойное шифрование опознаётся.\n\nВ текущих исходниках ядра допустимое значение одно: `xtls-rprx-vision`.\n\n## Про `-udp443`\n\nСуффикс `xtls-rprx-vision-udp443` разрешает пропускать UDP на порт 443 — то есть QUIC — вместо того, чтобы его блокировать. Полезно, когда браузеры на клиенте ходят по HTTP/3.\n\n**Ключевая деталь: этот суффикс существует только на стороне клиента.** Серверный inbound его не принимает и должен получить `xtls-rprx-vision` без хвоста. Architect срезает суффикс сам, когда собирает серверную часть, — иначе ядро отказалось бы поднимать конфигурацию.",
+      en: "`flow` turns on Vision — the mode in which XTLS stops encrypting what is already encrypted.\n\nWithout it, traffic inside TLS is encrypted twice: once by the protocol and once by the outer TLS. After the session is established, Vision passes some data through directly, dropping the second layer. That is faster and, more importantly, **removes the distinctive packet-length pattern** by which double encryption is recognised.\n\nIn the current core sources the only accepted value is `xtls-rprx-vision`.\n\n## About `-udp443`\n\nThe `xtls-rprx-vision-udp443` suffix allows UDP to port 443 — that is, QUIC — through instead of blocking it. Useful when the browsers on the client speak HTTP/3.\n\n**The detail that catches people: the suffix exists on the client side only.** A server inbound does not accept it and must be given `xtls-rprx-vision` with nothing after it. Architect strips the suffix itself when it builds the server side — otherwise the core would refuse to start the configuration.",
+    },
+    keywords: ["flow", "vision", "xtls", "udp443", "quic", "http/3"],
+  },
+  {
+    id: "xhttp-modes",
+    category: "xray",
+    question: {
+      ru: "Что такое XHTTP и чем отличаются его режимы?",
+      en: "What is XHTTP and how do its modes differ?",
+    },
+    answer: {
+      ru: "XHTTP — транспорт, который заворачивает трафик в обычные HTTP-запросы. Для наблюдателя это переписка браузера с веб-сервером, а не туннель.\n\n## Режимы\n\n`packet-up` — каждая порция данных уходит отдельным запросом. Больше всего похоже на обычный веб-трафик и лучше всех проходит через посредников, которые не любят долгих соединений. Платится накладными расходами.\n\n`stream-up` — данные вверх идут одним длинным запросом, который сервер держит открытым. Экономнее, но долгоживущий POST сам по себе заметен.\n\n`stream-one` — запрос и ответ в одном соединении в обе стороны. Наименее накладный.\n\n`auto` — выбор оставлен ядру. Оно берёт `packet-up` обычно, `stream-one` под REALITY и `stream-up`, если для скачивания задан отдельный транспорт.\n\n## Что стоит знать\n\nЧасть параметров работает не во всех режимах. Размещение данных в cookie или заголовке допустимо только в `packet-up`; метод `GET` — тоже. Ядро на несовместимой паре откажется стартовать, поэтому Architect такие сочетания не выдаёт.",
+      en: "XHTTP is a transport that wraps traffic in ordinary HTTP requests. To an observer it is a browser talking to a web server, not a tunnel.\n\n## The modes\n\n`packet-up` — each chunk of data goes as its own request. It resembles ordinary web traffic most closely and passes best through middleboxes that dislike long-lived connections. You pay in overhead.\n\n`stream-up` — upstream data goes as one long request the server holds open. Cheaper, though a long-lived POST is conspicuous in itself.\n\n`stream-one` — request and response share one connection in both directions. The least overhead of the three.\n\n`auto` — the choice is left to the core, which takes `packet-up` normally, `stream-one` under REALITY, and `stream-up` when a separate download transport is configured.\n\n## Worth knowing\n\nSome settings do not work in every mode. Placing data in a cookie or a header is legal only in `packet-up`, and so is the `GET` method. The core refuses to start on an incompatible pair, so Architect does not emit those combinations.",
+    },
+    keywords: ["xhttp", "packet-up", "stream-up", "stream-one", "транспорт", "transport"],
+  },
+  {
+    id: "fingerprint-choice",
+    category: "xray",
+    question: {
+      ru: "Зачем выбирать `fp` — под какой браузер маскироваться?",
+      en: "Why choose an `fp` — which browser to imitate?",
+    },
+    answer: {
+      ru: "Потому что TLS-рукопожатие само по себе — отпечаток. Порядок расширений, набор шифров, длины полей у каждой библиотеки свои, и по ним клиент опознаётся ещё до того, как что-то передал.\n\nБиблиотека Go, на которой написано ядро, оставляет отпечаток Go, а не браузера. Через REALITY при этом идёт то, что должно выглядеть браузером. `fp` заставляет клиента повторить рукопожатие выбранного браузера — `chrome`, `firefox`, `safari`, `edge` и другие.\n\n## Что выбирать\n\nТо, что не выделяется в вашей сети. Chrome — самый распространённый и потому самый скучный выбор, а скучный здесь значит хороший. В сетях, где заметная доля пользователей сидит на региональном браузере, разумнее взять его.\n\n## Оговорка\n\nОтпечатки в Architect собраны по измерениям, а не по названиям: для части браузеров размеры полей унаследованы от родственного движка, и там, где это так, сказано прямо. Отпечаток движется вместе с версиями браузера — совпадение никогда не бывает вечным.",
+      en: "Because a TLS handshake is a fingerprint in itself. The order of extensions, the cipher list and the field lengths differ per library, and they identify a client before it has sent anything.\n\nThe Go library the core is written in leaves a Go fingerprint, not a browser's. Meanwhile what travels through REALITY is supposed to look like a browser. `fp` makes the client reproduce a chosen browser's handshake — `chrome`, `firefox`, `safari`, `edge` and others.\n\n## What to choose\n\nWhatever does not stand out on your network. Chrome is the most common and therefore the most boring choice, and boring is the right property here. On networks where a noticeable share of users run a regional browser, that one is the better pick.\n\n## One caveat\n\nThe fingerprints in Architect come from measurements rather than from names: for some browsers the field sizes are inherited from a related engine, and where that is so it is stated outright. A fingerprint moves with browser versions — the match is never permanent.",
+    },
+    keywords: ["fingerprint", "fp", "chrome", "firefox", "safari", "utls", "отпечаток"],
+  },
+  {
+    id: "finalmask-what",
+    category: "xray",
+    question: {
+      ru: "Что такое FinalMask и зачем он, если уже есть REALITY?",
+      en: "What is FinalMask, and why have it when REALITY is already there?",
+    },
+    answer: {
+      ru: "REALITY прячет соединение *внутри* чужого протокола. FinalMask работает ниже и меняет саму форму байтов на проводе — это ближайший аналог того, что делает AmneziaWG.\n\nОн лежит под транспортом, поэтому действует независимо от того, что настроено выше.\n\n## Что он умеет\n\n`noise` — шлёт мусорные пакеты перед настоящими. Ровно тот же приём, что junk-поезд AmneziaWG.\n\n`fragment` — режет первые пакеты на части, чтобы TLS ClientHello никогда не приходил целиком. Посредник, который читает SNI, не видит его полностью.\n\n`sudoku` — обфускация с паддингом на общем пароле, поверх TCP или UDP.\n\n`salamander` — UDP-обфускация из Hysteria.\n\n`mkcp-legacy` — старые маскировки заголовков mKCP: DNS, DTLS, SRTP, uTP, WeChat, WireGuard.\n\n## Чего Architect не выдаёт\n\nЯдро предлагает двенадцать типов, генерируются шесть. Остальные описывают инфраструктуру, а не настройки: `header-custom` — это язык описания пакетов, `xmc` нужен хост Minecraft, `xdns` — резолверы, `xicmp` — адреса, `realm` — URL и STUN-серверы. **Сгенерировать за вас то, чего у вас нет, значит выдать конфигурацию, которая не заработает.**",
+      en: "REALITY hides a connection *inside* someone else's protocol. FinalMask works lower down and changes the shape of the bytes on the wire — the closest analogue to what AmneziaWG does.\n\nIt sits beneath the transport, so it applies whatever is configured above it.\n\n## What it offers\n\n`noise` — sends junk packets ahead of the real ones. Exactly the device AmneziaWG's junk train uses.\n\n`fragment` — splits the first packets so a TLS ClientHello never arrives whole. A middlebox reading SNI never sees all of it.\n\n`sudoku` — password-keyed obfuscation with padding, over TCP or UDP.\n\n`salamander` — Hysteria's UDP obfuscation.\n\n`mkcp-legacy` — mKCP's old header disguises: DNS, DTLS, SRTP, uTP, WeChat, WireGuard.\n\n## What Architect will not emit\n\nThe core offers twelve types; six are generated. The rest describe infrastructure rather than settings: `header-custom` is a packet-scripting language, `xmc` needs a Minecraft host, `xdns` needs resolvers, `xicmp` needs addresses, `realm` needs a URL and STUN servers. **Inventing what you do not have would mean handing you a configuration that cannot work.**",
+    },
+    keywords: ["finalmask", "noise", "fragment", "sudoku", "salamander", "mkcp", "обфускация"],
+  },
+  {
+    id: "xray-version-matters",
+    category: "xray",
+    question: {
+      ru: "Почему набор параметров зависит от версии ядра Xray?",
+      en: "Why does the set of parameters depend on the Xray core version?",
+    },
+    answer: {
+      ru: "Потому что ядро меняется быстро, а неизвестный ключ оно **молча игнорирует**. Конфигурация с параметром, которого в этой версии нет, стартует как ни в чём не бывало — просто без него.\n\nЭто худший вид ошибки: ничего не сломалось, но настройки, на которую вы рассчитывали, нет.\n\n## Как это проверяется\n\nЮнит-тесты тут бессильны — они проверяют генератор против нашего представления о версии, а представление может быть неверным. Поэтому конфигурации гоняются против настоящих ядер в Docker, **по ядру на каждую версию**. Одно ядро на всех не доказывает ничего ровно из-за молчаливого игнорирования.\n\nТак нашлись три ошибки, которые тесты пропустили: VLESS Encryption, предложенное для версии, где его нет; ML-DSA-65 как необязательный там, где он обязателен; и режим XHTTP, которого в старой версии не существует.\n\n## Что это значит для вас\n\nВыбирайте в генераторе ту версию, которая стоит на сервере, а не самую новую. Конфигурация, собранная под более новое ядро, на старом потеряет часть настроек и не скажет об этом.",
+      en: "Because the core moves fast, and an unknown key is **silently ignored**. A configuration carrying a parameter this version does not have starts as though nothing were wrong — just without it.\n\nThat is the worst kind of failure: nothing broke, and the setting you were relying on is not there.\n\n## How it is checked\n\nUnit tests are no use here — they test the generator against our idea of a version, and that idea can be wrong. So configurations are run against real cores in Docker, **one core per version**. A single core for all of them proves nothing, precisely because of the silent ignoring.\n\nThat is how three mistakes were found that the tests had kept: VLESS Encryption offered for a version that has none; ML-DSA-65 treated as optional where it is required; and an XHTTP mode that does not exist in an older release.\n\n## What it means for you\n\nPick the version your server actually runs, not the newest one in the list. A configuration built for a newer core will quietly lose settings on an older one and say nothing about it.",
+    },
+    keywords: ["версия", "version", "docker", "ядро", "core", "совместимость"],
+  },
+  {
+    id: "awg-or-xray",
+    category: "basics",
+    question: {
+      ru: "У инструмента два движка — какой мне нужен?",
+      en: "The tool has two engines — which one do I need?",
+    },
+    answer: {
+      ru: "Первым делом смотрите не на протокол, а на то, **что у вас уже стоит на сервере**. Генератор собирает конфигурацию для той стороны, которая её примет; выбрать движок, которого на сервере нет, значит получить красивый файл ни для чего.\n\n## AmneziaWG\n\nЕсли сервер поднят через приложение Amnezia или через контейнеры AmneziaWG. Работает поверх UDP, ставится проще, параметров меньше — двадцать три. Клиентские параметры можно менять на каждом устройстве отдельно.\n\n## XRay\n\nЕсли на сервере Xray-core. Работает поверх TCP и выглядит как TLS-сессия с настоящим сайтом. Параметров семьдесят четыре, и часть из них зависит от версии ядра. Лучше держится там, где применяют активное зондирование.\n\n## Если можно и то и другое\n\nБерите оба и положите в один ключ `vpn://`: контейнеров в нём может быть несколько, и приложение переключится между ними без новой ссылки. Когда один способ перестаёт проходить, второй уже настроен.",
+      en: "Look first not at the protocol but at **what your server already runs**. The generator builds a configuration for the side that has to accept it; picking an engine the server does not have gives you a tidy file for nothing.\n\n## AmneziaWG\n\nIf the server was set up through the Amnezia app or with AmneziaWG containers. It runs over UDP, is simpler to deploy, and has fewer parameters — twenty-three. The client-side ones can differ per device.\n\n## XRay\n\nIf the server runs Xray-core. It runs over TCP and looks like a TLS session with a real site. Seventy-four parameters, some of which depend on the core version. It holds up better where active probing is in use.\n\n## If you can have both\n\nTake both and put them in one `vpn://` key: it can hold several containers, and the app switches between them without a new link. When one route stops getting through, the other is already configured.",
+    },
+    keywords: ["выбор", "choice", "движок", "engine", "amneziawg", "xray", "сравнение"],
+  },
   /* ── Parameters ───────────────────────────────────────────────────────── */
   {
     id: "param-classes",

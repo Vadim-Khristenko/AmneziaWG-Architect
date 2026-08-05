@@ -37,6 +37,7 @@ import SupportSection from "@/components/SupportSection.vue";
 import RichText from "@/components/RichText";
 import { localizePath, useI18n, pick } from "@/i18n";
 import { TIMELINE } from "@/data/changelog";
+import { FAQ_ENTRIES } from "@/data/faq";
 import { OTHER_PROJECTS } from "@/data/support";
 import { AWG_PARAMETERS } from "@/engines/awg/generator/params";
 import { XRAY_PARAMETERS } from "@/engines/xray/params";
@@ -58,6 +59,9 @@ const LICENSE_URL = "https://opensource.org/license/mit";
  * single value for 1.x and once as a range for 2.0+, and counting the entries
  * would claim four parameters that are two.
  */
+/* Counted, not typed: the text used to say "forty-four" and went stale. */
+const faqCount = FAQ_ENTRIES.length;
+
 const paramCount = computed(() => {
     const awg = new Set(AWG_PARAMETERS.map((p) => p.key)).size;
     const xray = new Set(XRAY_PARAMETERS.map((p) => p.key)).size;
@@ -283,7 +287,7 @@ const projects = computed(() =>
                     <h3 class="about-h3">
                         {{ t(`about.what.card.${w.n}.title` as never) }}
                     </h3>
-                    <p class="prose">{{ t(`about.what.card.${w.n}.desc` as never) }}</p>
+                    <p class="prose">{{ t(`about.what.card.${w.n}.desc` as never, { n: faqCount }) }}</p>
                 </div>
             </div>
         </section>

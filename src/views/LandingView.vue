@@ -29,6 +29,7 @@ import {
     Boxes,
 } from "lucide-vue-next";
 import { localizePath, useI18n } from "@/i18n";
+import { FAQ_ENTRIES } from "@/data/faq";
 
 const { locale, t } = useI18n();
 const at = (path: string) => localizePath(path, locale.value);
@@ -407,7 +408,7 @@ const MORE = [
                     <router-link :to="at(m.to)" class="landing-more-link">
                         <component :is="m.icon" :size="17" class="landing-more-icon" />
                         <span class="landing-more-name">{{ t(m.label) }}</span>
-                        <span class="landing-more-desc">{{ t(m.desc) }}</span>
+                        <span class="landing-more-desc">{{ t(m.desc, { n: FAQ_ENTRIES.length }) }}</span>
                         <ArrowUpRight :size="15" class="landing-more-go" />
                     </router-link>
                 </li>

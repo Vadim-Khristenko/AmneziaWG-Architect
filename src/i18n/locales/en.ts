@@ -97,7 +97,7 @@ export const en: Catalog = {
   "landing.more.simulator":
     "Walk through what the handshake looks like with the parameters you chose.",
   "landing.more.faq":
-    "Forty-four answers: what each parameter does, and what to check when the tunnel will not come up.",
+    "{n} answers: what each parameter does, and what to check when the tunnel will not come up.",
   "landing.more.about": "How this differs from the generate button in your client.",
   "landing.more.vaiexia":
     "The same author's other project: server management in Rust. What is written, and what is not yet.",
@@ -701,7 +701,7 @@ export const en: Catalog = {
     "No analytics, no counters, no server side. The page is static files, and once loaded it works with the network off.",
   "about.what.card.4.title": "Explains, not only emits",
   "about.what.card.4.desc":
-    "Every parameter carries a note: what it does, whether it has to match the server, and which version introduced it. The forty-four FAQ answers are the same thing at length.",
+    "Every parameter carries a note: what it does, whether it has to match the server, and which version introduced it. The {n} FAQ answers are the same thing at length.",
 
   "about.timeline.title": "How it grew",
   "about.timeline.lede":
@@ -1157,8 +1157,18 @@ export const en: Catalog = {
 
   /* ── FAQ page ─────────────────────────────────────────────────────────── */
   "faq.title": "Questions and answers",
+  "faq.title.pre": "FAQ from",
+  "faq.title.main": "ARCHITECT",
+  "faq.stat.answers": "answers",
+  "faq.stat.sections": "sections",
+  "faq.stat.engines": "engines",
+  "faq.stat.updated": "updated",
+  "faq.stat.updated.value": "continuously",
+  "faq.expand.all": "Expand all",
+  "faq.collapse.all": "Collapse all",
+  "faq.searching": "Found for your search",
   "faq.lede":
-    "How the AmneziaWG parameters work, what separates the versions, and what to do when the tunnel will not come up.",
+    "Answers gathered by the author of ARCHITECT and by the community. We keep adding to it and keep it current, so that things are simpler and clearer for you)",
   "faq.search.placeholder": "Search: Jc, nonce, will not connect…",
   "faq.search.label": "Search the FAQ",
   "faq.search.clear": "Clear",
