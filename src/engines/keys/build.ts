@@ -196,9 +196,15 @@ export function renderWgQuick(input: AwgContainerInput): string {
  */
 export function makeAwgContainer(
   input: AwgContainerInput,
-  container: "amnezia-awg" | "amnezia-wireguard" = "amnezia-awg",
+  container:
+    | "amnezia-awg"
+    | "amnezia-awg2"
+    | "amnezia-awg3"
+    | "amnezia-wireguard" = "amnezia-awg",
 ): ContainerEntry {
-  const obf = container === "amnezia-awg" ? (input.obfuscation ?? {}) : {};
+  // Every AmneziaWG container carries obfuscation; only WireGuard does not.
+  const obf =
+    container === "amnezia-wireguard" ? {} : (input.obfuscation ?? {});
   const quick = renderWgQuick({ ...input, obfuscation: obf });
 
   const inner: Record<string, unknown> = {
@@ -221,7 +227,7 @@ export function makeAwgContainer(
     if (inner[k] === undefined) delete inner[k];
   }
 
-  const protocol = container === "amnezia-awg" ? "awg" : "wireguard";
+  const protocol = container === "amnezia-wireguard" ? "wireguard" : "awg";
 
   return {
     container,

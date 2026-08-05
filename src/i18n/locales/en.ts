@@ -548,8 +548,42 @@ export const en: Catalog = {
   "sim.desc.xrayAppData": "Application data over {transport}, +{overhead} B of framing",
 
   /* ── MergeKeys ────────────────────────────────────────────────────────── */
+  "mk.act.copyGroup": "Copy",
+  "mk.act.saveGroup": "Download as a file",
+  "mk.view.indent": "Indent",
+  "mk.view.confWraps": "Long lines wrap",
+  "mk.act.copyKey": "Copy the vpn:// key",
+  "mk.act.copyJson": "Copy the JSON",
+  "mk.act.copyConf": "Copy the .conf",
+  "mk.act.copyVless": "Copy the vless:// link",
+  "mk.act.saveKey": "Download the key",
+  "mk.act.saveJson": "Download the JSON",
+  "mk.act.saveConf": "Download the .conf",
+  "mk.view.wrap": "Wrap lines",
+  "mk.edit.start": "Edit",
+  "mk.edit.apply": "Apply",
+  "mk.edit.cancel": "Cancel",
+  "mk.edit.unreadable": "Could not read that back: check the syntax.",
+  "mk.view.copyHint":
+    "The button on the right copies whatever is shown.",
+  "mk.build.templateLabel":
+    "Start from a template",
+  "mk.tpl.awg3":
+    "Header protection and timers",
+  "mk.tpl.awg2":
+    "S3, S4 and header ranges",
+  "mk.tpl.awg15":
+    "The I1–I5 chain on top of the basics",
+  "mk.tpl.awg1":
+    "Basic obfuscation: junk, S1 and S2",
+  "mk.tpl.wg":
+    "No obfuscation, a plain tunnel",
+  "mk.tpl.xray":
+    "REALITY over VLESS",
+  "find.vpn.no_endpoint":
+    "The configuration does not say where to connect: there is no Endpoint line giving a server address and port. The config itself is fine — the obfuscation parameters are all there — but nothing can connect with it yet. Add the server address.",
   "mk.build.addLabel":
-    "Add a part",
+    "Or paste something you have",
   "mk.build.add":
     "Add to the key",
   "mk.err.noContainerToAdd":
@@ -591,7 +625,7 @@ export const en: Catalog = {
   "mk.hero.lede":
     "Read a key, fold several into one, refresh the obfuscation, or assemble your own.",
   "mk.hero.desc":
-    "It reads Amnezia's `vpn://` format and `vless://` links, shows what is inside, and says what is wrong with it. One key can carry several protocols at once — WireGuard, AmneziaWG, XRay, OpenVPN — and every one of them is listed.",
+    "It reads Amnezia's `vpn://` format, `vless://` links, `.json` exports and `.conf` files, shows what is inside, and says what is wrong with it. One key can carry several protocols at once — WireGuard, AmneziaWG, XRay, OpenVPN — and every one of them is listed.",
   "mk.hero.privacy":
     "Everything is computed in your tab. Keys go nowhere, because there is nowhere to send them: this project has no server. The private keys inside are access — treat them accordingly.",
   "mk.modes.label":
@@ -601,7 +635,7 @@ export const en: Catalog = {
   "mk.mode.inspect.hint":
     "What this key is, and what is wrong with it",
   "mk.mode.inspect.lede":
-    "Paste a `vpn://` key or a `vless://` link. It is decoded, identified and checked — nothing is sent anywhere.",
+    "Paste a `vpn://` key, a `vless://` link, a `.json` export or a `.conf` file. It is decoded, identified and checked, and you can read it back in any of the formats — nothing is sent anywhere.",
   "mk.mode.merge.title":
     "Merge",
   "mk.mode.merge.hint":
@@ -621,7 +655,7 @@ export const en: Catalog = {
   "mk.mode.build.lede":
     "Your own key from ready parts. Paste a key or a link and its containers become parts of the new one — as many ways to connect as you like, in a single key.",
   "mk.input.placeholder":
-    "vpn://… or vless://…",
+    "vpn://… · vless://… · JSON · .conf",
   "mk.slot.unreadable":
     "unreadable",
   "mk.merge.run":

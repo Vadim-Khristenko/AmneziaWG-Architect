@@ -10,6 +10,7 @@
  */
 
 export * from "./types";
+export * from "./templates";
 export * from "./build";
 export * from "./codec";
 export * from "./containers";

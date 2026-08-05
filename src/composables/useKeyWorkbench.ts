@@ -30,6 +30,8 @@ import {
   mergeVpnConfigs,
   parseVless,
   setKeyLabels,
+  templateContainer,
+  type TemplateId,
   toContainer,
   validateVpnConfig,
   vpnDecode,
@@ -42,6 +44,7 @@ import {
 } from "@/engines/keys";
 import type { Finding } from "@/shared/findings";
 import { localiseError } from "@/shared/errors";
+import { warn } from "@/shared/findings";
 import { translate, type MessageKey } from "@/i18n";
 
 /** The catalogue lookup a plain function needs, since it has no component. */
@@ -85,21 +88,29 @@ function readField(text: string, field: string): string | undefined {
   return m ? m[1] : undefined;
 }
 
+/** A `.conf` with no endpoint is not broken — it just has nowhere to go. */
+export const NO_ENDPOINT = "__no-endpoint__";
+
 /**
- * A complete `.conf` as a one-container key.
+ * A `.conf` as a one-container key.
  *
- * Requires an endpoint, because without one there is no tunnel to describe.
- * A file with obfuscation fields and no endpoint is a parameter set, not a
- * key, and it is handled by the refresh mode instead.
+ * A missing endpoint used to mean refusal, and that was the wrong call. A
+ * generated parameter file has no endpoint by design — the obfuscation is the
+ * whole point and the address is the reader's to supply — so the file is
+ * perfectly good and simply cannot connect yet. Refusing it meant the tool
+ * could not show a config it had produced itself.
+ *
+ * It is read either way. Where the address is missing, a marker goes in its
+ * place and the checker says what to add rather than what went wrong.
  */
 function fromWgQuick(text: string): VpnConfig | null {
-  const endpoint = readField(text, "Endpoint");
-  if (!endpoint) return null;
+  if (!/^\s*\[Interface\]/im.test(text)) return null;
 
-  const at = endpoint.lastIndexOf(":");
-  const host = at > 0 ? endpoint.slice(0, at) : endpoint;
-  const port = at > 0 ? Number(endpoint.slice(at + 1)) : NaN;
-  if (!host || !Number.isFinite(port)) return null;
+  const endpoint = readField(text, "Endpoint");
+  const at = endpoint ? endpoint.lastIndexOf(":") : -1;
+  const host = endpoint ? (at > 0 ? endpoint.slice(0, at) : endpoint) : NO_ENDPOINT;
+  const parsedPort = at > 0 ? Number(endpoint!.slice(at + 1)) : NaN;
+  const port = Number.isFinite(parsedPort) ? parsedPort : 0;
 
   const obfuscation: Record<string, string> = {};
   for (const field of CONF_FIELDS) {
@@ -181,16 +192,23 @@ export function readKey(input: string): ReadKey {
 
   if (/^\s*\[Interface\]/im.test(source)) {
     const built = fromWgQuick(source);
-    return built
-      ? {
-          source,
-          config: built,
-          identity: identifyKey(built),
-          findings: validateVpnConfig(built),
-          error: null,
-          fromLink: false,
-        }
-      : { ...EMPTY, source, error: say("mk.err.confUnreadable") };
+    if (!built) return { ...EMPTY, source, error: say("mk.err.confUnreadable") };
+
+    const findings = validateVpnConfig(built);
+    if (built.hostName === NO_ENDPOINT) {
+      // Said first, because it is the one thing standing between this config
+      // and a working tunnel.
+      findings.unshift(warn("Endpoint", "vpn.no_endpoint"));
+    }
+
+    return {
+      source,
+      config: built,
+      identity: identifyKey(built),
+      findings,
+      error: null,
+      fromLink: false,
+    };
   }
 
   try {
@@ -354,6 +372,18 @@ export function useKeyWorkbench() {
     buildInput.value = "";
   }
 
+  /**
+   * Start from a template.
+   *
+   * Appended rather than replacing what is there: a key holding AmneziaWG and
+   * XRay at once is the whole reason the container format exists, and someone
+   * picking a second template means to add it.
+   */
+  function addTemplate(id: TemplateId): void {
+    buildError.value = null;
+    parts.value.push(templateContainer(id));
+  }
+
   function removePart(index: number): void {
     parts.value.splice(index, 1);
   }
@@ -479,6 +509,7 @@ export function useKeyWorkbench() {
     buildError,
     buildMeta,
     addPart,
+    addTemplate,
     removePart,
     built,
 
