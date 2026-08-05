@@ -26,6 +26,7 @@ import {
     HelpCircle,
     Info,
     Shuffle,
+    Boxes,
 } from "lucide-vue-next";
 import { localizePath, useI18n } from "@/i18n";
 
@@ -121,6 +122,10 @@ const MORE = [
     { icon: Activity, to: "/simulator", label: "nav.simulator", desc: "landing.more.simulator" },
     { icon: HelpCircle, to: "/faq", label: "nav.faq", desc: "landing.more.faq" },
     { icon: Info, to: "/about", label: "nav.about", desc: "landing.more.about" },
+    // The one entry that is not part of this tool. It is here because the
+    // question it answers — "is anything else being built?" — is one people
+    // ask about a project with one author.
+    { icon: Boxes, to: "/vaiexia", label: "nav.vaiexia", desc: "landing.more.vaiexia" },
 ] as const;
 </script>
 

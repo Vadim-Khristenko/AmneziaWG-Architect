@@ -167,21 +167,25 @@ const PAGES = [
     },
     tags: ["CPS", "JUNK", "INIT", "DATA"],
   },
+  /*
+   * The card says what the page says. "COMING SOON" over a name is the one
+   * claim nobody can check; five repositories out of ten is one anybody can.
+   */
   {
     slug: "vaiexia",
     theme: "purple",
-    badge: "COMING SOON",
+    badge: "5 / 10 WRITTEN",
     titleLeft: "VAI",
     titleRight: "EXIA",
     ru: {
-      subtitle: "Веб-панель и бот для Telegram, Discord, Matrix",
-      tagline: "Сервер или кластер — откуда угодно",
+      subtitle: "Управление сервером и VPN, которое можно поднять у себя",
+      tagline: "Rust и WASM · собирается снизу вверх",
     },
     en: {
-      subtitle: "Web panel and Telegram, Discord, Matrix bots",
-      tagline: "Your server or cluster, from anywhere",
+      subtitle: "Server and VPN management you can host yourself",
+      tagline: "Rust and WASM · built from the bottom up",
     },
-    tags: ["PANEL", "BOTS", "CLUSTER", "1-CLICK"],
+    tags: ["Noise XK", "ChaCha20", "MIMICRY", "WASM"],
   },
 ];
 

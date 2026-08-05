@@ -99,6 +99,8 @@ export const en: Catalog = {
   "landing.more.faq":
     "Forty-four answers: what each parameter does, and what to check when the tunnel will not come up.",
   "landing.more.about": "How this differs from the generate button in your client.",
+  "landing.more.vaiexia":
+    "The same author's other project: server management in Rust. What is written, and what is not yet.",
 
   /* ── Generator, new layout ────────────────────────────────────────────── */
   "gen.sheet.title": "Configuration sheet",
@@ -1052,37 +1054,106 @@ export const en: Catalog = {
   "gen.host.placeholder.random": "your own host (optional)",
 
   /* ── VAIEXIA ──────────────────────────────────────────────────────────── */
-  "vaiexia.soon": "SOON",
-  "vaiexia.lede": "A web panel and a Telegram / Discord / Matrix bot — and more.",
+  "vaiexia.badge": "IN DEVELOPMENT",
+  "vaiexia.lede":
+    "Server and VPN management you can host yourself. All of it in Rust and WASM.",
   "vaiexia.desc":
-    "Run your server or cluster from anywhere, however you like. Installing packages takes one click, and so do the advanced protocol settings.",
-  "vaiexia.feature.panel.title": "Web panel",
-  "vaiexia.feature.panel.desc":
-    "One interface for a single server or a whole cluster. State, metrics and controls in one place instead of a scatter of SSH sessions.",
-  "vaiexia.feature.bots.title": "Telegram, Discord, Matrix",
-  "vaiexia.feature.bots.desc":
-    "The same control from a chat window. Restart a service, issue a key or check the load from your phone, without opening a laptop.",
-  "vaiexia.feature.install.title": "One-click installs",
-  "vaiexia.feature.install.desc":
-    "Packages and services install with a single press — no hand-built dependencies, no editing systemd units.",
-  "vaiexia.feature.protocols.title": "Advanced protocol settings",
-  "vaiexia.feature.protocols.desc":
-    "The fine obfuscation parameters are in the panel itself, not only in a config file. Including the ones this Architect generates.",
-  "vaiexia.feature.clusters.title": "Clusters and multi-server",
-  "vaiexia.feature.clusters.desc":
-    "Several nodes managed as one. Roll a configuration out to a group of servers instead of repeating the same steps.",
-  "vaiexia.feature.beyond.title": "Not only VPN",
-  "vaiexia.feature.beyond.desc":
-    "The panel is not tied to one protocol or one job — it is a general tool for running your infrastructure.",
-  "vaiexia.mirror.title": "GitHub unreachable?",
-  "vaiexia.mirror.lede":
-    "If GitHub does not open for you and you need the Amnezia apps, try a mirror:",
-  "vaiexia.mirror.copy": "Copy the link",
-  "vaiexia.mirror.open": "Open",
-  "vaiexia.mirror.warning":
-    "This is an independent mirror, not Amnezia's official site. Check the checksums and release signatures before installing — as you would for any third-party source.",
-  "vaiexia.wip":
-    "The project is being built. This page is an announcement: no dates yet, and no promises on credit.",
+    "A panel, bots, and an agent on the managed host. It is being built from the bottom up: cryptography and transport first, then the things you press on top of them. Below is what has been written and what is still an empty repository.",
+
+  "vaiexia.snapshot": "Snapshot of {date}",
+  "vaiexia.stat.repos": "repositories",
+  "vaiexia.stat.built": "with code",
+  "vaiexia.stat.size": "KB of source",
+  "vaiexia.stat.lang": "language",
+
+  /* ── The section ──────────────────────────────────────────────────────── */
+  "vaiexia.stack.title": "A section, bottom-up",
+  "vaiexia.stack.lede":
+    "Each layer is its own crate. What is written is drawn solid and what is not is drawn as an outline; the line between them is exactly where the project stands.",
+  "vaiexia.stack.built": "written",
+  "vaiexia.stack.planned": "empty",
+
+  "vaiexia.stack.surface.title": "Surfaces",
+  "vaiexia.stack.surface.1":
+    "A panel in Rust with a WASM front end, a cross-platform client aimed at Android as well, a bot for Telegram, Discord and Matrix, and plugins.",
+  "vaiexia.stack.surface.2":
+    "The repositories exist and hold no code — that is a plain \"not yet\", not a \"soon\".",
+
+  "vaiexia.stack.agent.title": "The agent",
+  "vaiexia.stack.agent.1":
+    "Privilege separation: the network-facing daemon runs as its own user with no capabilities at all, under a systemd syscall filter.",
+  "vaiexia.stack.agent.2":
+    "Root work goes to a separate process with a closed vocabulary: install packages, touch systemd units. It runs no arbitrary commands by construction rather than by agreement.",
+  "vaiexia.stack.agent.3":
+    "Scoped tokens compared in constant time, Argon2id against brute force, an audit trail chained with BLAKE3 hashes.",
+
+  "vaiexia.stack.contract.title": "The contract",
+  "vaiexia.stack.contract.1":
+    "Versioned message envelopes, diagnostic tags, authentication types — what every part agrees on once.",
+  "vaiexia.stack.contract.2":
+    "Three layers: L0 is pure and compiles to WASM, L1 is the transport traits, L2 is client and server on top of them.",
+  "vaiexia.stack.contract.3":
+    "A MockTransport ships with it, so the upper layers can be tested without a network.",
+
+  "vaiexia.stack.transport.title": "Transport",
+  "vaiexia.stack.transport.1":
+    "TCP and UDP over the same handshake. UDP adds client-driven retransmission, tolerance for reordering, and a cookie gate that switches itself on under load.",
+  "vaiexia.stack.transport.2":
+    "Proxy chains: SOCKS5 and HTTP CONNECT, with the handshake tunnelled whole.",
+  "vaiexia.stack.transport.3":
+    "The mimicry profile is agreed out of band. Negotiating it in band would make a fingerprint out of the negotiation itself.",
+
+  "vaiexia.stack.wire.title": "The foundation",
+  "vaiexia.stack.wire.1":
+    "ChaCha20-Poly1305 records with an explicit 64-bit counter and a sliding anti-replay window — the same device WireGuard uses.",
+  "vaiexia.stack.wire.2":
+    "A Noise XK handshake: the initiator pins the server's static key in advance, and the server learns who came knocking only from the third message, which is already encrypted.",
+  "vaiexia.stack.wire.3":
+    "Mimicry profiles: Vanilla with no obfuscation, AmneziaJunk with a magic header and bucketed padding, and QuicMimic, which wraps records in fake QUIC long headers.",
+
+  /* ── The ledger ───────────────────────────────────────────────────────── */
+  "vaiexia.ledger.title": "The ledger",
+  "vaiexia.ledger.lede":
+    "Every repository in the organisation, empty ones included. The sizes and dates are what the forge itself reports.",
+  "vaiexia.ledger.col.repo": "Repository",
+  "vaiexia.ledger.col.what": "What it is",
+  "vaiexia.ledger.col.state": "State",
+  "vaiexia.ledger.col.touched": "Last commit",
+  "vaiexia.ledger.size": "{n} KB",
+  "vaiexia.ledger.empty": "empty",
+
+  "vaiexia.repo.wire": "Cryptographic framing: records, handshake, mimicry.",
+  "vaiexia.repo.obfs": "Transport over the framing — TCP, UDP, proxy chains.",
+  "vaiexia.repo.core": "The contract: envelopes, auth, transport traits.",
+  "vaiexia.repo.server": "The agent on a managed host, privilege-separated.",
+  "vaiexia.repo.panel": "Server and cluster panel — Rust plus WASM.",
+  "vaiexia.repo.client": "Cross-platform client: VPN and panel manager.",
+  "vaiexia.repo.bot": "Control bot for Telegram, Discord and Matrix.",
+  "vaiexia.repo.plugins": "Official plugins and extensions.",
+  "vaiexia.repo.vgit": "The CLI it is committed with: GPG signing, mirrors.",
+  "vaiexia.repo.website": "The project site, vaiexia.vai-rice.space.",
+
+  /* ── Where it meets Architect ─────────────────────────────────────────── */
+  "vaiexia.bridge.title": "Where this meets Architect",
+  "vaiexia.bridge.lede":
+    "VAIEXIA's foundation derives an obfuscation vocabulary from its own mimicry configuration, in order to hand the agent ready-made tunnel parameters. Those are the same quantities the AmneziaWG page assembles: the junk-packet count, their sizes, the S-padding. One of the profiles is called AmneziaJunk.",
+  "vaiexia.bridge.note":
+    "The overlap is not a coincidence, and it is not finished either: for now these are two separate projects by one author that speak the same parameter language. Nothing integrates them.",
+  "vaiexia.bridge.go": "Open the AmneziaWG generator",
+
+  /* ── Go and look ──────────────────────────────────────────────────────── */
+  "vaiexia.go.title": "See for yourself",
+  "vaiexia.go.lede":
+    "The organisation is open. Every claim on this page comes from the README of the crate it describes — you can read them and disagree.",
+  "vaiexia.go.open": "Open the organisation",
+  "vaiexia.go.copy": "Copy the link",
+
+  /* ── What is missing ──────────────────────────────────────────────────── */
+  "vaiexia.caveat.title": "What is not there yet",
+  "vaiexia.caveat.body":
+    "No repository has a release, which means no binaries and no installer. What is written has gaps its own authors name: sockets over the framing, a rekey policy, a real QUIC stack in place of the imitation of one. It is too early to put this on a live server.",
+  "vaiexia.caveat.snapshot":
+    "The numbers above are a snapshot, not a live query. Architect has no server side and the forge is self-hosted, so a request from the browser would hit CORS in precisely the places its readers live.",
 
   /* ── FAQ page ─────────────────────────────────────────────────────────── */
   "faq.title": "Questions and answers",

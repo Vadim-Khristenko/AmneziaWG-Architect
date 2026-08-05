@@ -197,26 +197,26 @@ export const ROUTE_SEO: SeoTable = {
 
   vaiexia: {
     ru: {
-      title: "VAIEXIA — веб-панель и боты для управления сервером",
+      title: "VAIEXIA — что уже написано, а что пока пустой репозиторий",
       description:
-        "VAIEXIA — веб-панель и бот для Telegram, Discord и Matrix. Управляйте сервером или кластером откуда угодно: установка пакетов в один клик и продвинутая настройка протоколов.",
-      ogTitle: "VAIEXIA — веб-панель и Telegram/Discord/Matrix бот",
+        "Управление сервером и VPN на Rust и WASM. Разрез по слоям: криптографическая рама, транспорт, контракт и агент написаны; панель, клиент, бот и плагины — пока пустые репозитории. Со ссылками на исходники.",
+      ogTitle: "VAIEXIA — отчёт о состоянии, а не анонс",
       ogDescription:
-        "Управляйте сервером или кластером где угодно и как угодно. Установка пакетов в один клик.",
+        "Десять репозиториев, пять с кодом. Что написано и что нет — с размерами и датами.",
       ogImage: "og-vaiexia.png",
       keywords:
-        "VAIEXIA, веб-панель, управление сервером, Telegram бот, Discord, Matrix, VPN панель",
+        "VAIEXIA, управление сервером, Rust, WASM, Noise XK, обфускация, VPN панель, открытый код",
     },
     en: {
-      title: "VAIEXIA — web panel and bots for server management",
+      title: "VAIEXIA — what is written, and what is still an empty repository",
       description:
-        "VAIEXIA is a web panel plus a Telegram, Discord and Matrix bot. Run your server or cluster from anywhere: one-click package installs and advanced protocol configuration.",
-      ogTitle: "VAIEXIA — web panel and Telegram/Discord/Matrix bot",
+        "Server and VPN management in Rust and WASM. A section through the layers: cryptographic framing, transport, contract and agent are written; panel, client, bot and plugins are still empty repositories. With links to the sources.",
+      ogTitle: "VAIEXIA — a status report, not an announcement",
       ogDescription:
-        "Run your server or cluster anywhere, any way you like. One-click package installs.",
+        "Ten repositories, five with code. What is written and what is not, with sizes and dates.",
       ogImage: "og-vaiexia-en.png",
       keywords:
-        "VAIEXIA, web panel, server management, Telegram bot, Discord, Matrix, VPN panel",
+        "VAIEXIA, server management, Rust, WASM, Noise XK, obfuscation, VPN panel, open source",
     },
   },
 
