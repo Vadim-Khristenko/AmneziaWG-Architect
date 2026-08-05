@@ -458,6 +458,12 @@ function save(ext: string, text: string, mime: string): void {
     /* One rhythm down the panel, so nothing depends on a neighbour's margin. */
     display: grid;
     gap: var(--sp-5);
+    min-width: 0;
+}
+
+/* See the note on `.mk > *`: a grid track will not shrink below its content. */
+.mk-result > * {
+    min-width: 0;
 }
 
 .mk-result-title {
@@ -525,6 +531,17 @@ function save(ext: string, text: string, mime: string): void {
     line-height: 1.6;
     color: var(--ink-2);
     text-wrap: pretty;
+    min-width: 0;
+}
+
+/*
+ * A finding quotes what it found, and what it found is often a CPS chain or a
+ * key: one token, no spaces, longer than the panel. `anywhere` lets it break
+ * mid-token, which is the only way it fits.
+ */
+.mk-finding > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .mk-finding .dot {
@@ -568,16 +585,29 @@ function save(ext: string, text: string, mime: string): void {
     color: var(--accent-ink);
 }
 
+/*
+ * The key is one string with no break opportunity in it, and it is longer than
+ * any panel. Scrolling it sideways hid most of it and pushed the panel's right
+ * edge off the page; `anywhere` lets the line break mid-token, so it stays one
+ * value that happens to be drawn across several rows.
+ */
 .mk-keyline-value {
     display: block;
     padding: var(--sp-3) var(--sp-4);
-    overflow-x: auto;
-    white-space: nowrap;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.7;
 }
 
 .mk-viewer {
     display: grid;
     gap: var(--sp-2);
+    min-width: 0;
+}
+
+.mk-viewer > * {
+    min-width: 0;
 }
 
 .mk-viewer-bar {
@@ -598,16 +628,14 @@ function save(ext: string, text: string, mime: string): void {
 }
 
 /*
- * A native checkbox draws itself in the system's colours, which on this ground
- * is a dark square with a tick nobody can see — the control looked the same
- * checked and unchecked. `accent-color` hands it the page's own.
+ * The box itself belongs to the kit, which draws its own fill and tick — an
+ * `accent-color` here did nothing, since the kit takes the native rendering
+ * away and `accent-color` only colours a control the browser still draws.
+ * All that is left to say is that this one sits on a line rather than beside a
+ * paragraph.
  */
 .mk-toggle input {
-    width: 15px;
-    height: 15px;
     margin: 0;
-    accent-color: rgb(var(--accent-rgb));
-    cursor: pointer;
 }
 
 .mk-viewer-note {
@@ -619,9 +647,16 @@ function save(ext: string, text: string, mime: string): void {
 /*
  * The two layers hold the same text in the same metrics, so the caret lands
  * where the colour is. Any difference in font, size or padding shows as drift.
+ *
+ * `min-width: 0` is what keeps the box on the page. The highlighted layer
+ * scrolls on its own, so reading a config stayed bounded; editing put this
+ * wrapper between it and the grid, and a wrapper that does not scroll takes
+ * the width of its longest unwrapped line — six thousand pixels of JSON, with
+ * the whole page dragged along behind it.
  */
 .mk-editor {
     position: relative;
+    min-width: 0;
 }
 
 .mk-editor-input {

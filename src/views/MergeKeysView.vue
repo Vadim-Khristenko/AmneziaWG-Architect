@@ -129,6 +129,19 @@ onMounted(() => {
     align-content: start;
 }
 
+/*
+ * A grid track is `min-width: auto` by default, which means it refuses to
+ * shrink below its content — and a key or a CPS chain has no break
+ * opportunity in it at all. One of those inside pushed the whole page wider
+ * than the viewport and dragged every panel's right edge off screen with it.
+ *
+ * Stated on the page, the panels and the result alike, because the overflow
+ * travels up through every grid it passes.
+ */
+.mk > * {
+    min-width: 0;
+}
+
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .mk-hero {
     display: grid;
@@ -260,6 +273,11 @@ onMounted(() => {
     display: grid;
     gap: var(--sp-3);
     align-content: start;
+    min-width: 0;
+}
+
+.mk-panel > * {
+    min-width: 0;
 }
 
 .mk-panel > .h {
