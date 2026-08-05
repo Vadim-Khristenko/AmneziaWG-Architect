@@ -7,7 +7,7 @@ import {
   confToVpn,
   vpnToConf,
 } from "@/engines/awg/awgFormat";
-import { vpnDecode } from "@/engines/awg/mergekeys";
+import { vpnDecode } from "@/engines/keys";
 
 describe("detectFormat", () => {
   it("detects vpn:// keys by prefix", () => {

@@ -13,14 +13,14 @@
  * Pure module — no DOM, no Vue. Reuses the codec from mergekeys.ts.
  */
 
-import { vpnDecode, vpnEncode } from "@/engines/awg/mergekeys";
-import type { VpnConfig, AwgContainer } from "@/engines/awg/mergekeys";
+import { vpnDecode, vpnEncode } from "@/engines/keys";
+import type { VpnConfig, AwgContainer } from "@/engines/keys";
 import { LocalisedError } from "@/shared/errors";
 
 export type AwgFormat = "vpn" | "conf" | "json" | "unknown";
 
 /* Re-export container types so consumers don't depend on mergekeys directly. */
-export type { VpnConfig, AwgContainer, ContainerEntry } from "@/engines/awg/mergekeys";
+export type { VpnConfig, AwgContainer, ContainerEntry } from "@/engines/keys";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Detection

@@ -35,7 +35,7 @@ import { copyText } from "@/utils/clipboard";
 import { downloadText } from "@/utils/download";
 import { confToVpn, buildVpnConfig } from "@/engines/awg/awgFormat";
 import type { VpnConfig } from "@/engines/awg/awgFormat";
-import type { AwgContainer } from "@/engines/awg/mergekeys";
+import type { AwgContainer } from "@/engines/keys";
 import type { GeneratorInput } from "@/engines/awg/generator";
 import { AWG_VERSIONS, capsFor } from "@/engines/awg/generator/versions";
 

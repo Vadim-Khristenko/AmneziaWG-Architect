@@ -33,7 +33,7 @@ import {
 import { parseConf, vpnToConf } from "@/engines/awg/awgFormat";
 import { useI18n } from "@/i18n";
 import { resolveFinding } from "@/shared/findings";
-import type { GeneratedParams, AwgVersion } from "@/engines/awg/mergekeys";
+import type { GeneratedParams, AwgVersion } from "@/engines/keys";
 
 const { locale, t } = useI18n();
 

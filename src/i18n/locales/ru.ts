@@ -1023,8 +1023,6 @@ export const ru = {
   "clientFields.hint.cps": "CPS-цепочка {n}",
 
   /* ── MergeKeys: what the engine reports ───────────────────────────────── */
-  "mk.err.lengthMismatch":
-    "Длина после распаковки ({got}) не совпадает с заголовком ({expected}).",
   "mk.err.decode": "Не удалось декодировать ключ: {error}",
   "mk.err.noConfig":
     "Конфиг не сгенерирован. Вернитесь на главную и нажмите «СГЕНЕРИРОВАТЬ».",

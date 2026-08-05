@@ -39,13 +39,13 @@ import {
   buildObfuscationPatch,
   applyPatchToVpnConfig,
   patchWgQuickString,
-} from "@/engines/awg/mergekeys";
+} from "@/engines/keys";
 import type {
   VpnConfig,
   AwgContainer,
   GeneratedParams,
   AwgVersion,
-} from "@/engines/awg/mergekeys";
+} from "@/engines/keys";
 
 export type EditorViewMode = "code" | "fields";
 

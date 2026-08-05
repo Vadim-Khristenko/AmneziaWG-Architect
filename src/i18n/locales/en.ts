@@ -1018,8 +1018,6 @@ export const en: Catalog = {
   "clientFields.hint.cps": "CPS chain {n}",
 
   /* ── MergeKeys: what the engine reports ───────────────────────────────── */
-  "mk.err.lengthMismatch":
-    "Decompressed length ({got}) does not match the header ({expected}).",
   "mk.err.decode": "The key could not be decoded: {error}",
   "mk.err.noConfig":
     "No config has been generated yet. Go back to the generator and press GENERATE.",
