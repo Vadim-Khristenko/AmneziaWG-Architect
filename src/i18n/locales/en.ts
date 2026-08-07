@@ -9,18 +9,14 @@ import type { Catalog } from "./ru";
 
 export const en: Catalog = {
   /* ── Navigation ───────────────────────────────────────────────────────── */
-  "nav.generator": "Generator",
   "nav.awg": "AmneziaWG",
   "nav.xray": "XRay",
-  "nav.home": "Home",
   "nav.mergekeys": "MergeKeys",
   "nav.simulator": "Simulator",
   "nav.about": "About",
   "nav.vaiexia": "VAIEXIA",
   "nav.faq": "FAQ",
-  "nav.donate": "Donate",
   "nav.menu": "Menu",
-  "nav.close": "Close",
   "nav.github": "GitHub repository",
 
   /* ── Language switcher ────────────────────────────────────────────────── */
@@ -103,15 +99,11 @@ export const en: Catalog = {
     "The same author's other project: server management in Rust. What is written, and what is not yet.",
 
   /* ── Generator, new layout ────────────────────────────────────────────── */
-  "gen.sheet.title": "Configuration sheet",
   "gen.zone.junk": "Junk train",
   "gen.zone.sizes": "Packet sizes",
   "gen.zone.headers": "Headers",
   "gen.zone.cps": "CPS chain",
-  "gen.zone.awg3": "3.0 parameters",
   "gen.zone.mimic": "Mimicry profile",
-  "gen.zone.target": "Where this config is going",
-
   "gen.junk.handshake": "handshake",
   "gen.junk.none": "no train",
   "gen.junk.count": "packets before the handshake",
@@ -119,10 +111,7 @@ export const en: Catalog = {
   "gen.section.setup": "Setup",
   "gen.section.result": "What came out",
   "gen.zone.fp": "Browser fingerprint",
-  "gen.zone.tags": "Chain tags",
-  "gen.zone.params": "Parameters one by one",
   "gen.params.copyHint": "Copy the value",
-  "gen.params.copied": "Copied",
   "gen.region.label": "Host region",
   "gen.region.any": "Any",
   "gen.scope.shared": "both ends",
@@ -132,7 +121,6 @@ export const en: Catalog = {
   "gen.scope.hint.sender": "Applied by whoever sends. The other end need not know.",
   "gen.scope.hint.local": "A local setting; nothing to agree on.",
   "gen.since": "since {v}",
-  "gen.version.label": "Protocol version",
   "gen.endpoint.label": "Server address",
   "gen.endpoint.hint": "host:port. Leave empty and nothing is added to the file.",
   "gen.host.label": "Host to mimic",
@@ -161,7 +149,6 @@ export const en: Catalog = {
   "gen.fp.family.other": "Other",
   "gen.view.one": "One by one",
   "gen.view.whole": "Whole",
-  "gen.sizes.floorMark": "12 B floor",
   "gen.fp.derived": "Sizes taken from {from} — the same network stack.",
   "gen.headers.rule": "The ranges must not overlap. Here you can see it.",
   "gen.headers.clash": "Overlapping",
@@ -169,9 +156,6 @@ export const en: Catalog = {
   "gen.sizes.floor": "12-byte floor with header protection on",
 
   "gen.help.open": "What these parameters are",
-  "gen.reroll": "Re-roll",
-  "gen.reroll.hint": "Rebuild this group only",
-
   "gen.act.generate": "Generate",
   "gen.act.regenerate": "Generate again",
   "gen.act.batch": "Several at once",
@@ -188,7 +172,6 @@ export const en: Catalog = {
   "gen.forge.send": "Open in the key workbench",
   "gen.links.title": "If something does not add up",
   "gen.links.faq": "What each parameter does",
-  "gen.links.merge": "Refresh the obfuscation in an existing key",
   "gen.links.about": "How this differs from the button in your client",
 
   /* ── XRay generator ───────────────────────────────────────────────────── */
@@ -234,7 +217,6 @@ export const en: Catalog = {
   "xg.ph.text": "text",
   "xg.ph.key": "base64, {n} bytes",
   "xg.ph.hex": "hex, {n} characters",
-  "xg.ph.duration": "e.g. 300ms",
   "xg.state.generated": "chosen for you",
   "xg.state.manual": "you set it",
   "xg.state.missing": "not covered",
@@ -267,22 +249,6 @@ export const en: Catalog = {
   "xg.act.generate": "Generate",
   "xg.act.regenerate": "Generate again",
 
-  "xray.badge": "In progress",
-  "xray.title": "XRay / REALITY",
-  "xray.lede":
-    "The engine is written: parameters, config rendering, parsing and checks. The interface to it is still being built, and this page arrives with it.",
-  "xray.ready.title": "Already done",
-  "xray.ready.reality": "REALITY: X25519 keys, shortIds, ML-DSA-65, server verification",
-  "xray.ready.vless": "The VLESS encryption DSL, and connection-string parsing",
-  "xray.ready.xhttp": "XHTTP transports in every mode, xmux and sockopt",
-  "xray.ready.fp": "Browser fingerprints and FinalMask",
-  "xray.ready.tests":
-    "Tested against released Xray cores in Docker — one core per version",
-  "xray.left.title": "What is missing",
-  "xray.left.desc":
-    "The interface. Four parameters cannot yet be expressed in the current model: inbound fallbacks, mldsa65Verify, XHTTP downloadSettings, and FinalMask infrastructure.",
-  "xray.meanwhile": "Meanwhile, you can build an AmneziaWG config",
-
   /* ── Theme switcher ───────────────────────────────────────────────────── */
   "theme.label": "Theme",
   "theme.system": "Match system",
@@ -297,17 +263,6 @@ export const en: Catalog = {
     "Advanced obfuscation generator for defeating DPI. Everything runs in your browser — nothing leaves your device.",
 
   /* ── Versions ─────────────────────────────────────────────────────────── */
-  "version.new": "NEW",
-  "version.notice.10":
-    "S3, S4 and CPS (I1–I5) are unsupported. Jc should be ≥ 4 and Jmax > 81.",
-  "version.notice.15":
-    "S3 and S4 are unsupported. I1–I5 apply on the client side only.",
-  "version.notice.30":
-    "ChaCha20 header encryption, randomised transport padding and randomised protocol timers.",
-  "version.notice.30.req": "Requires",
-  "version.notice.30.tail":
-    "with 3.0 support — on both ends: HeaderProtectionKey is shared, so client and server must match.",
-
   /* ── AWG 3.0 panel ────────────────────────────────────────────────────── */
   "awg3.panel.title": "AmneziaWG 3.0 parameters",
   "awg3.hpk.title": "HeaderProtectionKey",
@@ -347,8 +302,6 @@ export const en: Catalog = {
   "client.note.engineUnverified":
     "What this client uses to read the I1–I5 chain could not be established from source. It keeps the tags both known engines understand; <c> is withheld, because an unfamiliar tag rejects not itself but the whole packet.",
   "gen.client.releaseCurrent": "Current client version",
-  "gen.client.hint":
-    "Parameters are filtered to what the selected client supports.",
   "gen.profile.label": "Mimicry profile",
   "gen.profile.random": "Random choice",
   "gen.host.check": "Check domain availability",
@@ -363,15 +316,7 @@ export const en: Catalog = {
     "The selected client runs on {engine}, which does not know {tags}. Those tags are switched off rather than handed over in a config the client would reject whole.",
   "gen.tags.engineUnknownDrops":
     "This client has {engine}: what it reads the chain with could not be established from source. So {tags} are withheld, because an engine that does not know them rejects the whole junk packet rather than the one tag.",
-  "gen.cps.unavailable": "CPS chains are unavailable in AWG 1.0",
-  "gen.cps.unavailableHint":
-    "The I1–I5 tags arrived in 1.5. Mimicry profiles do not apply here — obfuscation is limited to junk packets and headers.",
-  "gen.cps.switchTo20": "Switch to 2.0",
-  "gen.fp.label": "Browser fingerprint",
   "gen.fp.toggle": "Imitate packet sizes",
-  "gen.mtu.label": "Interface MTU",
-  "gen.mtu.hint": "1500 = Ethernet · 1420 = WG/PPPoE · 1280 = min IPv6",
-  "gen.entropy.label": "Entropy",
   "gen.junk.label": "Junk train (Jc)",
   "gen.junk.off": "0 — Off",
   "gen.junk.optimal": "3 — Optimal",
@@ -379,36 +324,9 @@ export const en: Catalog = {
   "gen.junk.strong": "7 — Strong",
   "gen.junk.max": "10 — Maximum",
   "gen.extreme.title": "Extreme maximums",
-  "gen.extreme.desc": "Use the highest permitted parameter values",
   "gen.router.title": "Router mode",
-  "gen.router.desc": "Limit the load for router hardware",
-  "gen.batch.title": "Batch generator",
-  "gen.batch.desc":
-    "Generate several independent configs at once. Above 50, generation runs in a background Web Worker so the interface stays responsive.",
-  "gen.batch.action": "Generate",
-  "gen.batch.running": "Generating {n}…",
   "gen.batch.download": "Download {n} configs",
   "gen.merge.title": "Key management",
-  "gen.merge.desc":
-    "Already have a vpn:// key? Refresh its obfuscation parameters, or merge several keys into one.",
-  "gen.merge.update": "Refresh",
-  "gen.merge.combine": "Merge",
-  "gen.generate": "Generate",
-  "gen.works": "Works",
-  "gen.worksNot": "Does not work",
-  "gen.config": "Configuration",
-  "gen.waiting": "Waiting for generation…",
-  "gen.preview": "Configuration file preview",
-  "gen.export.title": "Export configuration",
-  "gen.export.copyConf": "Copy .conf",
-  "gen.export.downloadConf": "Download .conf",
-  "gen.export.copyJson": "Copy JSON",
-  "gen.export.downloadJson": "Download JSON",
-  "gen.export.simulator": "Handshake simulator",
-  "gen.copyAll": "Copy all",
-  "gen.copyGroup": "Copy group",
-  "gen.clickToCopy": "Click to copy",
-
   /* ── Generator log ────────────────────────────────────────────────────── */
   "log.generated": "Generated — {profile}",
   "log.routerMode": "Router mode: minimal noise",
@@ -459,33 +377,12 @@ export const en: Catalog = {
   "history.legacy": "Legacy entry — copy only",
 
   /* ── Knowledge base CTA ───────────────────────────────────────────────── */
-  "kb.fields.short": "The client's form, with your values",
-  "kb.fields.title": "Where do these parameters go?",
-  "kb.fields.desc":
-    "The Amnezia app's form field by field, filled with your values — nothing left to guess.",
-  "kb.fields.action": "Show the fields",
-  "kb.short": "Parameters, versions, common problems",
-  "kb.title": "The knowledge base moved to the FAQ",
-  "kb.desc":
-    "Parameter walkthroughs, the differences between 1.0 and 3.0, tuning guidance and common problems — now in one place, with search and filters.",
-  "kb.action": "Open the FAQ",
-
   /* ── Parameter groups ─────────────────────────────────────────────────── */
-  "params.title": "Parameters",
   "params.group.junk": "Junk Train",
   "params.group.sizes": "Packet sizes",
   "params.group.headers": "Headers",
   "params.group.cps": "CPS Signatures",
-  "params.group.cpsClient": "CPS (client only)",
-  "params.group.awg3": "AmneziaWG 3.0",
-
   /* ── Actions ──────────────────────────────────────────────────────────── */
-  "action.generate": "Generate",
-  "action.copy": "Copy",
-  "action.copied": "Copied",
-  "action.download": "Download",
-  "action.retry": "Try again",
-
   /* ── 404 ──────────────────────────────────────────────────────────────── */
   "nf.badge": "PACKET LOST",
   "nf.title": "Page not found",
@@ -583,13 +480,10 @@ export const en: Catalog = {
   "mk.act.saveKey": "Download the key",
   "mk.act.saveJson": "Download the JSON",
   "mk.act.saveConf": "Download the .conf",
-  "mk.view.wrap": "Wrap lines",
   "mk.edit.start": "Edit",
   "mk.edit.apply": "Apply",
   "mk.edit.cancel": "Cancel",
   "mk.edit.unreadable": "Could not read that back: check the syntax.",
-  "mk.view.copyHint":
-    "The button on the right copies whatever is shown.",
   "mk.build.templateLabel":
     "Start from a template",
   "mk.tpl.awg3":
@@ -708,112 +602,14 @@ export const en: Catalog = {
     "No containers at all",
   "mk.result.inferred":
     "worked out from the fields",
-  "mk.result.service.other":
-    "Subscription key",
   "mk.result.rename":
     "Apply",
-  "mk.result.copy":
-    "Copy the key",
-  "mk.subtitle": "Key editor and Amnezia VPN container merging",
-  "mk.loaded.title": "Config loaded from the generator.",
-  "mk.loaded.hint": "Open the Editor tab and press “Apply obfuscation”.",
-  "mk.notice.title": "No obfuscation config was passed in.",
-  "mk.notice.body":
-    "To update Jc/Jmin/Jmax/I1–I5, go back to the home page, press “Generate”, then “Open MergeKeys”.",
-  "mk.notice.manual": "You can also edit a key by hand in the Editor tab.",
-  "mk.notice.mergeWorks": "The Merge keys tab works without the generator.",
-  "mk.tab.editor": "Editor and converter",
-  "mk.tab.merge": "Merge keys",
-
-  "mk.how.title": "Why merge keys?",
-  "mk.how.1":
-    "Amnezia VPN supports several containers (protocols) inside one key: AWG + XRay, AWG + OpenVPN and so on. That lets you switch protocols without changing keys.",
-  "mk.how.2":
-    "Paste two or more vpn:// keys into the slots below — an AWG key first, say, and an XRay key from the same server second.",
-  "mk.how.3":
-    "Press “Merge”. Containers from every key are collected into a single master key. Duplicates (same container name) are skipped with a warning.",
-  "mk.how.4":
-    "If you arrived from the generator, the new AWG obfuscation parameters are applied automatically to the AWG containers in the result.",
-  "mk.how.5":
-    "Metadata (dns1, dns2, hostName, defaultContainer) is taken from the first key. Descriptions are joined with “ + ”.",
-
-  "mk.slots.title": "Keys to merge",
-  "mk.slots.limits": "minimum 2, maximum 4",
   "mk.slot.remove":
     "Remove this box",
-  "mk.slot.viewJson": "View JSON",
-  "mk.slot.clear": "Clear",
   "mk.slot.add":
     "Another key",
-  "mk.action.merge": "Merge",
-  "mk.action.clearAll": "Clear all",
   "mk.result.title":
     "What is inside",
-  "mk.result.label": "Merged key",
-  "mk.action.copy": "Copy",
-  "mk.action.copied": "Copied",
-  "mk.action.downloadJson": "Download JSON",
-
-  "mk.editor.title": "Editor and converter",
-  "mk.editor.activeKey": "Active key",
-  "mk.editor.key": "Key",
-  "mk.editor.open": "Open",
-  "mk.editor.openHint": "Open for preview and editing",
-  "mk.editor.backToList": "back to the list",
-  "mk.editor.tabCode": "Code",
-  "mk.editor.tabFields": "Fields",
-  "mk.editor.import": "Import",
-  "mk.editor.showAs": "Show as",
-  "mk.editor.noAwgContainer": "No AmneziaWG container",
-  "mk.editor.multiHint":
-    "One key per line. “Refresh obfuscation” applies to all of them; press “Open” to preview and edit a single key.",
-  "mk.editor.placeholder":
-    "Paste a vpn:// key, an AmneziaWG .conf or JSON… (several keys — one per line)",
-  "mk.editor.empty": "Load a vpn:// key or a .conf to edit its fields.",
-  "mk.editor.obfParams": "Obfuscation parameters",
-  "mk.editor.dangerZone":
-    "Danger zone — change these only if you know what they do",
-  "mk.editor.checkHide": "Hide",
-  "mk.editor.checkShow": "Check",
-  "mk.editor.checkConfig": "config",
-  "mk.editor.noIssues": "No problems found.",
-  "mk.editor.applyObf": "Refresh obfuscation",
-  "mk.editor.generateFirst": "Generate a config on the home page first",
-  "mk.editor.pickContainer": "Pick an AWG container",
-  "mk.editor.openOneToExport": "Open a single key to export",
-  "mk.editor.openOneToDownload": "Open a single key to download",
-  "mk.editor.exportVpn": "Export vpn://",
-  "mk.editor.exportConf": "Export .conf",
-  "mk.editor.download": "Download",
-
-  "mk.msg.loadedConf":
-    "Loaded AWG {version} config (Jc={jc}, Jmin={jmin}, Jmax={jmax}).",
-  "mk.msg.cpsReady": "CPS I1–I5 are ready to apply.",
-  "mk.msg.onlyJunk": "AWG 1.0: Jc/Jmin/Jmax only.",
-  "mk.msg.noConfig": "No config",
-  "mk.msg.noCps": "I1–I5 unsupported",
-  "mk.msg.keyContents": "Key contents",
-  "mk.msg.keyContentsN": "Contents of key #{n}",
-  "mk.msg.slotEmpty": "Slot #{n} is empty.",
-  "mk.msg.slotError": "Error in key #{n}: {error}",
-  "mk.msg.needTwo": "Fill at least 2 fields with vpn:// keys.",
-  "mk.msg.merged": "Merged {unique} containers from {keys} keys.",
-  "mk.msg.dupes": "Duplicates skipped: {n}.",
-  "mk.msg.obfUpdated": "AWG obfuscation updated: {fields}.",
-  "mk.msg.unknownFormat":
-    "Could not recognise the format (vpn:// / .conf / JSON).",
-  "mk.msg.obfUpdatedKeys": "Obfuscation updated in {n} {keyWord}: {fields}.",
-  "mk.msg.obfUpdatedOne":
-    "Obfuscation updated: {fields} ({n} AWG {containerWord}).",
-  "mk.msg.alreadyCurrent": "Parameters are already current — nothing to change.",
-  "mk.msg.convertOne":
-    "Conversion works on a single key. Leave one key in the editor.",
-  "mk.slot.1": "First key",
-  "mk.slot.2": "Second key",
-  "mk.slot.3": "Third key",
-  "mk.slot.4": "Fourth key",
-  "mk.slot.n": "Key #{n}",
-
   /* ── About page ───────────────────────────────────────────────────────── */
   /* ── About ────────────────────────────────────────────────────────────── */
   "about.hero.tagline": "A next-generation generator)",
@@ -948,8 +744,6 @@ export const en: Catalog = {
   "footer.credits.from": "by",
   "footer.madeWith": "Made with",
   "footer.forCommunity": "for the AmneziaVPN community",
-  "footer.build": "Last build",
-  "footer.local": "100% local: your data never leaves the browser",
   "footer.stamp.project": "Project",
   "footer.stamp.build": "Build",
   "footer.stamp.data": "Data",
@@ -957,17 +751,6 @@ export const en: Catalog = {
   "footer.stamp.source": "Source",
 
   /* ── Common ───────────────────────────────────────────────────────────── */
-  "common.and": "and",
-  "common.copy": "Copy",
-  "common.close": "Close",
-  "common.back": "Back",
-  "common.loading": "Loading…",
-  "common.error": "Error",
-  "common.configs": {
-    one: "{n} config",
-    other: "{n} configs",
-  },
-
   /* ── Находки валидаторов ────────────────────────────────────────────── */
   // Тексты живут здесь, а не в валидаторах: находка несёт код и значения,
   // а предложение собирается на языке читателя.
@@ -1252,10 +1035,6 @@ export const en: Catalog = {
     "Container “{name}” from key #{from} was skipped — key #{seen} already carries it.",
 
   /* ── Counted nouns ────────────────────────────────────────────────────── */
-  "count.key": { one: "key", other: "keys" },
-  "count.keyIn": { one: "key", other: "keys" },
-  "count.container": { one: "container", other: "containers" },
-
   /* ── Generator: the custom-host field ─────────────────────────────────── */
   "gen.host.hint.quic": "A host that speaks HTTP/3. From the database: {examples}",
   "gen.host.hint.tls": "Any host with TLS 1.3. From the database: {examples}",
@@ -1403,10 +1182,6 @@ export const en: Catalog = {
 
   /* ── Donate section ───────────────────────────────────────────────────── */
   "donate.crypto": "Cryptocurrency",
-  "donate.projects.title": "My other projects",
-  "donate.projects.lede":
-    "Architect is not the only thing I build. Have a look if you are curious what else I work on.",
-
   /* ── Client releases ──────────────────────────────────────────────────── */
   "client.release.upTo": "up to {version}",
   "client.releaseLabel": "Client build",
@@ -1486,13 +1261,6 @@ export const en: Catalog = {
   "history.note": "Note",
   "history.notePlaceholder": "What makes this one different",
   "gen.fp.yandexUnstable": "The Yandex Browser profile is unstable.",
-  "gen.extreme.warning":
-    "Jc up to 128, S3 up to 256, H1–H4 spread up to 10M. May add traffic overhead.",
-  "gen.router.warning":
-    "Jc ≤ 3, Jmax ≤ 128, I2–I5 off. For modest hardware: NanoPi, Keenetic, OpenWrt.",
-  "gen.preview.waiting": "// Waiting for a generation…",
-  "gen.fp.yandexDesktop": "Yandex Browser Desktop ⚠",
-  "gen.fp.yandexMobile": "Yandex Browser Mobile ⚠",
   "log.generateFailed": "The config could not be built: {error}",
 };
 

@@ -9,18 +9,14 @@ import type { MessageValue } from "../types";
 
 export const ru = {
   /* ── Navigation ───────────────────────────────────────────────────────── */
-  "nav.generator": "Генератор",
   "nav.awg": "AmneziaWG",
   "nav.xray": "XRay",
-  "nav.home": "Главная",
   "nav.mergekeys": "MergeKeys",
   "nav.simulator": "Симулятор",
   "nav.about": "О проекте",
   "nav.vaiexia": "VAIEXIA",
   "nav.faq": "FAQ",
-  "nav.donate": "Поддержать",
   "nav.menu": "Меню",
-  "nav.close": "Закрыть",
   "nav.github": "Репозиторий на GitHub",
 
   /* ── Language switcher ────────────────────────────────────────────────── */
@@ -103,15 +99,11 @@ export const ru = {
     "Второй проект того же автора: управление сервером на Rust. Что уже написано, а что пока нет.",
 
   /* ── Generator, new layout ────────────────────────────────────────────── */
-  "gen.sheet.title": "Лист конфигурации",
   "gen.zone.junk": "Junk-поезд",
   "gen.zone.sizes": "Размеры пакетов",
   "gen.zone.headers": "Заголовки",
   "gen.zone.cps": "Цепочка CPS",
-  "gen.zone.awg3": "Параметры 3.0",
   "gen.zone.mimic": "Профиль мимикрии",
-  "gen.zone.target": "Куда поедет конфиг",
-
   "gen.junk.handshake": "рукопожатие",
   "gen.junk.none": "поезда нет",
   "gen.junk.count": "пакетов перед рукопожатием",
@@ -119,10 +111,7 @@ export const ru = {
   "gen.section.setup": "Настройка",
   "gen.section.result": "Что получилось",
   "gen.zone.fp": "Браузерный отпечаток",
-  "gen.zone.tags": "Теги цепочки",
-  "gen.zone.params": "Параметры по одному",
   "gen.params.copyHint": "Скопировать значение",
-  "gen.params.copied": "Скопировано",
   "gen.region.label": "Регион хостов",
   "gen.region.any": "Любой",
   "gen.scope.shared": "обе стороны",
@@ -132,7 +121,6 @@ export const ru = {
   "gen.scope.hint.sender": "Применяет тот, кто отправляет. Другой стороне знать не нужно.",
   "gen.scope.hint.local": "Локальная настройка, согласовывать не требуется.",
   "gen.since": "с {v}",
-  "gen.version.label": "Версия протокола",
   "gen.endpoint.label": "Адрес сервера",
   "gen.endpoint.hint": "host:port. Пусто — в файл ничего не добавится.",
   "gen.host.label": "Хост для мимикрии",
@@ -161,7 +149,6 @@ export const ru = {
   "gen.fp.family.other": "Прочие",
   "gen.view.one": "По одному",
   "gen.view.whole": "Целиком",
-  "gen.sizes.floorMark": "порог 12 Б",
   "gen.fp.derived": "Размеры взяты у {from} — тот же сетевой движок.",
   "gen.headers.rule": "Диапазоны не должны пересекаться. Здесь это видно.",
   "gen.headers.clash": "Пересекаются",
@@ -169,9 +156,6 @@ export const ru = {
   "gen.sizes.floor": "Порог 12 байт при защите заголовков",
 
   "gen.help.open": "Что это за параметры",
-  "gen.reroll": "Перебросить",
-  "gen.reroll.hint": "Пересобрать только эту группу",
-
   "gen.act.generate": "Сгенерировать",
   "gen.act.regenerate": "Сгенерировать заново",
   "gen.act.batch": "Сразу несколько",
@@ -188,7 +172,6 @@ export const ru = {
   "gen.forge.send": "Открыть в кузнице ключей",
   "gen.links.title": "Если что-то не сходится",
   "gen.links.faq": "Что делает каждый параметр",
-  "gen.links.merge": "Обновить обфускацию в готовом ключе",
   "gen.links.about": "Чем это отличается от кнопки в клиенте",
 
   /* ── XRay generator ───────────────────────────────────────────────────── */
@@ -234,7 +217,6 @@ export const ru = {
   "xg.ph.text": "текст",
   "xg.ph.key": "base64, {n} байт",
   "xg.ph.hex": "hex, {n} символов",
-  "xg.ph.duration": "например 300ms",
   "xg.state.generated": "подбирается",
   "xg.state.manual": "задаётся",
   "xg.state.missing": "не покрыт",
@@ -267,22 +249,6 @@ export const ru = {
   "xg.act.generate": "Сгенерировать",
   "xg.act.regenerate": "Сгенерировать заново",
 
-  "xray.badge": "В работе",
-  "xray.title": "XRay / REALITY",
-  "xray.lede":
-    "Движок написан: параметры, рендер конфигурации, разбор и проверка. Интерфейс к нему ещё собирается — эта страница появится вместе с ним.",
-  "xray.ready.title": "Что уже готово",
-  "xray.ready.reality": "REALITY: ключи X25519, shortIds, ML-DSA-65, проверка сервера",
-  "xray.ready.vless": "VLESS Encryption DSL и разбор строк подключения",
-  "xray.ready.xhttp": "Транспорты XHTTP со всеми режимами, xmux и sockopt",
-  "xray.ready.fp": "Отпечатки браузеров и FinalMask",
-  "xray.ready.tests":
-    "Проверка против выпущенных ядер Xray в Docker — по версии на ядро",
-  "xray.left.title": "Чего пока нет",
-  "xray.left.desc":
-    "Интерфейса. Параметров, которые нельзя выразить в текущей модели, осталось четыре: fallbacks у входящего соединения, mldsa65Verify, downloadSettings у XHTTP и infrastructure у FinalMask.",
-  "xray.meanwhile": "Пока можно собрать конфигурацию AmneziaWG",
-
   /* ── Theme switcher ───────────────────────────────────────────────────── */
   "theme.label": "Тема",
   "theme.system": "Как в системе",
@@ -297,17 +263,6 @@ export const ru = {
     "Генератор продвинутой обфускации для обхода DPI. Всё работает в браузере — данные не покидают устройство.",
 
   /* ── Versions ─────────────────────────────────────────────────────────── */
-  "version.new": "NEW",
-  "version.notice.10":
-    "S3, S4 и CPS (I1–I5) не поддерживаются. Jc рекомендуется ≥ 4, Jmax > 81.",
-  "version.notice.15":
-    "S3, S4 не поддерживаются. I1–I5 работают только на стороне клиента.",
-  "version.notice.30":
-    "шифрование заголовков ChaCha20, случайный паддинг транспорта и рандомизация таймеров.",
-  "version.notice.30.req": "Требуется",
-  "version.notice.30.tail":
-    "с поддержкой 3.0 — на обеих сторонах: ключ HeaderProtectionKey общий, клиент и сервер должны совпадать.",
-
   /* ── AWG 3.0 panel ────────────────────────────────────────────────────── */
   "awg3.panel.title": "Параметры AmneziaWG 3.0",
   "awg3.hpk.title": "HeaderProtectionKey",
@@ -325,7 +280,6 @@ export const ru = {
 
   /* ── Generator controls ───────────────────────────────────────────────── */
   "gen.client.label": "Целевой клиент",
-  "gen.client.hint": "Параметры фильтруются под возможности выбранного клиента.",
   "client.note.windowsHCap":
     "До версии 2.0.2 редактор подчёркивает H-значения выше 2 147 483 647 красным и не даёт сохранить конфиг. На сервере такие значения работают нормально — ограничение было только в проверке на стороне клиента (PR #85, исправлено в #87).",
   "client.note.wgTunnelBattery":
@@ -362,15 +316,7 @@ export const ru = {
     "Выбранный клиент работает на {engine}, а этот движок не понимает таких тегов: {tags}. Они выключены, чтобы не отдать конфиг, который клиент отвергнет целиком.",
   "gen.tags.engineUnknownDrops":
     "У этого клиента {engine}: чем он разбирает цепочку, по исходникам установить не удалось. Поэтому в конфиг не идут теги, которых он может не знать: {tags}. Незнакомый тег отвергается вместе со всем джанк-пакетом, а не сам по себе.",
-  "gen.cps.unavailable": "CPS-цепочки недоступны в AWG 1.0",
-  "gen.cps.unavailableHint":
-    "Теги I1–I5 появились в 1.5. Профили мимикрии здесь не применяются — обфускация ограничена junk-пакетами и заголовками.",
-  "gen.cps.switchTo20": "Перейти на 2.0",
-  "gen.fp.label": "Браузерный отпечаток",
   "gen.fp.toggle": "Имитировать размер пакетов",
-  "gen.mtu.label": "MTU интерфейса",
-  "gen.mtu.hint": "1500 = Ethernet · 1420 = WG/PPPoE · 1280 = min IPv6",
-  "gen.entropy.label": "Энтропия",
   "gen.junk.label": "Junk-train (Jc)",
   "gen.junk.off": "0 — Отключено",
   "gen.junk.optimal": "3 — Оптимально",
@@ -378,36 +324,9 @@ export const ru = {
   "gen.junk.strong": "7 — Усиленный",
   "gen.junk.max": "10 — Максимальный",
   "gen.extreme.title": "Экстремальные максимумы",
-  "gen.extreme.desc": "Использовать предельные значения параметров",
   "gen.router.title": "Режим роутера",
-  "gen.router.desc": "Ограничить нагрузку для роутеров",
-  "gen.batch.title": "Batch генератор",
-  "gen.batch.desc":
-    "Сгенерируйте сразу несколько независимых конфигов. Для больших пакетов (более 50) генерация выполняется в фоновом Web Worker, чтобы интерфейс не зависал.",
-  "gen.batch.action": "Сгенерировать",
-  "gen.batch.running": "Генерация {n}…",
   "gen.batch.download": "Скачать {n} конфигов",
   "gen.merge.title": "Управление ключами",
-  "gen.merge.desc":
-    "Уже есть vpn:// ключ? Обновите параметры обфускации или объедините несколько ключей в один.",
-  "gen.merge.update": "Обновить",
-  "gen.merge.combine": "Объединить",
-  "gen.generate": "Сгенерировать",
-  "gen.works": "Работает",
-  "gen.worksNot": "Не работает",
-  "gen.config": "Конфигурация",
-  "gen.waiting": "Ожидание генерации…",
-  "gen.preview": "Превью конфигурационного файла",
-  "gen.export.title": "Экспорт конфигурации",
-  "gen.export.copyConf": "Копировать .conf",
-  "gen.export.downloadConf": "Скачать .conf",
-  "gen.export.copyJson": "Копировать JSON",
-  "gen.export.downloadJson": "Скачать JSON",
-  "gen.export.simulator": "Симулятор handshake",
-  "gen.copyAll": "Копировать всё",
-  "gen.copyGroup": "Копировать группу",
-  "gen.clickToCopy": "Нажмите чтобы скопировать",
-
   /* ── Generator log ────────────────────────────────────────────────────── */
   "log.generated": "Сгенерирован — {profile}",
   "log.routerMode": "Роутер-режим: минимальные шумы",
@@ -458,33 +377,12 @@ export const ru = {
   "history.legacy": "Старая запись — только копирование",
 
   /* ── Knowledge base CTA ───────────────────────────────────────────────── */
-  "kb.fields.short": "Форма клиента с вашими значениями",
-  "kb.fields.title": "Куда вставлять эти параметры?",
-  "kb.fields.desc":
-    "Форма приложения Amnezia поле за полем, с вашими значениями — чтобы не гадать, что куда.",
-  "kb.fields.action": "Показать поля",
-  "kb.short": "Параметры, версии, типичные проблемы",
-  "kb.title": "База знаний переехала в FAQ",
-  "kb.desc":
-    "Разбор параметров, различия версий 1.0–3.0, подбор конфигурации и типичные проблемы — теперь в одном месте, с поиском и фильтрами.",
-  "kb.action": "Открыть FAQ",
-
   /* ── Parameter groups ─────────────────────────────────────────────────── */
-  "params.title": "Параметры",
   "params.group.junk": "Junk Train",
   "params.group.sizes": "Размеры пакетов",
   "params.group.headers": "Заголовки",
   "params.group.cps": "CPS Signatures",
-  "params.group.cpsClient": "CPS (только клиент)",
-  "params.group.awg3": "AmneziaWG 3.0",
-
   /* ── Actions ──────────────────────────────────────────────────────────── */
-  "action.generate": "Сгенерировать",
-  "action.copy": "Копировать",
-  "action.copied": "Скопировано",
-  "action.download": "Скачать",
-  "action.retry": "Ещё раз",
-
   /* ── 404 ──────────────────────────────────────────────────────────────── */
   "nf.badge": "ПАКЕТ ПОТЕРЯН",
   "nf.title": "Страница не найдена",
@@ -582,13 +480,10 @@ export const ru = {
   "mk.act.saveKey": "Скачать ключ",
   "mk.act.saveJson": "Скачать JSON",
   "mk.act.saveConf": "Скачать .conf",
-  "mk.view.wrap": "Переносить строки",
   "mk.edit.start": "Редактировать",
   "mk.edit.apply": "Применить",
   "mk.edit.cancel": "Отмена",
   "mk.edit.unreadable": "Не удалось прочитать: проверьте синтаксис.",
-  "mk.view.copyHint":
-    "Кнопка справа копирует то, что показано сейчас.",
   "mk.build.templateLabel":
     "Начать с шаблона",
   "mk.tpl.awg3":
@@ -707,112 +602,14 @@ export const ru = {
     "Ни одного контейнера",
   "mk.result.inferred":
     "определено по полям",
-  "mk.result.service.other":
-    "Подписочный ключ",
   "mk.result.rename":
     "Применить",
-  "mk.result.copy":
-    "Скопировать ключ",
-  "mk.subtitle": "Редактор ключей и объединение контейнеров Amnezia VPN",
-  "mk.loaded.title": "Конфиг из генератора загружен.",
-  "mk.loaded.hint":
-    "Перейдите во вкладку «Редактор» и нажмите «Применить обфускацию».",
-  "mk.notice.title": "Конфиг обфускации не передан.",
-  "mk.notice.body":
-    "Для обновления параметров Jc/Jmin/Jmax/I1–I5 вернитесь на главную страницу, нажмите «Сгенерировать», затем «Открыть MergeKeys».",
-  "mk.notice.manual": "Ключ можно отредактировать вручную во вкладке «Редактор».",
-  "mk.notice.mergeWorks": "Вкладка «Объединить ключи» работает без генератора.",
-  "mk.tab.editor": "Редактор и конвертер",
-  "mk.tab.merge": "Объединить ключи",
-
-  "mk.how.title": "Зачем объединять ключи?",
-  "mk.how.1":
-    "Amnezia VPN поддерживает несколько контейнеров (протоколов) в одном ключе: AWG + XRay, AWG + OpenVPN и так далее. Это позволяет переключаться между протоколами, не меняя ключ.",
-  "mk.how.2":
-    "Вставьте два или более vpn://-ключа в слоты ниже. Например, первый — ключ AWG, второй — ключ XRay от того же сервера.",
-  "mk.how.3":
-    "Нажмите «Объединить». Контейнеры из всех ключей будут собраны в один мастер-ключ. Дубликаты (одинаковое имя контейнера) пропускаются с предупреждением.",
-  "mk.how.4":
-    "Если страница открыта из генератора, новые параметры обфускации AWG применятся автоматически к AWG-контейнерам в итоговом ключе.",
-  "mk.how.5":
-    "Метаданные (dns1, dns2, hostName, defaultContainer) берутся из первого ключа. Описание объединяется через « + ».",
-
-  "mk.slots.title": "Ключи для объединения",
-  "mk.slots.limits": "минимум 2, максимум 4",
   "mk.slot.remove":
     "Убрать поле",
-  "mk.slot.viewJson": "Просмотр JSON",
-  "mk.slot.clear": "Очистить",
   "mk.slot.add":
     "Ещё ключ",
-  "mk.action.merge": "Объединить",
-  "mk.action.clearAll": "Очистить всё",
   "mk.result.title":
     "Что внутри",
-  "mk.result.label": "Объединённый ключ",
-  "mk.action.copy": "Копировать",
-  "mk.action.copied": "Скопировано",
-  "mk.action.downloadJson": "Скачать JSON",
-
-  "mk.editor.title": "Редактор и конвертер",
-  "mk.editor.activeKey": "Активный ключ",
-  "mk.editor.key": "Ключ",
-  "mk.editor.open": "Открыть",
-  "mk.editor.openHint": "Открыть для превью и правки",
-  "mk.editor.backToList": "назад к списку",
-  "mk.editor.tabCode": "Код",
-  "mk.editor.tabFields": "Поля",
-  "mk.editor.import": "Импортировать",
-  "mk.editor.showAs": "Показать как",
-  "mk.editor.noAwgContainer": "Нет AmneziaWG-контейнера",
-  "mk.editor.multiHint":
-    "Каждый ключ с новой строки. «Обновить обфускацию» применится ко всем; нажмите «Открыть», чтобы смотреть превью и править один ключ.",
-  "mk.editor.placeholder":
-    "Вставьте vpn:// ключ, AmneziaWG .conf или JSON… (несколько ключей — с новой строки)",
-  "mk.editor.empty": "Загрузите vpn:// ключ или .conf, чтобы редактировать поля.",
-  "mk.editor.obfParams": "Параметры обфускации",
-  "mk.editor.dangerZone":
-    "Опасная зона — меняйте, только если понимаете последствия",
-  "mk.editor.checkHide": "Скрыть",
-  "mk.editor.checkShow": "Проверить",
-  "mk.editor.checkConfig": "конфиг",
-  "mk.editor.noIssues": "Проблем не найдено.",
-  "mk.editor.applyObf": "Обновить обфускацию",
-  "mk.editor.generateFirst": "Сначала сгенерируйте конфиг на главной",
-  "mk.editor.pickContainer": "Выбор AWG-контейнера",
-  "mk.editor.openOneToExport": "Откройте один ключ для экспорта",
-  "mk.editor.openOneToDownload": "Откройте один ключ для скачивания",
-  "mk.editor.exportVpn": "Экспорт vpn://",
-  "mk.editor.exportConf": "Экспорт .conf",
-  "mk.editor.download": "Скачать",
-
-  "mk.msg.loadedConf":
-    "Загружен конфиг AWG {version} (Jc={jc}, Jmin={jmin}, Jmax={jmax}).",
-  "mk.msg.cpsReady": "CPS I1–I5 готовы к вставке.",
-  "mk.msg.onlyJunk": "AWG 1.0: только Jc/Jmin/Jmax.",
-  "mk.msg.noConfig": "Нет конфига",
-  "mk.msg.noCps": "I1–I5 не поддерж.",
-  "mk.msg.keyContents": "Содержимое ключа",
-  "mk.msg.keyContentsN": "Содержимое ключа №{n}",
-  "mk.msg.slotEmpty": "Слот №{n} пуст.",
-  "mk.msg.slotError": "Ошибка в ключе №{n}: {error}",
-  "mk.msg.needTwo": "Заполните минимум 2 поля с ключами vpn://.",
-  "mk.msg.merged": "Объединено контейнеров: {unique} из {keys} ключей.",
-  "mk.msg.dupes": "Пропущено дублей: {n}.",
-  "mk.msg.obfUpdated": "Обфускация AWG обновлена: {fields}.",
-  "mk.msg.unknownFormat": "Не удалось распознать формат (vpn:// / .conf / JSON).",
-  "mk.msg.obfUpdatedKeys": "Обфускация обновлена в {n} {keyWord}: {fields}.",
-  "mk.msg.obfUpdatedOne":
-    "Обфускация обновлена: {fields} ({n} AWG-{containerWord}).",
-  "mk.msg.alreadyCurrent": "Параметры уже актуальны — изменений не потребовалось.",
-  "mk.msg.convertOne":
-    "Конвертация доступна для одного ключа. Оставьте в редакторе один ключ.",
-  "mk.slot.1": "Первый ключ",
-  "mk.slot.2": "Второй ключ",
-  "mk.slot.3": "Третий ключ",
-  "mk.slot.4": "Четвёртый ключ",
-  "mk.slot.n": "Ключ №{n}",
-
   /* ── About page ───────────────────────────────────────────────────────── */
   /* ── About ────────────────────────────────────────────────────────────── */
   "about.hero.tagline": "Генератор нового поколения)",
@@ -954,8 +751,6 @@ export const ru = {
   "footer.credits.from": "от",
   "footer.madeWith": "Разработано с",
   "footer.forCommunity": "для сообщества AmneziaVPN",
-  "footer.build": "Последняя сборка",
-  "footer.local": "100% локально: данные не покидают браузер",
   "footer.stamp.project": "Проект",
   "footer.stamp.build": "Сборка",
   "footer.stamp.data": "Данные",
@@ -963,19 +758,6 @@ export const ru = {
   "footer.stamp.source": "Исходник",
 
   /* ── Common ───────────────────────────────────────────────────────────── */
-  "common.and": "и",
-  "common.copy": "Копировать",
-  "common.close": "Закрыть",
-  "common.back": "Назад",
-  "common.loading": "Загрузка…",
-  "common.error": "Ошибка",
-  "common.configs": {
-    one: "{n} конфиг",
-    few: "{n} конфига",
-    many: "{n} конфигов",
-    other: "{n} конфигов",
-  },
-
   /* ── Находки валидаторов ────────────────────────────────────────────── */
   // Тексты живут здесь, а не в валидаторах: находка несёт код и значения,
   // а предложение собирается на языке читателя.
@@ -1257,25 +1039,6 @@ export const ru = {
     "Дубликат контейнера «{name}» из ключа #{from} пропущен — он уже есть из ключа #{seen}.",
 
   /* ── Counted nouns ────────────────────────────────────────────────────── */
-  "count.key": {
-    one: "ключ",
-    few: "ключа",
-    many: "ключей",
-    other: "ключей",
-  },
-  "count.keyIn": {
-    one: "ключе",
-    few: "ключах",
-    many: "ключах",
-    other: "ключах",
-  },
-  "count.container": {
-    one: "контейнер",
-    few: "контейнера",
-    many: "контейнеров",
-    other: "контейнеров",
-  },
-
   /* ── Generator: the custom-host field ─────────────────────────────────── */
   "gen.host.hint.quic": "Хост с HTTP/3. Примеры из базы: {examples}",
   "gen.host.hint.tls": "Любой хост с TLS 1.3. Примеры из базы: {examples}",
@@ -1428,10 +1191,6 @@ export const ru = {
 
   /* ── Donate section ───────────────────────────────────────────────────── */
   "donate.crypto": "Криптовалюта",
-  "donate.projects.title": "Другие мои проекты",
-  "donate.projects.lede":
-    "Architect — не единственное, что я делаю. Загляните, если интересно, чем ещё занимаюсь.",
-
   /* ── Client releases ──────────────────────────────────────────────────── */
   "client.release.upTo": "до {version}",
   "client.releaseLabel": "Сборка клиента",
@@ -1511,13 +1270,6 @@ export const ru = {
   "history.note": "Заметка",
   "history.notePlaceholder": "Чем эта запись отличается",
   "gen.fp.yandexUnstable": "Профиль Яндекс Браузера нестабилен.",
-  "gen.extreme.warning":
-    "Jc до 128, S3 до 256, разброс H1–H4 до 10M. Может увеличить оверхед трафика.",
-  "gen.router.warning":
-    "Jc ≤ 3, Jmax ≤ 128, I2–I5 отключены. Для слабых устройств: NanoPi, Keenetic, OpenWrt.",
-  "gen.preview.waiting": "// Ожидание генерации…",
-  "gen.fp.yandexDesktop": "Яндекс Браузер Desktop ⚠",
-  "gen.fp.yandexMobile": "Яндекс Браузер Mobile ⚠",
   "log.generateFailed": "Не удалось собрать конфиг: {error}",
 } as const satisfies Record<string, MessageValue>;
 

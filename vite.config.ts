@@ -467,6 +467,22 @@ export default defineConfig({
     // Prod source maps shipped 1:1 with the bundle — pure deploy bloat and
     // source exposure. Keep them off for the public build.
     sourcemap: false,
+    /**
+     * Above the domain database, below anything else.
+     *
+     * `domains` is ~700 kB of source and 29 kB over the wire: it is a
+     * thousand records of near-identical shape, so gzip eats it. It is also
+     * not on the critical path — the entry preloads `index`, `vue` and
+     * `icons` and nothing else, and the database arrives with whichever
+     * generator view asked for it, then sits in cache for a year under the
+     * `_headers` rules below.
+     *
+     * So the default 500 kB was firing on the one chunk where raw size says
+     * least, and firing every build teaches you to read past it. Raised to
+     * just above that chunk rather than switched off, so a genuinely new
+     * heavyweight still trips it.
+     */
+    chunkSizeWarningLimit: 750,
     rollupOptions: {
       output: {
         /**
