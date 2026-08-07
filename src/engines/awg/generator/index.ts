@@ -296,7 +296,18 @@ export function genCfg(input: GeneratorInput): AWGConfig {
   const jmin = int("jmin");
   const jmax = resolveJmax(jmin, int("jmax"), version);
 
-  const hasCPS = caps.cps;
+  /*
+   * Both the protocol version and the client have to want a chain.
+   *
+   * `supportsI1I5` was declared with the matrix and then never read, so a
+   * client that ignores I1-I5 was handed one anyway. WireSock is the case
+   * that matters: it drops the fields without complaining. The tunnel comes
+   * up either way, since the chain is junk the client sends and the far end
+   * discards, so what is lost is the mimicry alone and nothing reports it.
+   * Writing five fields that will not be sent only tells the reader they have
+   * an obfuscation they do not have.
+   */
+  const hasCPS = caps.cps && client.supportsI1I5;
   const isComposite = profile === "tls_to_quic" || profile === "quic_burst";
   const isDns = profile === "dns_query";
 

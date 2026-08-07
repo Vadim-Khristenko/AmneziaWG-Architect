@@ -274,17 +274,47 @@ const clientEngine = computed(
     () => clientCaps(config.clientId, config.clientRelease).limits.engine,
 );
 
-/** Tags the chosen client cannot parse, so the UI can stop offering them. */
-const unavailableTags = computed(
-    () =>
-        new Set(
-            TAGS.filter(
-                (item) =>
-                    item.tag !== null &&
-                    !engineHasTag(clientEngine.value, item.tag),
-            ).map((item) => item.field),
-        ),
+/**
+ * What to call it in a sentence.
+ *
+ * Package names go through untouched; the one engine that is not a package
+ * has a catalogue key instead, because "engine not established" sitting
+ * inside a Russian sentence is how this first went wrong.
+ */
+const engineName = computed(() =>
+    clientEngine.value.labelKey
+        ? t(clientEngine.value.labelKey as never)
+        : clientEngine.value.label,
 );
+
+/** The tags withheld, spelled out, so nobody has to work out which. */
+const droppedTagList = computed(() =>
+    TAGS.filter((item) => unavailableTags.value.has(item.field))
+        .map((item) => item.label)
+        .join(", "),
+);
+
+/**
+ * Whether the client sends a chain at all.
+ *
+ * WireSock does not, and then no tag means anything: it is not that three of
+ * the five are missing from its vocabulary, it is that there is nowhere for
+ * any of them to go.
+ */
+const clientSendsChain = computed(
+    () => clientCaps(config.clientId, config.clientRelease).limits.supportsI1I5,
+);
+
+/** Tags the chosen client cannot parse, so the UI can stop offering them. */
+const unavailableTags = computed(() => {
+    if (!clientSendsChain.value) return new Set(TAGS.map((item) => item.field));
+    return new Set(
+        TAGS.filter(
+            (item) =>
+                item.tag !== null && !engineHasTag(clientEngine.value, item.tag),
+        ).map((item) => item.field),
+    );
+});
 
 /* ── The help drawers ────────────────────────────────────────────────────── */
 
@@ -1222,18 +1252,26 @@ function toSimulator() {
                         makes the reader work out which, and the whole point is
                         that they stopped having to guess.
                     -->
-                    <div v-if="unavailableTags.size" class="note">
+                    <div v-if="!clientSendsChain" class="note note--warn">
+                        <TriangleAlert :size="15" class="note-icon" />
+                        <span>{{ t("gen.tags.noChain") }}</span>
+                    </div>
+                    <!--
+                        A confirmed engine and an unconfirmed one withhold a
+                        tag for different reasons, and saying "the client will
+                        reject it" when we only failed to establish what the
+                        client runs would be stating a fact we do not have.
+                    -->
+                    <div v-else-if="unavailableTags.size" class="note">
                         <Info :size="15" class="note-icon" />
                         <span>
                             {{
-                                t("gen.tags.engineDrops", {
-                                    tags: TAGS.filter((x) =>
-                                        unavailableTags.has(x.field),
-                                    )
-                                        .map((x) => x.label)
-                                        .join(", "),
-                                    engine: clientEngine.label,
-                                })
+                                t(
+                                    clientEngine.verified
+                                        ? "gen.tags.engineDrops"
+                                        : "gen.tags.engineUnknownDrops",
+                                    { tags: droppedTagList, engine: engineName },
+                                )
                             }}
                         </span>
                     </div>

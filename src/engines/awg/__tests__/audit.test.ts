@@ -21,6 +21,17 @@ const seeded = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 const draws = (n: number, over: Partial<GeneratorInput>) =>
   Array.from({ length: n }, () => genCfg(seeded(over)));
 
+/**
+ * Room for the thousands-of-draws cases.
+ *
+ * A one-in-forty-thousand bug needs thousands of configs to show itself, and
+ * generating those takes about twenty seconds — right on vitest's default,
+ * so the whole suite failed or passed depending on what else the machine was
+ * doing. Lowering the draw count would have made the test quieter by making
+ * it worse at its job.
+ */
+const SLOW = 90_000;
+
 describe("router mode is a ceiling, not a preset", () => {
   it("varies the junk train instead of emitting three constants", () => {
     // It used to produce Jc 3, Jmin 40, Jmax 128 for every user on every
@@ -78,7 +89,7 @@ describe("header ranges stay inside their own zone", () => {
       useHeaderProtection: true,
     });
     expect(configs.filter(overlapping)).toEqual([]);
-  });
+  }, SLOW);
 
   it("does not end a range on the client's ceiling", () => {
     // One config in six used to end H4 at exactly 2147483647. An upper bound
@@ -94,7 +105,7 @@ describe("header ranges stay inside their own zone", () => {
       [c.h1, c.h2, c.h3, c.h4].some((r) => Number(String(r).split("-")[1]) === ceiling),
     );
     expect(pinned).toEqual([]);
-  });
+  }, SLOW);
 
   it("still respects the ceiling it is not allowed to cross", () => {
     for (const c of draws(500, {

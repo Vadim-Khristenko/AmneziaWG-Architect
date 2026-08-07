@@ -348,6 +348,7 @@ export function useGenerator() {
       address: translate("conf.address"),
       cpsClientOnly: translate("conf.cpsClientOnly"),
       noCps: translate("conf.noCps"),
+      noCpsClient: translate("conf.noCpsClient"),
       awg3Hpk: translate("conf.awg3Hpk"),
       awg3Cpa: translate("conf.awg3Cpa"),
       awg3Timers: translate("conf.awg3Timers"),

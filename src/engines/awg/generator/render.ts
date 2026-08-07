@@ -37,6 +37,8 @@ export interface RenderLabels {
   address: string;
   cpsClientOnly: string;
   noCps: string;
+  /** The version has a chain and the chosen client does not read one. */
+  noCpsClient: string;
   awg3Hpk: string;
   awg3Cpa: string;
   awg3Timers: string;
@@ -64,6 +66,8 @@ export const DEFAULT_LABELS: RenderLabels = {
   address: "Address = 10.0.0.2/32",
   cpsClientOnly: "Client-side only in 1.5 — the server ignores these:",
   noCps: "1.0 has no CPS chain; obfuscation here is junk packets and headers",
+  noCpsClient:
+    "The chosen client does not send I1-I5, so this config carries none. The tunnel works without them; what they add is the mimicry, and writing fields the client will not send would only look like it",
   awg3Hpk: "Header encryption. The key is shared, and the padding above feeds its nonce",
   awg3Cpa: "Extra random padding on every transport packet",
   awg3Timers: "Randomised protocol timers instead of the fixed constants",
@@ -169,8 +173,19 @@ export function renderConfLines(
   lines.push(kv("Jc", cfg.jc), kv("Jmin", cfg.jmin), kv("Jmax", cfg.jmax));
 
   lines.push(cm(""));
+  /*
+   * Read off the config rather than off the client, because render is handed
+   * a config and nothing else. On a version that has a chain, all five empty
+   * only happens when whatever produced it decided against one, and saying
+   * "1.0 has no chain" over an AWG 2.0 config would be the wrong reason.
+   */
+  const hasChain = [cfg.i1, cfg.i2, cfg.i3, cfg.i4, cfg.i5].some(
+    (field) => String(field ?? "") !== "",
+  );
   if (!caps.cps) {
     lines.push(cm(`# ${L.noCps}`));
+  } else if (!hasChain) {
+    lines.push(cm(`# ${L.noCpsClient}`));
   } else {
     lines.push(cm(`# ${L.blockCps}`));
     if (v === "1.5") lines.push(cm(`# ${L.cpsClientOnly}`));

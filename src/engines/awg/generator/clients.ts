@@ -23,7 +23,9 @@ import {
   engineTagSupport,
   ENGINE_GO,
   ENGINE_KMOD,
+  ENGINE_KMOD_BSD,
   ENGINE_UNVERIFIED,
+  ENGINE_WIRESOCK,
   type AwgEngine,
   type CpsTagSupport,
 } from "./engines";
@@ -160,8 +162,43 @@ export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
     id: "wiresock",
     name: "WireSock",
     platforms: ["Windows"],
-    limits: on(ENGINE_UNVERIFIED),
-    notes: ["client.note.engineUnverified"],
+    /*
+     * It reads no signature chain at all, and does not say so when handed
+     * one. See ./engines.ts — this is the entry `supportsI1I5` was added for
+     * and then never consulted about.
+     */
+    limits: on(ENGINE_WIRESOCK, { supportsI1I5: false }),
+    notes: ["client.note.wiresockNoI"],
+  },
+  {
+    id: "mihomo",
+    name: "mihomo / Clash.Meta",
+    platforms: ["Windows", "macOS", "Linux", "Android"],
+    /*
+     * `adapter/outbound/wireguard.go` builds a real device from
+     * `metacubex/amneziawg-go`, whose `device/obf.go` is upstream's blob
+     * `cf2275c5` again, so the vocabulary is go's.
+     *
+     * It is also the only client here outside Amnezia's own that reaches
+     * AWG 3.0: `genIpcConf` emits `header_protection_key` and
+     * `content_padding_addition`. That needs `version: 3` in the outbound
+     * options; below it the legacy `device_v1` runs instead.
+     */
+    limits: on(ENGINE_GO),
+    notes: ["client.note.goNoTagC", "client.note.mihomoVersion3"],
+  },
+  {
+    id: "opnsense",
+    name: "OPNsense (os-amneziawg)",
+    platforms: ["OPNsense 25.x+"],
+    /*
+     * Jmin and Jmax are bounded below at 1 by the plugin's own validator, not
+     * at 0 as everywhere else: `Instance.xml` gives both `MinimumValue 1`.
+     * Jc is 1..128 there, which is why maxJc is not the router 128 by
+     * coincidence but by their number.
+     */
+    limits: on(ENGINE_KMOD_BSD, { maxJc: 128 }),
+    notes: ["client.note.opnsenseBounds", "client.note.engineUnverified"],
   },
   {
     id: "keenetic-native",
@@ -176,6 +213,23 @@ export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
     platforms: ["Linux", "macOS"],
     limits: on(ENGINE_GO, { maxJc: 128 }),
     notes: ["client.note.goNoTagC"],
+  },
+  {
+    id: "awg-kmod",
+    name: "amneziawg-linux-kernel-module",
+    platforms: ["Linux"],
+    /*
+     * The module on its own, for a server or a Linux box running awg-quick
+     * rather than an app. It is the only engine with `<c>`, and the only one
+     * without `<d>`, `<ds>` and `<dz>`.
+     *
+     * `jp_spec_setup` refuses a junk spec whose packet exceeds
+     * MESSAGE_MAX_SIZE, which is the one hard bound its parser states, and
+     * every value here stays far under it. Jc goes to the router ceiling
+     * because nothing in `netlink.c` bounds the count.
+     */
+    limits: on(ENGINE_KMOD, { maxJc: 128 }),
+    notes: ["client.note.kmodTags"],
   },
   {
     id: "openwrt",

@@ -333,8 +333,17 @@ export const en: Catalog = {
     "Sensitive to I1: prefer a simple <r 64> or a DNS mimicry profile.",
   "client.note.goNoTagC":
     "The tunnel here is amneziawg-go, and it has no <c> at all: its vocabulary is <b>, <t>, <r>, <rc>, <rd>, <d>, <ds>, <dz>. The packet counter exists only in the Linux kernel module.",
+  "client.engine.unverified": "an unconfirmed engine",
+  "client.note.kmodTags":
+    "The only engine where <c> works: the packet counter is implemented here and nowhere else. It does not know <d>, <ds> or <dz>, which exist only in amneziawg-go. An unfamiliar tag takes the whole junk packet down with it.",
   "client.note.openwrtKmod":
     "OpenWrt packages build the kernel module rather than amneziawg-go. So <c> does work here, while <d>, <ds> and <dz> do not.",
+    "client.note.wiresockNoI":
+    "It does not send the I1-I5 chain at all: it has its own Id/Ip/Ib set on top of a BoringTun fork. It accepts I1-I5 fields silently and throws them away, and the tunnel comes up as if nothing happened, because those packets are discarded at the far end anyway. All that is lost is the mimicry, and nothing says so. Configs for it are generated without I1-I5.",
+  "client.note.mihomoVersion3":
+    "The only client outside Amnezia's own ecosystem that reaches AWG 3.0, and only with version: 3 in the outbound options. Below that it runs the older implementation, without header protection.",
+  "client.note.opnsenseBounds":
+    "The plugin bounds Jc to 1-128 and starts Jmin and Jmax at 1 rather than 0. It takes H values as either a number or a range.",
   "client.note.engineUnverified":
     "What this client uses to read the I1–I5 chain could not be established from source. It keeps the tags both known engines understand; <c> is withheld, because an unfamiliar tag rejects not itself but the whole packet.",
   "gen.client.releaseCurrent": "Current client version",
@@ -348,8 +357,12 @@ export const en: Catalog = {
   "gen.tags.warnC":
     "The packet counter exists only in the Linux kernel module. amneziawg-go, which every Amnezia app runs on, has no <c> in any version — and an unfamiliar tag there rejects the whole junk packet, not just itself.",
   "gen.tags.unavailable": "{engine} does not parse this tag",
+  "gen.tags.noChain":
+    "The selected client does not send an I1-I5 chain at all, so the tags here change nothing. The tunnel will come up, but without the mimicry. If you need that, pick a different client.",
   "gen.tags.engineDrops":
     "The selected client runs on {engine}, which does not know {tags}. Those tags are switched off rather than handed over in a config the client would reject whole.",
+  "gen.tags.engineUnknownDrops":
+    "This client has {engine}: what it reads the chain with could not be established from source. So {tags} are withheld, because an engine that does not know them rejects the whole junk packet rather than the one tag.",
   "gen.cps.unavailable": "CPS chains are unavailable in AWG 1.0",
   "gen.cps.unavailableHint":
     "The I1–I5 tags arrived in 1.5. Mimicry profiles do not apply here — obfuscation is limited to junk packets and headers.",
@@ -421,6 +434,8 @@ export const en: Catalog = {
   "conf.address": "Address = 10.0.0.2/32",
   "conf.cpsClientOnly": "I1-I5 are client-side only in AWG 1.5:",
   "conf.noCps": "I1-I5 are not supported in AWG 1.0",
+  "conf.noCpsClient":
+    "The chosen client does not send I1-I5, so there is no chain here. The tunnel works without it: what it adds is the mimicry, and fields the client will not send would only give the appearance of it",
   "conf.awg3Hpk":
     "AWG 3.0 — shared header protection key (identical on both ends)",
   "conf.awg3Cpa": "AWG 3.0 — random transport packet padding",

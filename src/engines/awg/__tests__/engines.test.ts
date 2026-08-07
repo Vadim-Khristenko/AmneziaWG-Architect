@@ -130,10 +130,28 @@ describe("clients against their engines", () => {
     }
   });
 
-  it("puts OpenWrt on the kernel module, which is where <c> lives", () => {
-    const limits = clientCaps("openwrt").limits;
-    expect(limits.engine.id).toBe(ENGINE_KMOD.id);
-    expect(limits.supportsCpsTagC).toBe(true);
+  it("puts the kernel-module clients where <c> lives", () => {
+    for (const id of ["openwrt", "awg-kmod"]) {
+      const limits = clientCaps(id).limits;
+      expect(limits.engine.id, id).toBe(ENGINE_KMOD.id);
+      expect(limits.supportsCpsTagC, id).toBe(true);
+    }
+  });
+
+  it("names an engine in a way a sentence can use", () => {
+    // "engine not established" is prose, and prose in `label` reached the
+    // Russian UI untranslated. A package name may stay in `label`; anything
+    // else needs a catalogue key.
+    for (const profile of AWG_CLIENT_PROFILES) {
+      const engine = clientCaps(profile.id).limits.engine;
+      const isPackageName = /^[a-z0-9][\w.-]*( \(.+\))?( \d[\w.]*)?$/i.test(
+        engine.label,
+      );
+      expect(
+        isPackageName || Boolean(engine.labelKey),
+        `${engine.id}: "${engine.label}"`,
+      ).toBe(true);
+    }
   });
 
   it("keeps the engine across a release that only moved a ceiling", () => {
@@ -179,6 +197,42 @@ describe("what the generator emits", () => {
         seeded({ clientId: "amneziavpn", version: "3.0", useTagC: true }),
       );
       expect(cfg.i1 + cfg.i2 + cfg.i3 + cfg.i4 + cfg.i5).not.toContain("<c>");
+    }
+  });
+
+  it("writes no chain for a client that does not send one", () => {
+    /*
+     * WireSock reads Jc/S/H and drops I1-I5 without a word. The tunnel comes
+     * up regardless, since the chain is junk the far end discards anyway, so
+     * five populated fields would only look like mimicry that is not on the
+     * wire. `supportsI1I5` existed for this and was never read.
+     */
+    for (const version of ["3.0", "2.0", "1.5"] as const) {
+      const cfg = genCfg(seeded({ clientId: "wiresock", version }));
+      expect(cfg.i1 + cfg.i2 + cfg.i3 + cfg.i4 + cfg.i5, version).toBe("");
+      // The rest of the obfuscation is untouched: this is not a downgrade.
+      expect(cfg.jc, version).toBeGreaterThan(0);
+      expect(cfg.h1 || cfg.h1s, version).toBeTruthy();
+    }
+  });
+
+  it("says why the chain is missing rather than blaming AWG 1.0", () => {
+    const cfg = genCfg(seeded({ clientId: "wiresock", version: "2.0" }));
+    const conf = awgEngine.render(cfg, {
+      noCps: "WRONG-REASON",
+      noCpsClient: "RIGHT-REASON",
+    });
+    const text = conf.map((line) => line.value).join("\n");
+    expect(text).toContain("RIGHT-REASON");
+    expect(text).not.toContain("WRONG-REASON");
+  });
+
+  it("keeps the chain for every client that does send one", () => {
+    for (const profile of AWG_CLIENT_PROFILES) {
+      const limits = clientCaps(profile.id).limits;
+      if (!limits.supportsI1I5) continue;
+      const cfg = genCfg(seeded({ clientId: profile.id, version: "2.0" }));
+      expect(cfg.i1, profile.id).not.toBe("");
     }
   });
 

@@ -54,6 +54,14 @@ export interface AwgEngine {
   id: string;
   /** The package name. Not translated — it spells itself the same anywhere. */
   label: string;
+  /**
+   * Catalogue key for the label, when there is no package to name.
+   *
+   * "amneziawg-go 3.x" is the same string in every language and belongs in
+   * `label`. "an unidentified engine" is a phrase, and left in `label` it
+   * turned up untranslated in the middle of a Russian sentence.
+   */
+  labelKey?: string;
   /** Every tag its parser accepts. Anything outside this refuses the chain. */
   tags: readonly CpsTag[];
   /**
@@ -84,6 +92,46 @@ export const ENGINE_KMOD: AwgEngine = {
 };
 
 /**
+ * WireSock's BoringTun fork, which has no signature chain at all.
+ *
+ * It reads Jc, Jmin, Jmax, S1–S4 and H1–H4, and then, in the vendor's own
+ * words on the 3.4.4.1 release page: "Standard AWG 1.5 `I1`–`I5` parameters
+ * are not supported. WireSock uses its own method for configuring simulation
+ * settings" — its `Id`/`Ip`/`Ib` triple, which is nobody else's format.
+ *
+ * The awkward part is what it does with an I1–I5 config, stated on the 3.4.5.1
+ * page: the fields are "now silently ignored instead of being flagged as
+ * errors by the profile editor". The tunnel still comes up — the chain is
+ * junk the client sends and the server discards, so nothing on the far end
+ * misses it — which is exactly why this is worth saying. Everything looks
+ * fine, and the mimicry the config was generated for is simply not on the
+ * wire. A failure that announced itself would be easier.
+ *
+ * Closed source, so this is vendor documentation rather than a parser.
+ */
+export const ENGINE_WIRESOCK: AwgEngine = {
+  id: "wiresock-boringtun",
+  label: "WireSock (BoringTun fork)",
+  tags: [],
+  verified: false,
+};
+
+/**
+ * The FreeBSD kernel module behind OPNsense, `net/amnezia-kmod`.
+ *
+ * A third implementation: derived from FreeBSD's in-tree `if_wg` rather than
+ * from either Linux engine, and it carries neither `device/obf.go` nor
+ * `src/junk.c`. Its parameter model has I1–I5, so something in it reads a
+ * chain; what that something accepts we have not read.
+ */
+export const ENGINE_KMOD_BSD: AwgEngine = {
+  id: "amnezia-kmod-bsd",
+  label: "amnezia-kmod (FreeBSD)",
+  tags: ["b", "t", "r", "rc", "rd"],
+  verified: false,
+};
+
+/**
  * What every engine we have read accepts — the intersection of the two above.
  *
  * For a client whose insides are closed. Claiming `<c>` here would be claiming
@@ -93,7 +141,8 @@ export const ENGINE_KMOD: AwgEngine = {
  */
 export const ENGINE_UNVERIFIED: AwgEngine = {
   id: "unverified",
-  label: "engine not established",
+  label: "an unidentified engine",
+  labelKey: "client.engine.unverified",
   tags: ["b", "t", "r", "rc", "rd"],
   verified: false,
 };
@@ -101,6 +150,8 @@ export const ENGINE_UNVERIFIED: AwgEngine = {
 export const AWG_ENGINES: readonly AwgEngine[] = [
   ENGINE_GO,
   ENGINE_KMOD,
+  ENGINE_KMOD_BSD,
+  ENGINE_WIRESOCK,
   ENGINE_UNVERIFIED,
 ];
 
