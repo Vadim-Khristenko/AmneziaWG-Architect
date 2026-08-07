@@ -382,8 +382,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "How do I1–I5 work and which tags are available?",
     },
     answer: {
-      ru: "**`I1–I5` — это до пяти пакетов, которые клиент отправляет перед handshake, чтобы начало сессии выглядело как чужой протокол.**\n\nСодержимое описывается тегами: `<b hex>` — статические байты (например, шапка QUIC Initial), `<t>` — 32-битная метка времени в сетевом порядке байт, `<r N>` — N криптослучайных байт, `<rc N>` — N случайных латинских букв, `<rd N>` — N случайных цифр. **Обычно I1 несёт узнаваемую сигнатуру реального протокола, а I2–I5 добавляют энтропию**, чтобы пачка не выглядела одинаково от сессии к сессии.",
-      en: "**`I1–I5` are up to five packets the client sends before the handshake so that session start resembles some other protocol.**\n\nTheir contents are described with tags: `<b hex>` for static bytes (a QUIC Initial header, say), `<t>` for a 32-bit timestamp in network byte order, `<r N>` for N cryptographically random bytes, `<rc N>` for N random Latin letters and `<rd N>` for N random digits. **Typically I1 carries a recognisable signature of a real protocol while I2–I5 add entropy**, so the burst does not look identical from session to session.",
+      ru: "**`I1–I5` — это до пяти пакетов, которые клиент отправляет перед handshake, чтобы начало сессии выглядело как чужой протокол.**\n\nСодержимое описывается тегами: `<b hex>` — статические байты (например, шапка QUIC Initial), `<t>` — 32-битная метка времени в сетевом порядке байт, `<r N>` — N криптослучайных байт, `<rc N>` — N случайных латинских букв, `<rd N>` — N случайных цифр. **Обычно I1 несёт узнаваемую сигнатуру реального протокола, а I2–I5 добавляют энтропию**, чтобы пачка не выглядела одинаково от сессии к сессии.\n\n**Какие теги доступны, решает движок, а не приложение.** Пять перечисленных выше понимают оба: и `amneziawg-go`, и модуль ядра Linux. Сверх них у go есть `d`, `ds`, `dz`, а у модуля ядра `<c>` — счётчик пакетов, которого в go нет вовсе. Поэтому генератор гасит тег, если движок выбранного клиента его не знает: незнакомый тег отвергается вместе со всем пакетом.",
+      en: "**`I1–I5` are up to five packets the client sends before the handshake so that session start resembles some other protocol.**\n\nTheir contents are described with tags: `<b hex>` for static bytes (a QUIC Initial header, say), `<t>` for a 32-bit timestamp in network byte order, `<r N>` for N cryptographically random bytes, `<rc N>` for N random Latin letters and `<rd N>` for N random digits. **Typically I1 carries a recognisable signature of a real protocol while I2–I5 add entropy**, so the burst does not look identical from session to session.\n\n**Which tags you get is decided by the engine, not by the app.** The five above are understood by both `amneziawg-go` and the Linux kernel module. Beyond them go has `d`, `ds`, `dz`, and the kernel module has `<c>`, a packet counter that go does not have at all. So the generator switches a tag off when the selected client's engine does not know it: an unfamiliar tag is rejected along with the whole packet.",
     },
     keywords: ["i1", "i2", "cps", "теги", "tags", "мимикрия", "mimicry"],
   },
@@ -444,6 +444,39 @@ export const FAQ_ENTRIES: FaqEntry[] = [
 
   /* ── Clients ──────────────────────────────────────────────────────────── */
   {
+    id: "client-vs-engine",
+    category: "clients",
+    question: {
+      ru: "Чем клиент отличается от движка и почему это важно?",
+      en: "What is the difference between a client and an engine, and why does it matter?",
+    },
+    answer: {
+      ru: "**Клиент — это приложение, движок — то, что внутри него ведёт туннель.** Разные приложения часто несут один и тот же движок, и тогда всё, что решает движок, у них совпадает, как бы по-разному они ни выглядели.\n\nAmneziaWG для Android, для iOS, для Windows и Amnezia VPN объявляют один и тот же `amneziawg-go/v3 v3.0.1`. WG Tunnel несёт его форк, у которого `device/obf.go` побайтово тот же файл. Пакеты OpenWrt собирают другой движок — `amneziawg-linux-kernel-module`. WireSock не использует ни один из двух: у него форк BoringTun. OPNsense ставит третий, FreeBSD-шный `amnezia-kmod`, выведенный из `if_wg`.\n\n**Практическая разница вот в чём.** Потолки значений обычно принадлежат приложению: это его редактор решает, сохранять ли H выше INT32_MAX. А словарь тегов в `I1–I5` принадлежит движку, и приложение тут ни при чём. Поэтому четыре приложения Amnezia не могут расходиться в том, какие теги работают, а два приложения на разных движках расходятся обязательно.",
+      en: "**A client is the app; the engine is what runs the tunnel inside it.** Different apps often carry the same engine, and then everything the engine decides is identical between them, however different they look.\n\nAmneziaWG for Android, for iOS, for Windows and Amnezia VPN all declare the same `amneziawg-go/v3 v3.0.1`. WG Tunnel carries a fork whose `device/obf.go` is byte for byte the same file. OpenWrt packages build a different engine, `amneziawg-linux-kernel-module`. WireSock uses neither: it has a BoringTun fork. OPNsense installs a third, the FreeBSD `amnezia-kmod` derived from `if_wg`.\n\n**The practical difference is this.** Value ceilings usually belong to the app: it is its editor that decides whether to save an H above INT32_MAX. The tag vocabulary in `I1–I5` belongs to the engine, and the app has no say in it. So four Amnezia apps cannot disagree about which tags work, while two apps on different engines are bound to.",
+    },
+    keywords: [
+      "движок",
+      "engine",
+      "amneziawg-go",
+      "kernel module",
+      "модуль ядра",
+      "boringtun",
+    ],
+  },
+  {
+    id: "wiresock-no-chain",
+    category: "clients",
+    question: {
+      ru: "Почему для WireSock не генерируются I1–I5?",
+      en: "Why are I1–I5 not generated for WireSock?",
+    },
+    answer: {
+      ru: "**Потому что он их не отправляет, и молчит об этом.**\n\nВ его собственных release notes к 3.4.4.1 сказано прямо: «Standard AWG 1.5 `I1`–`I5` parameters are not supported». Вместо цепочки у него свой набор `Id`/`Ip`/`Ib` — домен, протокол и профиль браузера, — который больше нигде не понимают. А в 3.4.5.1 добавлено, что поля `I1`–`I5` теперь «silently ignored instead of being flagged as errors».\n\n**Самое неприятное здесь то, что ничего не ломается.** Туннель поднимается как ни в чём не бывало: эти пакеты в любом случае отбрасываются на стороне сервера, никто их не ждёт. Теряется ровно маскировка, и об этом не сообщает никто. Поэтому мы не пишем в конфиг пять полей, которые клиент не отправит: они создавали бы видимость защиты, которой нет. Если мимикрия нужна, выберите другой клиент.",
+      en: "**Because it does not send them, and says nothing about it.**\n\nIts own release notes for 3.4.4.1 put it plainly: \"Standard AWG 1.5 `I1`–`I5` parameters are not supported\". Instead of the chain it has its own `Id`/`Ip`/`Ib` set — domain, protocol and browser profile — which nothing else understands. And 3.4.5.1 adds that `I1`–`I5` fields are now \"silently ignored instead of being flagged as errors\".\n\n**The awkward part is that nothing breaks.** The tunnel comes up as if all were well: those packets are discarded at the server end anyway, nobody is waiting for them. What is lost is exactly the mimicry, and nothing reports it. So we do not write five fields the client will not send: they would give the appearance of a protection that is not there. If you need the mimicry, pick a different client.",
+    },
+    keywords: ["wiresock", "i1", "boringtun", "id", "ip", "ib"],
+  },
+  {
     id: "which-client",
     category: "clients",
     question: {
@@ -461,6 +494,28 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       "официальный",
       "official",
       "выбор",
+    ],
+  },
+  {
+    id: "which-clients-covered",
+    category: "clients",
+    question: {
+      ru: "Какие клиенты есть в матрице и откуда взяты их ограничения?",
+      en: "Which clients are in the matrix, and where do their limits come from?",
+    },
+    answer: {
+      ru: "**Тринадцать записей, и почти для каждой движок установлен по манифесту, а не по описанию.**\n\nНа `amneziawg-go`: AmneziaWG для Android, iOS и Windows, Amnezia VPN, WG Tunnel, отдельный CLI `amneziawg-go` и mihomo / Clash.Meta. На модуле ядра Linux: сам модуль отдельной строкой и пакеты OpenWrt. Своим движком: WireSock и OPNsense.\n\n**Что стоит знать про отдельные записи.** mihomo — единственный клиент вне экосистемы Amnezia, который дотягивается до AWG 3.0, но только при `version: 3` в настройках outbound; ниже включается старая реализация. У OPNsense плагин задаёт свои границы: `Jc` от 1 до 128, `Jmin` и `Jmax` начинаются с единицы, а не с нуля. Модуль ядра — единственное место, где работает `<c>`, и единственное, где нет `d`, `ds`, `dz`.\n\n**Три записи честно помечены как неустановленные**: Keenetic, ASUS Merlin и OPNsense. Для первых двух прошивка закрыта, у третьего движок известен, но его разбор тегов мы не читали. Им оставлены только теги, которые понимают оба известных движка, а `<c>` не выдаётся: гадать здесь дороже, чем недодать один тег.",
+      en: "**Thirteen entries, and for nearly all of them the engine is established from a manifest rather than from a description.**\n\nOn `amneziawg-go`: AmneziaWG for Android, iOS and Windows, Amnezia VPN, WG Tunnel, the standalone `amneziawg-go` CLI, and mihomo / Clash.Meta. On the Linux kernel module: the module itself as its own entry, and the OpenWrt packages. On an engine of their own: WireSock and OPNsense.\n\n**Things worth knowing about particular entries.** mihomo is the only client outside Amnezia's ecosystem that reaches AWG 3.0, and only with `version: 3` in the outbound options; below that it runs the older implementation. The OPNsense plugin sets its own bounds: `Jc` from 1 to 128, and `Jmin` and `Jmax` starting at one rather than zero. The kernel module is the only place `<c>` works, and the only one without `d`, `ds`, `dz`.\n\n**Three entries are honestly marked as unestablished**: Keenetic, ASUS Merlin and OPNsense. The first two are closed firmware; for the third the engine is known but we have not read its tag parser. They get only the tags both known engines understand, and `<c>` is withheld: guessing costs more here than withholding one tag.",
+    },
+    keywords: [
+      "матрица",
+      "matrix",
+      "mihomo",
+      "clash",
+      "opnsense",
+      "openwrt",
+      "keenetic",
+      "merlin",
     ],
   },
   {
@@ -494,8 +549,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "Why do some parameters change when I pick a client?",
     },
     answer: {
-      ru: "**Потому что реализации отличаются в мелочах, и эти мелочи ломают конфиги.**\n\nКлиент AmneziaWG для Windows, например, ограничен INT32_MAX для значений H, тогда как остальные принимают весь 32-битный диапазон, — конфиг с H около четырёх миллиардов там просто не примется. Некоторые сборки не реализуют теги `<c>`, `<rc>` или `<rd>`, и цепочка с ними отвалится с ошибкой. *Генератор знает эти ограничения и подрезает параметры под выбранный клиент, вместо того чтобы выдать красивый конфиг, который не заработает.*",
-      en: "**Because implementations differ in small ways, and those small ways break configs.**\n\nThe AmneziaWG client for Windows, for instance, caps H values at INT32_MAX while others accept the full 32-bit range — a config with an H near four billion is simply rejected there. Some builds do not implement the `<c>`, `<rc>` or `<rd>` tags, and a chain using them fails outright. *The generator knows these limits and trims parameters to the selected client rather than handing you an elegant config that will not run.*",
+      ru: "**Потому что ограничения приходят с двух разных сторон, и путать их дорого.**\n\nЧасть из них принадлежит самому приложению. Клиент AmneziaWG для Windows до версии 2.0.2 отказывался сохранять H выше INT32_MAX, хотя на сервере такие значения работали всегда: это была проверка в редакторе, и её починили в PR #87.\n\nОстальное принадлежит движку под приложением, а не приложению. Набор тегов в `I1–I5` разбирает не клиент, а туннель: `amneziawg-go` знает `b`, `t`, `r`, `rc`, `rd`, `d`, `ds`, `dz`, модуль ядра Linux знает `b`, `c`, `t`, `r`, `rc`, `rd`. Наборы расходятся в обе стороны, и незнакомый тег отвергает весь пакет, а не сам себя.\n\n*Генератор знает и то и другое: клиент называет свой движок, теги выводятся из движка, а потолки остаются за клиентом. Поэтому конфиг подрезается под выбранную связку, а не выдаётся красивым и нерабочим.*",
+      en: "**Because the limits come from two different places, and confusing them is expensive.**\n\nSome belong to the app itself. The AmneziaWG client for Windows refused to save an H above INT32_MAX until 2.0.2, even though the server always accepted such values: that was a check in the editor, fixed in PR #87.\n\nThe rest belong to the engine under the app rather than to the app. What parses the tags in `I1–I5` is the tunnel, not the client: `amneziawg-go` knows `b`, `t`, `r`, `rc`, `rd`, `d`, `ds`, `dz`, and the Linux kernel module knows `b`, `c`, `t`, `r`, `rc`, `rd`. The sets differ in both directions, and an unfamiliar tag rejects the whole packet rather than itself.\n\n*The generator holds both: a client names its engine, the tags follow from the engine, and the ceilings stay with the client. So the config is trimmed to the pairing you picked instead of being handed to you elegant and broken.*",
     },
     keywords: ["совместимость", "compatibility", "int32", "windows", "лимиты"],
   },
@@ -532,8 +587,8 @@ export const FAQ_ENTRIES: FaqEntry[] = [
       en: "Why is the <c> tag flagged as problematic?",
     },
     answer: {
-      ru: "**Он не реализован в ряде сборок** `amneziawg-go` и вызывает там ошибку ErrorCode 1000 — конфиг не применяется целиком.\n\nКроме того, **разработчики Amnezia позднее от него отказались**, так что он может перестать работать и в тех клиентах, где сейчас работает. По умолчанию генератор его не включает, а для клиентов, где он заведомо не поддерживается, отключает принудительно. Если у вас нет конкретной причины его использовать, лучше обойтись без него.",
-      en: "**It is unimplemented in several** `amneziawg-go` builds, where it raises ErrorCode 1000 and the whole config fails to apply. **Amnezia's developers also stepped away from it later**, so it may stop working even in clients where it works today. The generator leaves it off by default and force-disables it for clients known not to support it. Unless you have a specific reason to use it, do without.",
+      ru: "**Он существует ровно в одном движке из двух.**\n\nСчётчик пакетов реализован в `amneziawg-linux-kernel-module`: в `src/junk.c`, функция `jp_parse_tags`, есть ветка `strcmp(key, \"c\")`. В `amneziawg-go` его нет ни в одной версии — карта `obfBuilders` в `device/obf.go` знает `b`, `t`, `r`, `rc`, `rd`, `d`, `ds`, `dz`, и это всё. А на `amneziawg-go` работают все приложения Amnezia: Android, iOS, Windows и Amnezia VPN.\n\n**Незнакомый тег не игнорируется, а отвергает весь джанк-пакет.** `newObfChain` в go собирает ошибки и возвращает их через `errors.Join`, модуль ядра отдаёт `-EINVAL`. Поэтому цена ошибки здесь не «одним тегом меньше», а неработающая маскировка целиком.\n\nГенератор смотрит на движок выбранного клиента и просто не даёт включить `<c>` там, где его не примут. Раньше здесь было написано, что тег сломан в старых сборках AWG-go: это неверно, его там не было никогда.",
+      en: "**It exists in exactly one of the two engines.**\n\nThe packet counter is implemented in `amneziawg-linux-kernel-module`: `src/junk.c`, function `jp_parse_tags`, has a `strcmp(key, \"c\")` branch. `amneziawg-go` has it in no version at all — the `obfBuilders` map in `device/obf.go` knows `b`, `t`, `r`, `rc`, `rd`, `d`, `ds`, `dz`, and that is the whole vocabulary. And `amneziawg-go` is what every Amnezia app runs on: Android, iOS, Windows and Amnezia VPN.\n\n**An unfamiliar tag is not ignored, it rejects the whole junk packet.** `newObfChain` in go collects the errors and returns them through `errors.Join`; the kernel module returns `-EINVAL`. So the cost of getting this wrong is not one tag fewer, it is the mimicry gone entirely.\n\nThe generator looks at the engine behind the selected client and will not let you switch `<c>` on where it would not be accepted. This answer used to say the tag was broken in older AWG-go builds. That was wrong: it was never there.",
     },
     keywords: ["<c>", "errorcode 1000", "тег", "предупреждение", "warning"],
   },
