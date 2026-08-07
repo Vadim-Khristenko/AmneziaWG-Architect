@@ -19,16 +19,29 @@ import {
   type ClientProfile,
   type ResolvedClient,
 } from "@/shared/clients";
+import {
+  engineTagSupport,
+  ENGINE_GO,
+  ENGINE_KMOD,
+  ENGINE_UNVERIFIED,
+  type AwgEngine,
+  type CpsTagSupport,
+} from "./engines";
 import type { ClientCapability } from "./types";
 
 /** What an AmneziaWG client will and will not accept. */
-export interface AwgClientLimits {
+export interface AwgClientLimits extends CpsTagSupport {
+  /**
+   * What reads the junk-packet chain underneath this client.
+   *
+   * It sits in `limits` rather than beside them so a release can override it:
+   * a client that changed engines changed its tag vocabulary with it, and that
+   * is the same kind of fact as a raised ceiling.
+   */
+  engine: AwgEngine;
   /** Largest H value the client accepts. */
   maxHValue: number;
   supportsS3S4: boolean;
-  supportsCpsTagC: boolean;
-  supportsCpsTagRC: boolean;
-  supportsCpsTagRD: boolean;
   supportsI1I5: boolean;
   maxJc: number;
   maxS4: number;
@@ -40,37 +53,57 @@ const UINT32_MAX = 4_294_967_295;
 /** What amneziawg-windows accepted before v2.0.2. */
 const INT32_MAX = 2_147_483_647;
 
-/** A client with nothing unusual about it, for the entries that differ little. */
-const FULL: AwgClientLimits = {
+/** Everything that is not the tag set, for the entries that differ little. */
+const BASE = {
   maxHValue: UINT32_MAX,
   supportsS3S4: true,
-  supportsCpsTagC: true,
-  supportsCpsTagRC: true,
-  supportsCpsTagRD: true,
   supportsI1I5: true,
   maxJc: 10,
   maxS4: 32,
-};
-
-/** No CPS tags beyond the basics. */
-const NO_CPS_TAGS = {
-  supportsCpsTagC: false,
-  supportsCpsTagRC: false,
-  supportsCpsTagRD: false,
 } as const;
 
+/**
+ * Limits for a client running on a given engine.
+ *
+ * The tag flags are never written by hand here — they come off the engine, so
+ * two clients naming one engine cannot disagree about what it parses. That
+ * disagreement is what this replaced: four entries on `amneziawg-go/v3 v3.0.1`
+ * held three different answers about `<c>` between them.
+ */
+function on(
+  engine: AwgEngine,
+  overrides: Partial<Omit<AwgClientLimits, "engine" | keyof CpsTagSupport>> = {},
+): AwgClientLimits {
+  return { ...BASE, engine, ...engineTagSupport(engine), ...overrides };
+}
+
+/*
+ * Which engine each client ships, and how that was established. Every `go.mod`
+ * below was read on 6 aug 2026; a manifest states a declared dependency, not
+ * the bytes in a release artefact, which is the one gap in this evidence.
+ *
+ *   amneziawg-android   tunnel/tools/libwg-go/go.mod      amneziawg-go/v3 v3.0.1
+ *   amneziawg-apple     Sources/WireGuardKitGo/go.mod     amneziawg-go/v3 v3.0.1
+ *   amneziawg-windows   go.mod                            amneziawg-go/v3 v3.0.1
+ *   amnezia-client      recipes/awg-go/conanfile.py       version = "3.0.1",
+ *                       and the macOS and Linux daemons start the built
+ *                       `amneziawg-go` binary by name
+ *   amneziawg-openwrt   kmod-amneziawg/Makefile           the kernel module
+ */
 export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
   {
     id: "amneziawg-android",
     name: "AmneziaWG Android",
     platforms: ["Android 5+"],
-    limits: { ...FULL },
+    limits: on(ENGINE_GO),
+    notes: ["client.note.goNoTagC"],
   },
   {
     id: "amneziawg-ios",
     name: "AmneziaWG iOS",
     platforms: ["iOS 15+"],
-    limits: { ...FULL },
+    limits: on(ENGINE_GO),
+    notes: ["client.note.goNoTagC"],
   },
   {
     id: "amneziawg-windows",
@@ -79,7 +112,12 @@ export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
     // v2.0.2 raised the editor's H bound from 2^31-1 to the full uint32 the
     // protocol has always used (PR #87, commit c9740b17). Current builds are
     // like everything else, so that is the baseline.
-    limits: { ...FULL, ...NO_CPS_TAGS },
+    //
+    // The H ceiling really was this client's own: `conf/parser.go` keeps I1–I5
+    // as opaque strings and only checks them for emptiness, so the tags are
+    // amneziawg-go's business and nothing here overrides them.
+    limits: on(ENGINE_GO),
+    notes: ["client.note.goNoTagC"],
     releases: [
       {
         id: "<2.0.2",
@@ -94,46 +132,66 @@ export const AWG_CLIENT_PROFILES: readonly ClientProfile<AwgClientLimits>[] = [
     id: "amneziavpn",
     name: "Amnezia VPN",
     platforms: ["Android", "iOS", "Windows", "macOS", "Linux"],
-    limits: { ...FULL },
+    limits: on(ENGINE_GO),
+    notes: ["client.note.goNoTagC"],
   },
   {
     id: "wg-tunnel",
     name: "WG Tunnel",
     platforms: ["Android"],
-    limits: { ...FULL, ...NO_CPS_TAGS },
-    notes: ["client.note.wgTunnelBattery"],
+    /*
+     * The manifest's `amneziawg-parser` reads a config rather than running
+     * one, so it says nothing about the tunnel. What carries it is
+     * `libam-go.so`, built from a vendored fork: `tunnel/tools/libwg-go/go.mod`
+     * replaces `amnezia-vpn/amneziawg-go v0.2.16` with
+     * `wgtunnel/amneziawg-go v0.0.0-20260618075902-e1b699b2104b`.
+     *
+     * A fork could have changed the vocabulary and did not: its `device/obf.go`
+     * is the same blob as upstream's, `cf2275c5`. So the tag set is go's, `<c>`
+     * included in what it does not have.
+     *
+     * It carries no AWG 3.0 block: `device/uapi.go` accepts jc, jmin, jmax,
+     * s1-s4, h1-h4 and i1-i5 and rejects any other key outright.
+     */
+    limits: on(ENGINE_GO),
+    notes: ["client.note.wgTunnelBattery", "client.note.goNoTagC"],
   },
   {
     id: "wiresock",
     name: "WireSock",
     platforms: ["Windows"],
-    limits: { ...FULL, ...NO_CPS_TAGS },
+    limits: on(ENGINE_UNVERIFIED),
+    notes: ["client.note.engineUnverified"],
   },
   {
     id: "keenetic-native",
     name: "Keenetic (native)",
     platforms: ["Keenetic OS 4.x"],
-    limits: { ...FULL, maxJc: 128 },
-    notes: ["client.note.keeneticI1"],
+    limits: on(ENGINE_UNVERIFIED, { maxJc: 128 }),
+    notes: ["client.note.keeneticI1", "client.note.engineUnverified"],
   },
   {
     id: "awg-go-legacy",
     name: "amneziawg-go (legacy)",
     platforms: ["Linux", "macOS"],
-    limits: { ...FULL, ...NO_CPS_TAGS, maxJc: 128 },
-    notes: ["client.note.awgGoTagC"],
+    limits: on(ENGINE_GO, { maxJc: 128 }),
+    notes: ["client.note.goNoTagC"],
   },
   {
     id: "openwrt",
     name: "OpenWRT",
     platforms: ["OpenWrt"],
-    limits: { ...FULL, maxJc: 128 },
+    limits: on(ENGINE_KMOD, { maxJc: 128 }),
+    notes: ["client.note.openwrtKmod"],
   },
   {
     id: "asus-merlin",
     name: "ASUS Merlin",
     platforms: ["Asuswrt-Merlin"],
-    limits: { ...FULL, maxJc: 128 },
+    // Merlin itself carries no AmneziaWG; it arrives through Entware or a
+    // third-party package, and which one decides the tag set.
+    limits: on(ENGINE_UNVERIFIED, { maxJc: 128 }),
+    notes: ["client.note.engineUnverified"],
   },
 ];
 

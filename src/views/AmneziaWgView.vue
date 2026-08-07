@@ -64,6 +64,8 @@ import {
     AWG_CLIENT_PROFILES,
     YANDEX_UNSTABLE_PROFILES,
 } from "@/engines/awg/generator";
+import { clientCaps } from "@/engines/awg/generator/clients";
+import { engineHasTag } from "@/engines/awg/generator/engines";
 import { paramsFor } from "@/engines/awg/generator/params";
 import { awgParamBlocks } from "@/engines/awg/generator";
 import { REGIONS } from "@/shared/domains";
@@ -251,14 +253,38 @@ const yandexUnstable = computed(() =>
     ),
 );
 
-/** The five CPS tags, with the one that is known to be trouble marked. */
+/**
+ * The five CPS tags, each naming the tag its engine has to know.
+ *
+ * `<t>` and `<r>` are in every engine we have read, so they are never gated.
+ * The rest are, and used not to be visibly: the generator quietly dropped a
+ * tag the chosen client could not parse, so someone who ticked one got a
+ * config without it and no word about why. The box now says so itself.
+ */
 const TAGS = [
-    { field: "useTagC", label: "<c>", warn: true },
-    { field: "useTagT", label: "<t>", warn: false },
-    { field: "useTagR", label: "<r>", warn: false },
-    { field: "useTagRC", label: "<rc>", warn: false },
-    { field: "useTagRD", label: "<rd>", warn: false },
+    { field: "useTagC", label: "<c>", tag: "c", warn: true },
+    { field: "useTagT", label: "<t>", tag: null, warn: false },
+    { field: "useTagR", label: "<r>", tag: null, warn: false },
+    { field: "useTagRC", label: "<rc>", tag: "rc", warn: false },
+    { field: "useTagRD", label: "<rd>", tag: "rd", warn: false },
 ] as const;
+
+/** The engine behind the chosen client and build, which owns the tag set. */
+const clientEngine = computed(
+    () => clientCaps(config.clientId, config.clientRelease).limits.engine,
+);
+
+/** Tags the chosen client cannot parse, so the UI can stop offering them. */
+const unavailableTags = computed(
+    () =>
+        new Set(
+            TAGS.filter(
+                (item) =>
+                    item.tag !== null &&
+                    !engineHasTag(clientEngine.value, item.tag),
+            ).map((item) => item.field),
+        ),
+);
 
 /* ── The help drawers ────────────────────────────────────────────────────── */
 
@@ -1164,16 +1190,52 @@ function toSimulator() {
                     <div class="field">
                         <span class="label">{{ t("gen.tags.label") }}</span>
                         <div class="row gen-tags">
-                            <label v-for="tag in TAGS" :key="tag.field" class="check">
+                            <label
+                                v-for="tag in TAGS"
+                                :key="tag.field"
+                                class="check"
+                                :class="{
+                                    'is-unavailable': unavailableTags.has(tag.field),
+                                }"
+                                :data-tooltip="
+                                    unavailableTags.has(tag.field)
+                                        ? t('gen.tags.unavailable', {
+                                              engine: clientEngine.label,
+                                          })
+                                        : undefined
+                                "
+                            >
                                 <input
                                     v-model="config[tag.field]"
                                     type="checkbox"
+                                    :disabled="unavailableTags.has(tag.field)"
                                     @change="generate()"
                                 />
                                 <span class="check-box"></span>
                                 <span class="mono">{{ tag.label }}</span>
                             </label>
                         </div>
+                    </div>
+
+                    <!--
+                        Named rather than counted: "two tags are unavailable"
+                        makes the reader work out which, and the whole point is
+                        that they stopped having to guess.
+                    -->
+                    <div v-if="unavailableTags.size" class="note">
+                        <Info :size="15" class="note-icon" />
+                        <span>
+                            {{
+                                t("gen.tags.engineDrops", {
+                                    tags: TAGS.filter((x) =>
+                                        unavailableTags.has(x.field),
+                                    )
+                                        .map((x) => x.label)
+                                        .join(", "),
+                                    engine: clientEngine.label,
+                                })
+                            }}
+                        </span>
                     </div>
 
                     <div v-if="config.useTagC" class="note note--warn">

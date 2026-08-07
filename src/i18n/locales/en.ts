@@ -331,8 +331,12 @@ export const en: Catalog = {
     "Large S3/S4 may drain battery or behave inconsistently; keep S4 modest.",
   "client.note.keeneticI1":
     "Sensitive to I1: prefer a simple <r 64> or a DNS mimicry profile.",
-  "client.note.awgGoTagC":
-    "Tag <c> is not implemented — ErrorCode 1000.",
+  "client.note.goNoTagC":
+    "The tunnel here is amneziawg-go, and it has no <c> at all: its vocabulary is <b>, <t>, <r>, <rc>, <rd>, <d>, <ds>, <dz>. The packet counter exists only in the Linux kernel module.",
+  "client.note.openwrtKmod":
+    "OpenWrt packages build the kernel module rather than amneziawg-go. So <c> does work here, while <d>, <ds> and <dz> do not.",
+  "client.note.engineUnverified":
+    "What this client uses to read the I1–I5 chain could not be established from source. It keeps the tags both known engines understand; <c> is withheld, because an unfamiliar tag rejects not itself but the whole packet.",
   "gen.client.releaseCurrent": "Current client version",
   "gen.client.hint":
     "Parameters are filtered to what the selected client supports.",
@@ -342,7 +346,10 @@ export const en: Catalog = {
   "gen.mimicAll": "Apply the profile to I2–I5",
   "gen.tags.label": "Tags in the CPS chain",
   "gen.tags.warnC":
-    "The <c> tag does not work in older AWG-go builds (ErrorCode 1000). Amnezia's developers later dropped it, so it may stop working in newer client versions too.",
+    "The packet counter exists only in the Linux kernel module. amneziawg-go, which every Amnezia app runs on, has no <c> in any version — and an unfamiliar tag there rejects the whole junk packet, not just itself.",
+  "gen.tags.unavailable": "{engine} does not parse this tag",
+  "gen.tags.engineDrops":
+    "The selected client runs on {engine}, which does not know {tags}. Those tags are switched off rather than handed over in a config the client would reject whole.",
   "gen.cps.unavailable": "CPS chains are unavailable in AWG 1.0",
   "gen.cps.unavailableHint":
     "The I1–I5 tags arrived in 1.5. Mimicry profiles do not apply here — obfuscation is limited to junk packets and headers.",

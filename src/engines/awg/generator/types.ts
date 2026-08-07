@@ -1,5 +1,6 @@
 import type { Finding } from "@/types/findings";
 import type { DomainRegion } from "@/types/domain";
+import type { AwgEngine } from "./engines";
 /**
  * AmneziaWG Architect — Generator public types.
  */
@@ -177,6 +178,8 @@ export interface ClientCapability {
   id: string;
   name: string;
   platforms: string[];
+  /** What parses the junk-packet chain underneath — see ./engines.ts. */
+  engine: AwgEngine;
   /** Maximum accepted H value (INT32_MAX or UINT32_MAX). */
   maxHValue: number;
   supportsS3S4: boolean;
